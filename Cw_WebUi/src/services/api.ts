@@ -6,6 +6,9 @@ import type {
   Item,
   ItemCreate,
   ItemUpdate,
+  SettingsResponse,
+  SettingsUpdate,
+  VersionResponse,
 } from '@/types'
 
 const API_BASE_URL = 'http://localhost:11222'
@@ -69,4 +72,14 @@ export const itemApi = {
     request(`/api/items/${id}`, {
       method: 'DELETE',
     }),
+}
+
+export const settingsApi = {
+  get: () => request<SettingsResponse>('/api/settings'),
+  update: (data: SettingsUpdate) =>
+    request<SettingsResponse>('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  getVersion: () => request<VersionResponse>('/api/settings/version'),
 }

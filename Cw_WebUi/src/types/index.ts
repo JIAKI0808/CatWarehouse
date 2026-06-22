@@ -54,3 +54,34 @@ export interface ItemUpdate {
 }
 
 export type ViewMode = 'table' | 'card'
+
+export interface AIConfig {
+  api_key: string
+  base_url: string
+  model_name: string
+  max_tokens: number
+}
+
+export interface PluginConfig {
+  ai_category_suggestion: boolean
+  smart_autocomplete: boolean
+  description_generation: boolean
+  voice_input: boolean
+}
+
+export interface SettingsResponse {
+  ai_config: AIConfig
+  plugin_config: PluginConfig
+}
+
+export interface SettingsUpdate {
+  ai_config?: AIConfig
+  plugin_config?: PluginConfig
+}
+
+export interface VersionResponse {
+  app_name: string
+  version: string
+  description: string
+  start_time: string
+}
