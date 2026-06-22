@@ -6,6 +6,7 @@ import { useItemStore } from '@/stores/item'
 import CategoryTree from '@/components/CategoryTree.vue'
 import ItemTable from '@/components/ItemTable.vue'
 import ItemCard from '@/components/ItemCard.vue'
+import FloatingButton from '@/components/FloatingButton.vue'
 
 const itemStore = useItemStore()
 const panelExpanded = ref(true)
@@ -43,5 +44,7 @@ const panelExpanded = ref(true)
       <ItemTable v-if="itemStore.viewMode === 'table'" />
       <ItemCard v-else />
     </div>
+
+    <FloatingButton />
   </div>
 </template>

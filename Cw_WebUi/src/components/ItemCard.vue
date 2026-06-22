@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { NCard, NGrid, NGridItem, NButton, NSpace, NSpin, NDropdown } from 'naive-ui'
-import { AddOutline } from '@vicons/ionicons5'
+import { NCard, NGrid, NGridItem, NButton, NSpace, NSpin } from 'naive-ui'
 import { gsap } from 'gsap'
 import { useItemStore } from '@/stores/item'
 import { useCategoryStore } from '@/stores/category'
@@ -29,16 +28,6 @@ watch(
     })
   }
 )
-
-const addOptions = [
-  { label: '新增大类', key: 'category' },
-]
-
-function handleAdd(key: string) {
-  if (key === 'category') {
-    showCategoryForm.value = true
-  }
-}
 
 function handleEdit(item: Item) {
   editingItem.value = item
@@ -102,14 +91,6 @@ function formatDate(dateStr: string | null): string {
           </NGridItem>
         </NGrid>
       </NSpin>
-    </div>
-
-    <div class="absolute bottom-6 right-6">
-      <NDropdown :options="addOptions" @select="handleAdd">
-        <NButton type="primary" circle size="large">
-          <AddOutline :size="24" />
-        </NButton>
-      </NDropdown>
     </div>
 
     <ItemForm

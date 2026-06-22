@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -134,3 +134,20 @@ async def delete_item(item_id: int, db: AsyncSession = Depends(get_db)):
     await db.delete(item)
     await db.commit()
     return {"ok": True}
+
+
+# ── Image Analysis ──
+
+@router.post("/image-analysis")
+async def image_analysis(file: UploadFile = File(...)):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(400, "File must be an image")
+
+    contents = await file.read()
+
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "size": len(contents),
+        "message": "Image received successfully",
+    }
