@@ -13,7 +13,20 @@ from models import Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import json
+    from pathlib import Path
+
+    from datetime import datetime
+
     setup_logging()
+
+    pkg = json.loads(
+        (Path(__file__).parent.parent / "Cw_WebUi" / "package.json").read_text()
+    )
+    import api.settings_router as sr
+    sr.APP_VERSION = pkg.get("version", "0.1.0")
+    sr.set_start_time(datetime.now().isoformat())
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

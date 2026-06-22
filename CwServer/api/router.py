@@ -9,6 +9,7 @@ from models.specific_item import SpecificItem
 from schemas.category import CategoryCreate, CategoryResponse
 from schemas.sub_category import SubCategoryCreate, SubCategoryResponse
 from schemas.specific_item import SpecificItemCreate, SpecificItemResponse, SpecificItemUpdate
+from api.settings_router import router as settings_router
 
 router = APIRouter(prefix="/api", tags=["inventory"])
 
@@ -151,3 +152,6 @@ async def image_analysis(file: UploadFile = File(...)):
         "size": len(contents),
         "message": "Image received successfully",
     }
+
+
+router.include_router(settings_router)
