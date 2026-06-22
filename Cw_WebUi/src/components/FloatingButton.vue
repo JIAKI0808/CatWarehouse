@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { NButton, NDropdown } from 'naive-ui'
-import { CloudUploadOutline } from '@vicons/ionicons5'
+import { ArrowUpOutline } from '@vicons/ionicons5'
 import UploadModal from './UploadModal.vue'
 
 const showUploadModal = ref(false)
@@ -38,7 +38,7 @@ async function handleUpload(file: File) {
   <div class="fixed bottom-6 right-6 z-50">
     <NDropdown :options="addOptions" @select="handleAdd">
       <NButton type="primary" circle size="large">
-        <CloudUploadOutline :size="24" />
+        <ArrowUpOutline :size="24" />
       </NButton>
     </NDropdown>
 
