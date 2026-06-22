@@ -12,6 +12,7 @@ import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
 import CategoryForm from './CategoryForm.vue'
+import ItemForm from './ItemForm.vue'
 
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
@@ -19,7 +20,9 @@ const itemStore = useItemStore()
 
 const expandedCategories = ref<Set<number>>(new Set())
 const showSubCategoryForm = ref(false)
+const showItemForm = ref(false)
 const contextCategoryId = ref<number | null>(null)
+const contextSubCategoryId = ref<number | null>(null)
 const showDeleteConfirm = ref(false)
 const categoryToDelete = ref<{ id: number; name: string } | null>(null)
 
@@ -46,6 +49,11 @@ function handleAddSubCategory(catId: number) {
   showSubCategoryForm.value = true
 }
 
+function handleAddItem(subId: number) {
+  contextSubCategoryId.value = subId
+  showItemForm.value = true
+}
+
 function handleDeleteCategory(cat: { id: number; name: string }) {
   categoryToDelete.value = cat
   showDeleteConfirm.value = true
@@ -61,6 +69,19 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
       data.notes
     )
     subCategoryStore.fetchByCategory(contextCategoryId.value)
+  }
+}
+
+async function handleItemSubmit(data: Record<string, unknown>) {
+  if (contextSubCategoryId.value) {
+    await itemStore.create({
+      sub_category_id: contextSubCategoryId.value,
+      name: data.name as string,
+      recorder: data.recorder as string,
+      price: data.price as number,
+      description: data.description as string,
+    })
+    itemStore.fetchBySubCategory(contextSubCategoryId.value)
   }
 }
 
@@ -129,7 +150,7 @@ async function handleDeleteCategoryConfirm() {
               <div
                 v-for="sub in subCategoryStore.subCategories.filter(s => s.category_id === category.id)"
                 :key="sub.id"
-                class="flex items-center gap-2 px-2 py-1 cursor-pointer rounded text-sm"
+                class="group/sub flex items-center gap-2 px-2 py-1 cursor-pointer rounded text-sm"
                 :class="subCategoryStore.selectedId === sub.id
                   ? 'bg-blue-50 text-blue-600'
                   : 'text-gray-600 hover:bg-gray-50'"
@@ -140,6 +161,19 @@ async function handleDeleteCategoryConfirm() {
                 </NIcon>
                 <span class="truncate flex-1">{{ sub.name }}</span>
                 <span class="text-xs text-gray-400">{{ sub.quantity }}</span>
+
+                <div class="flex gap-0.5 opacity-0 group-hover/sub:opacity-100 transition-opacity">
+                  <NButton
+                    size="tiny"
+                    quaternary
+                    circle
+                    @click.stop="handleAddItem(sub.id)"
+                  >
+                    <template #icon>
+                      <NIcon :size="12"><AddOutline /></NIcon>
+                    </template>
+                  </NButton>
+                </div>
               </div>
               <div
                 v-if="subCategoryStore.subCategories.filter(s => s.category_id === category.id).length === 0"
@@ -158,6 +192,11 @@ async function handleDeleteCategoryConfirm() {
       type="subCategory"
       title="新增子分类"
       @submit="handleSubCategorySubmit"
+    />
+
+    <ItemForm
+      v-model:visible="showItemForm"
+      @submit="handleItemSubmit"
     />
 
     <NModal

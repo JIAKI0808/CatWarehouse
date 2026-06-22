@@ -31,15 +31,11 @@ watch(
 
 const addOptions = [
   { label: '新增大类', key: 'category' },
-  { label: '新增物品', key: 'item' },
 ]
 
 function handleAdd(key: string) {
   if (key === 'category') {
     showCategoryForm.value = true
-  } else {
-    editingItem.value = null
-    showItemForm.value = true
   }
 }
 

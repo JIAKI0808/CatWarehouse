@@ -32,7 +32,6 @@ watch(
 
 const addOptions = [
   { label: '新增大类', key: 'category' },
-  { label: '新增物品', key: 'item' },
 ]
 
 const columns: DataTableColumns<Item> = [
