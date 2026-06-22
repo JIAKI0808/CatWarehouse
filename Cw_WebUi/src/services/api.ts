@@ -11,6 +11,7 @@ import type {
   SettingsResponse,
   SettingsUpdate,
   VersionResponse,
+  TrendData,
 } from '@/types'
 import { useServerConfigStore } from '@/stores/serverConfig'
 
@@ -121,6 +122,7 @@ export interface ExportData {
     name: string
     description: string
     icon: string
+    icon_color: string
     sub_categories: Array<{
       name: string
       unit: string
@@ -170,4 +172,9 @@ export const importApi = {
 
 export const connectionApi = {
   test: () => request<{ ok: boolean }>('/api/settings/test-connection'),
+}
+
+export const analyticsApi = {
+  getTrend: (subCategoryId: number) =>
+    request<TrendData>(`/api/analytics/trend?sub_category_id=${subCategoryId}`),
 }

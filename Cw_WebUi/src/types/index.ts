@@ -114,3 +114,16 @@ export interface VersionResponse {
   description: string
   start_time: string
 }
+
+export interface TrendPoint {
+  date: string
+  quantity: number
+  price: number
+}
+
+export interface TrendData {
+  sub_category_id: number
+  sub_category_name: string
+  unit: string
+  data: TrendPoint[]
+}
