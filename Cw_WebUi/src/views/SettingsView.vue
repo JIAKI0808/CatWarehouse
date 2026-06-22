@@ -30,7 +30,7 @@ async function handleSave() {
 
 <template>
   <div class="h-full overflow-y-auto bg-gray-50 flex justify-center">
-    <div class="w-full max-w-xl px-6 py-10 space-y-8">
+    <div class="w-full max-w-2xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
       <h1 class="text-2xl font-bold text-center">设置</h1>
 
       <NSpin :show="store.loading">
@@ -91,6 +91,8 @@ async function handleSave() {
           </template>
         </NCard>
 
+        <div class="border-t border-gray-200" />
+
         <!-- 插件功能 -->
         <NCard title="插件功能" :bordered="false" class="shadow-sm">
           <div class="space-y-5">
@@ -123,6 +125,8 @@ async function handleSave() {
             </div>
           </template>
         </NCard>
+
+        <div class="border-t border-gray-200" />
 
         <!-- 版本信息 -->
         <NCard title="版本信息" :bordered="false" class="shadow-sm">
