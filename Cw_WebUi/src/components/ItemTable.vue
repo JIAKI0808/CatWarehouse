@@ -105,13 +105,14 @@ async function handleCategorySubmit(data: Record<string, string>) {
 
 <template>
   <div class="h-full flex flex-col relative">
-    <div class="flex-1 overflow-auto p-4">
+    <div class="flex-1 overflow-auto p-4 min-h-0">
       <NSpin :show="itemStore.loading">
         <NDataTable
           :columns="columns"
           :data="itemStore.items"
           :bordered="false"
           :single-line="false"
+          :style="{ height: '100%' }"
         />
       </NSpin>
     </div>
