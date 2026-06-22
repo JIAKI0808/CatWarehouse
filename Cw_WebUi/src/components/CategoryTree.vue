@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue'
-import { NTree, NTreeOption, NSpin } from 'naive-ui'
+import { ref, onMounted, computed, h } from 'vue'
+import { NSpin, NButton, NIcon, NModal, NText } from 'naive-ui'
+import { AddOutline, TrashOutline } from '@vicons/ionicons5'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
@@ -13,16 +14,49 @@ const itemStore = useItemStore()
 const selectedCategoryId = ref<number | null>(null)
 const showSubCategoryForm = ref(false)
 const contextCategoryId = ref<number | null>(null)
+const showDeleteConfirm = ref(false)
+const categoryToDelete = ref<{ id: number; name: string } | null>(null)
 
-const contextMenuVisible = ref(false)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
+interface TreeNode {
+  key: string
+  label: string
+  isLeaf: boolean
+  children?: TreeNode[]
+  suffix?: () => any
+}
 
-const treeData = computed<NTreeOption[]>(() =>
+const treeData = computed<TreeNode[]>(() =>
   categoryStore.categories.map((cat) => ({
     key: `cat-${cat.id}`,
     label: cat.name,
     isLeaf: false,
+    suffix: () => h('span', { class: 'flex gap-1' }, [
+      h(NButton, {
+        size: 'tiny',
+        quaternary: true,
+        circle: true,
+        onClick: (e: Event) => {
+          e.stopPropagation()
+          contextCategoryId.value = cat.id
+          showSubCategoryForm.value = true
+        },
+      }, {
+        default: () => h(NIcon, { size: 14 }, { default: () => h(AddOutline) }),
+      }),
+      h(NButton, {
+        size: 'tiny',
+        quaternary: true,
+        circle: true,
+        type: 'error',
+        onClick: (e: Event) => {
+          e.stopPropagation()
+          categoryToDelete.value = { id: cat.id, name: cat.name }
+          showDeleteConfirm.value = true
+        },
+      }, {
+        default: () => h(NIcon, { size: 14 }, { default: () => h(TrashOutline) }),
+      }),
+    ]),
     children: subCategoryStore.subCategories
       .filter((sub) => sub.category_id === cat.id)
       .map((sub) => ({
@@ -42,13 +76,6 @@ const selectedKeys = computed(() => {
 
 onMounted(() => {
   categoryStore.fetchAll()
-  document.addEventListener('click', closeContextMenu)
-  document.addEventListener('contextmenu', closeContextMenu)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', closeContextMenu)
-  document.removeEventListener('contextmenu', closeContextMenu)
 })
 
 function handleExpand(keys: string[]) {
@@ -70,36 +97,6 @@ function handleSelect(keys: string[]) {
   }
 }
 
-function handleNodeContextmenu(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  const nodeEl = target.closest('.n-tree-node')
-
-  if (nodeEl) {
-    const keyAttr = nodeEl.querySelector('[data-key]')?.getAttribute('data-key')
-    if (keyAttr && keyAttr.startsWith('cat-')) {
-      e.preventDefault()
-      e.stopPropagation()
-
-      const catId = parseInt(keyAttr.replace('cat-', ''), 10)
-      contextCategoryId.value = catId
-      contextMenuX.value = e.clientX
-      contextMenuY.value = e.clientY
-      contextMenuVisible.value = true
-    }
-  }
-}
-
-function closeContextMenu() {
-  contextMenuVisible.value = false
-}
-
-function handleContextMenuAction() {
-  if (contextCategoryId.value) {
-    showSubCategoryForm.value = true
-  }
-  closeContextMenu()
-}
-
 async function handleSubCategorySubmit(data: Record<string, string>) {
   if (contextCategoryId.value) {
     await subCategoryStore.create(
@@ -112,6 +109,15 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
     subCategoryStore.fetchByCategory(contextCategoryId.value)
   }
 }
+
+async function handleDeleteCategory() {
+  if (categoryToDelete.value) {
+    // TODO: 实现删除大类的 API
+    console.log('删除大类:', categoryToDelete.value.id)
+    showDeleteConfirm.value = false
+    categoryToDelete.value = null
+  }
+}
 </script>
 
 <template>
@@ -121,28 +127,61 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
     </div>
     <div class="flex-1 overflow-auto p-2">
       <NSpin :show="categoryStore.loading">
-        <NTree
-          :data="treeData"
-          :selected-keys="selectedKeys"
-          default-expand-all
-          @update:expanded-keys="handleExpand"
-          @update:selected-keys="handleSelect"
-          @contextmenu="handleNodeContextmenu"
-        />
-      </NSpin>
-    </div>
+        <div class="space-y-1">
+          <div
+            v-for="category in treeData"
+            :key="category.key"
+            class="group"
+          >
+            <div
+              class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer"
+              @click="handleExpand([category.key])"
+            >
+              <span class="text-sm truncate">{{ category.label }}</span>
+              <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <NButton
+                  size="tiny"
+                  quaternary
+                  circle
+                  @click.stop="contextCategoryId = parseInt(category.key.replace('cat-', ''), 10); showSubCategoryForm = true"
+                >
+                  <template #icon>
+                    <NIcon :size="14"><AddOutline /></NIcon>
+                  </template>
+                </NButton>
+                <NButton
+                  size="tiny"
+                  quaternary
+                  circle
+                  type="error"
+                  @click.stop="categoryToDelete = { id: parseInt(category.key.replace('cat-', ''), 10), name: category.label }; showDeleteConfirm = true"
+                >
+                  <template #icon>
+                    <NIcon :size="14"><TrashOutline /></NIcon>
+                  </template>
+                </NButton>
+              </div>
+            </div>
 
-    <div
-      v-if="contextMenuVisible"
-      class="fixed bg-white border rounded-lg shadow-lg py-1 z-50"
-      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
-    >
-      <div
-        class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-        @click="handleContextMenuAction"
-      >
-        新增子分类
-      </div>
+            <div
+              v-if="selectedCategoryId === parseInt(category.key.replace('cat-', ''), 10)"
+              class="ml-4 space-y-0.5"
+            >
+              <div
+                v-for="child in category.children"
+                :key="child.key"
+                class="flex items-center px-2 py-1 rounded cursor-pointer text-sm"
+                :class="subCategoryStore.selectedId === parseInt(child.key.replace('sub-', ''), 10)
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'hover:bg-gray-100'"
+                @click="handleSelect([child.key])"
+              >
+                {{ child.label }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </NSpin>
     </div>
 
     <CategoryForm
@@ -150,6 +189,18 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
       type="subCategory"
       title="新增子分类"
       @submit="handleSubCategorySubmit"
+    />
+
+    <NModal
+      v-model:show="showDeleteConfirm"
+      preset="dialog"
+      title="确认删除"
+      :content="`确定要删除大类「${categoryToDelete?.name}」吗？`"
+      positive-text="删除"
+      negative-text="取消"
+      type="error"
+      @positive-click="handleDeleteCategory"
+      @negative-click="showDeleteConfirm = false"
     />
   </div>
 </template>
