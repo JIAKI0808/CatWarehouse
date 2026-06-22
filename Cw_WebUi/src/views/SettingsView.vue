@@ -95,20 +95,20 @@ async function handleSave() {
 
         <!-- 插件功能 -->
         <NCard title="插件功能" :bordered="false" class="shadow-sm">
-          <div class="space-y-8">
-            <div class="flex items-center justify-between">
+          <div>
+            <div class="flex items-center justify-between py-3">
               <span class="text-sm font-medium text-gray-700">AI 分类建议</span>
               <NSwitch v-model:value="store.pluginConfig.ai_category_suggestion" />
             </div>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between py-3">
               <span class="text-sm font-medium text-gray-700">智能补全</span>
               <NSwitch v-model:value="store.pluginConfig.smart_autocomplete" />
             </div>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between py-3">
               <span class="text-sm font-medium text-gray-700">描述生成</span>
               <NSwitch v-model:value="store.pluginConfig.description_generation" />
             </div>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between py-3">
               <span class="text-sm font-medium text-gray-700">语音输入</span>
               <NSwitch v-model:value="store.pluginConfig.voice_input" />
             </div>
