@@ -171,7 +171,6 @@ async function handleCategorySubmit(data: Record<string, string>) {
 
 async function handleDeleteCategoryConfirm() {
   if (categoryToDelete.value) {
-    console.log('删除大类:', categoryToDelete.value.id)
     showDeleteConfirm.value = false
     categoryToDelete.value = null
   }
