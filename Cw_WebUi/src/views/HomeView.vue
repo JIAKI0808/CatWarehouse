@@ -5,6 +5,7 @@ import { ChevronForwardOutline, ChevronBackOutline } from '@vicons/ionicons5'
 import { useItemStore } from '@/stores/item'
 import CategoryTree from '@/components/CategoryTree.vue'
 import ItemTable from '@/components/ItemTable.vue'
+import ItemCard from '@/components/ItemCard.vue'
 
 const itemStore = useItemStore()
 const panelExpanded = ref(true)
@@ -39,7 +40,8 @@ const panelExpanded = ref(true)
 
     <!-- 右侧内容区域 -->
     <div class="flex-1 overflow-hidden bg-gray-50">
-      <ItemTable />
+      <ItemTable v-if="itemStore.viewMode === 'table'" />
+      <ItemCard v-else />
     </div>
   </div>
 </template>

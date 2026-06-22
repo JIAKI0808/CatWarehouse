@@ -6,6 +6,7 @@ import { gsap } from 'gsap'
 import { useItemStore } from '@/stores/item'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
+import ViewToggle from './ViewToggle.vue'
 
 const itemStore = useItemStore()
 
@@ -40,6 +41,13 @@ const columns: DataTableColumns<Item> = [
     render: (row) =>
       row.entry_date ? new Date(row.entry_date).toLocaleDateString() : '-',
   },
+  {
+    title: '更新日期',
+    key: 'update_date',
+    render: (row) =>
+      row.update_date ? new Date(row.update_date).toLocaleDateString() : '-',
+  },
+  { title: '描述', key: 'description' },
   {
     title: '操作',
     key: 'actions',
@@ -83,6 +91,10 @@ async function handleSubmit(data: Record<string, unknown>) {
 
 <template>
   <div class="h-full flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b">
+      <div class="text-lg font-medium">库存列表</div>
+      <ViewToggle />
+    </div>
     <div class="flex-1 overflow-auto p-4 min-h-0">
       <NSpin :show="itemStore.loading">
         <NDataTable

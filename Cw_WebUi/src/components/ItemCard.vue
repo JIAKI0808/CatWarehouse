@@ -8,6 +8,7 @@ import { useCategoryStore } from '@/stores/category'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
 import CategoryForm from './CategoryForm.vue'
+import ViewToggle from './ViewToggle.vue'
 
 const itemStore = useItemStore()
 const categoryStore = useCategoryStore()
@@ -67,15 +68,21 @@ function formatDate(dateStr: string | null): string {
 
 <template>
   <div class="h-full flex flex-col relative">
+    <div class="flex items-center justify-between p-4 border-b border-pink-200">
+      <div class="text-lg font-bold text-gray-800">库存列表</div>
+      <ViewToggle />
+    </div>
     <div class="flex-1 overflow-auto p-4">
       <NSpin :show="itemStore.loading">
         <NGrid :cols="3" :x-gap="12" :y-gap="12">
           <NGridItem v-for="item in itemStore.items" :key="item.id">
-            <NCard :title="item.name" size="small">
-              <div class="space-y-2">
+            <NCard :title="item.name" size="small" style="background-color: #fce7f3; color: black;" :header-style="{ color: 'black', fontSize: '18px', fontWeight: 'bold' }">
+              <div class="space-y-2" style="color: black;">
                 <div>价格: ¥{{ item.price.toFixed(2) }}</div>
                 <div>录入人: {{ item.recorder }}</div>
-                <div>日期: {{ formatDate(item.entry_date) }}</div>
+                <div>录入日期: {{ formatDate(item.entry_date) }}</div>
+                <div>更新日期: {{ formatDate(item.update_date) }}</div>
+                <div>描述: {{ item.description || '-' }}</div>
               </div>
               <template #footer>
                 <NSpace>

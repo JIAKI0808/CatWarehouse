@@ -58,23 +58,12 @@ function handleMenuSelect(key: string) {
 </script>
 
 <template>
-  <div class="h-8 bg-gray-100 border-b flex items-center px-2 select-none">
+  <div class="h-8 bg-blue-500 border-b flex items-center justify-center select-none">
     <div class="flex items-center gap-1">
-      <NIcon :size="16" class="text-blue-500 mr-1">
+      <NIcon :size="16" class="text-white mr-1">
         <WalletOutline />
       </NIcon>
-      <span class="text-xs font-medium text-gray-700">CatWarehouse</span>
+      <span class="text-xs font-medium text-white">CatWarehouse</span>
     </div>
-
-    <NMenu
-      :options="menuOptions"
-      mode="horizontal"
-      :collapsed-width="64"
-      :collapsed-icon-size="20"
-      class="ml-4"
-      @update:value="handleMenuSelect"
-    />
-
-    <div class="flex-1" />
   </div>
 </template>

@@ -32,9 +32,9 @@ function handleNavigate(view: string) {
         bordered
         :width="64"
         :native-scrollbar="false"
-        class="flex flex-col"
+        class="flex flex-col relative"
       >
-        <div class="flex-1 flex flex-col items-center py-4 gap-2">
+        <div class="flex flex-col items-center py-4 gap-2">
           <NTooltip v-for="item in navItems" :key="item.key" placement="right">
             <template #trigger>
               <div
@@ -53,7 +53,8 @@ function handleNavigate(view: string) {
           </NTooltip>
         </div>
 
-        <div class="flex flex-col items-center pb-4">
+        <div class="absolute bottom-4 left-0 right-0 flex flex-col items-center">
+          <div class="w-8 border-t border-gray-300 mb-4" />
           <NTooltip placement="right">
             <template #trigger>
               <div
