@@ -63,7 +63,12 @@ function formatDate(dateStr: string | null): string {
     </div>
     <div class="flex-1 overflow-auto p-4">
       <NSpin :show="itemStore.loading">
-        <NGrid :cols="3" :x-gap="12" :y-gap="12">
+        <div v-if="itemStore.items.length === 0 && !itemStore.loading" class="flex flex-col items-center justify-center h-64 text-gray-400">
+          <div class="text-6xl mb-4">📦</div>
+          <div class="text-lg">暂无数据</div>
+          <div class="text-sm mt-1">点击右下角按钮添加物品</div>
+        </div>
+        <NGrid v-else :cols="3" :x-gap="12" :y-gap="12">
           <NGridItem v-for="item in itemStore.items" :key="item.id">
             <NCard :title="item.name" size="small" style="background-color: #fce7f3; color: black;" :header-style="{ color: 'black', fontSize: '18px', fontWeight: 'bold' }">
               <div class="space-y-2" style="color: black;">
