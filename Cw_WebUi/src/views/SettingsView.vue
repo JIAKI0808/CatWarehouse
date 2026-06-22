@@ -29,8 +29,8 @@ async function handleSave() {
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto bg-gray-50 flex justify-center">
-    <div class="w-full max-w-2xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
+  <div class="h-full overflow-y-auto bg-gray-50">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
       <h1 class="text-2xl font-bold text-center">设置</h1>
 
       <NSpin :show="store.loading">
