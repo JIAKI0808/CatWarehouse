@@ -11,7 +11,17 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
   async function fetchByCategory(categoryId: number) {
     loading.value = true
     try {
-      subCategories.value = await subCategoryApi.getByCategory(categoryId)
+      const categories = await subCategoryApi.getByCategory(categoryId)
+
+      // 获取每个子分类的实际数量
+      const categoriesWithQuantity = await Promise.all(
+        categories.map(async (cat) => {
+          const quantityData = await subCategoryApi.getQuantity(cat.id)
+          return { ...cat, quantity: quantityData.quantity }
+        })
+      )
+
+      subCategories.value = categoriesWithQuantity
     } finally {
       loading.value = false
     }
@@ -31,7 +41,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
       description,
       notes,
     })
-    subCategories.value.push(newSubCategory)
+    subCategories.value.push({ ...newSubCategory, quantity: 0 })
     return newSubCategory
   }
 
