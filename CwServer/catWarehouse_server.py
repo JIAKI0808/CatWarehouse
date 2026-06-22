@@ -51,6 +51,14 @@ def _migrate_tables(conn):
         conn.execute(text("ALTER TABLE specific_items ADD COLUMN is_expired INTEGER DEFAULT 0"))
         logger.info("Migrated: added is_expired to specific_items")
 
+    inspector_columns = conn.execute(
+        text("PRAGMA table_info(categories)")
+    ).fetchall()
+    col_names = {row[1] for row in inspector_columns}
+    if "icon_color" not in col_names:
+        conn.execute(text("ALTER TABLE categories ADD COLUMN icon_color VARCHAR DEFAULT '#f59e0b'"))
+        logger.info("Migrated: added icon_color to categories")
+
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 

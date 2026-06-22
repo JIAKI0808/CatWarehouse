@@ -47,7 +47,7 @@ async function handleSubmit(data: Record<string, unknown>) {
 }
 
 async function handleCategorySubmit(data: Record<string, string>) {
-  await categoryStore.create(data.name, data.description)
+  await categoryStore.create(data.name, data.description, data.icon, data.icon_color)
 }
 
 function formatDate(dateStr: string | null): string {

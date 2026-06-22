@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { NModal, NForm, NFormItem, NInput, NButton, NIcon } from 'naive-ui'
+import { NModal, NForm, NFormItem, NInput, NButton, NIcon, NColorPicker } from 'naive-ui'
 import {
   FolderOutline,
   CartOutline,
@@ -107,6 +107,7 @@ interface EditData {
   name: string
   description?: string
   icon?: string
+  icon_color?: string
   unit?: string
   notes?: string
 }
@@ -127,6 +128,7 @@ const form = ref({
   name: '',
   description: '',
   icon: 'FolderOutline',
+  icon_color: '#f59e0b',
   unit: '个',
   notes: '',
 })
@@ -143,6 +145,7 @@ watch(
         name: props.editData.name ?? '',
         description: props.editData.description ?? '',
         icon: props.editData.icon ?? 'FolderOutline',
+        icon_color: props.editData.icon_color ?? '#f59e0b',
         unit: props.editData.unit ?? '个',
         notes: props.editData.notes ?? '',
       }
@@ -157,6 +160,7 @@ function resetForm() {
     name: '',
     description: '',
     icon: 'FolderOutline',
+    icon_color: '#f59e0b',
     unit: '个',
     notes: '',
   }
@@ -200,9 +204,12 @@ function handleSubmit() {
                 :title="icon.label"
                 @click="form.icon = icon.name"
               >
-                <NIcon :size="20" :component="icon.component" />
+                <NIcon :size="20" :component="icon.component" :color="form.icon_color" />
               </div>
             </div>
+          </NFormItem>
+          <NFormItem label="图标颜色">
+            <NColorPicker v-model:value="form.icon_color" :show-alpha="false" />
           </NFormItem>
         </template>
         <template v-if="type === 'subCategory'">

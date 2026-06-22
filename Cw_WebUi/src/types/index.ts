@@ -3,18 +3,21 @@ export interface Category {
   name: string
   description: string
   icon?: string
+  icon_color?: string
 }
 
 export interface CategoryCreate {
   name: string
   description?: string
   icon?: string
+  icon_color?: string
 }
 
 export interface CategoryUpdate {
   name?: string
   description?: string
   icon?: string
+  icon_color?: string
 }
 
 export interface SubCategory {

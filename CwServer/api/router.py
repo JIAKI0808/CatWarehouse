@@ -283,6 +283,7 @@ async def export_data(db: AsyncSession = Depends(get_db)):
             "name": cat.name,
             "description": cat.description,
             "icon": cat.icon,
+            "icon_color": cat.icon_color,
             "sub_categories": [],
         }
         for sc in sub_map.get(cat.id, []):
@@ -359,6 +360,7 @@ async def execute_import(
                 name=cat.name,
                 description=cat.description,
                 icon=cat.icon,
+                icon_color=cat.icon_color,
             )
             db.add(new_cat)
             await db.flush()

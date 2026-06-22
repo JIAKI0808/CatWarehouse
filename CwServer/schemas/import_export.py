@@ -12,6 +12,7 @@ class ImportCategoryData(BaseModel):
     name: str
     description: str = ""
     icon: str = "FolderOutline"
+    icon_color: str = "#f59e0b"
     sub_categories: list[ImportSubCategoryData] = []
 
 

@@ -134,7 +134,7 @@ const categoryToDelete = ref<{ id: number; name: string } | null>(null)
 const showSubDeleteConfirm = ref(false)
 const subCategoryToDelete = ref<{ id: number; name: string; categoryId: number } | null>(null)
 
-const editingCategory = ref<{ id: number; name: string; description: string; icon: string } | null>(null)
+const editingCategory = ref<{ id: number; name: string; description: string; icon: string; icon_color: string } | null>(null)
 const editingSubCategory = ref<{ id: number; name: string; description: string; unit: string; notes: string } | null>(null)
 
 onMounted(() => {
@@ -177,7 +177,7 @@ function handleDeleteCategory(cat: { id: number; name: string }) {
   showDeleteConfirm.value = true
 }
 
-function handleEditCategory(category: { id: number; name: string; description: string; icon: string }) {
+function handleEditCategory(category: { id: number; name: string; description: string; icon: string; icon_color: string }) {
   editingCategory.value = { ...category }
   showCategoryForm.value = true
 }
@@ -237,10 +237,11 @@ async function handleCategorySubmit(data: Record<string, string>) {
       name: data.name,
       description: data.description,
       icon: data.icon,
+      icon_color: data.icon_color,
     })
     editingCategory.value = null
   } else {
-    await categoryStore.create(data.name, data.description, data.icon)
+    await categoryStore.create(data.name, data.description, data.icon, data.icon_color)
   }
 }
 
@@ -295,7 +296,7 @@ async function handleDeleteSubCategoryConfirm() {
                   class="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100"
                   @click="toggleCategory(category.id)"
                 >
-                  <NIcon :size="16" class="text-amber-500 flex-shrink-0" :component="getCategoryIcon(category.icon)" />
+                  <NIcon :size="16" class="flex-shrink-0" :component="getCategoryIcon(category.icon)" :color="category.icon_color || '#f59e0b'" />
                   <span class="text-sm font-medium truncate flex-1">{{ category.name }}</span>
 
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
