@@ -1,40 +1,34 @@
 <script setup lang="ts">
-import { NTabs, NTabPane } from 'naive-ui'
+import { ref } from 'vue'
+import { NButton, NIcon, NDrawer, NDrawerContent } from 'naive-ui'
+import { MenuOutline } from '@vicons/ionicons5'
 import { useItemStore } from '@/stores/item'
 import CategoryTree from '@/components/CategoryTree.vue'
 import ItemTable from '@/components/ItemTable.vue'
-import ItemCard from '@/components/ItemCard.vue'
-import ViewToggle from '@/components/ViewToggle.vue'
 
 const itemStore = useItemStore()
+const showDrawer = ref(false)
 </script>
 
 <template>
   <div class="h-full flex flex-col">
     <div class="h-10 border-b bg-white flex items-center px-4 gap-4">
-      <div class="flex-1" />
-      <ViewToggle />
+      <NButton text @click="showDrawer = true">
+        <template #icon>
+          <NIcon :size="20"><MenuOutline /></NIcon>
+        </template>
+      </NButton>
+      <span class="text-sm font-medium text-gray-600">库存管理</span>
     </div>
 
-    <div class="flex-1 flex overflow-hidden">
-      <div class="w-64 border-r bg-white">
+    <div class="flex-1 overflow-hidden bg-gray-50">
+      <ItemTable />
+    </div>
+
+    <NDrawer v-model:show="showDrawer" placement="left" :width="280">
+      <NDrawerContent>
         <CategoryTree />
-      </div>
-
-      <div class="flex-1 overflow-hidden bg-gray-50">
-        <NTabs type="segment" class="p-4 h-full flex flex-col">
-          <NTabPane name="list" tab="列表视图">
-            <div class="flex-1 overflow-auto">
-              <ItemTable />
-            </div>
-          </NTabPane>
-          <NTabPane name="card" tab="卡片视图">
-            <div class="flex-1 overflow-auto">
-              <ItemCard />
-            </div>
-          </NTabPane>
-        </NTabs>
-      </div>
-    </div>
+      </NDrawerContent>
+    </NDrawer>
   </div>
 </template>
