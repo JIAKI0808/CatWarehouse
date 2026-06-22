@@ -23,6 +23,38 @@ import {
   ColorPaletteOutline,
   CubeOutline,
   DiamondOutline,
+  HomeOutline,
+  CarOutline,
+  WalkOutline,
+  AirplaneOutline,
+  PawOutline,
+  LeafOutline,
+  FlameOutline,
+  WaterOutline,
+  SunnyOutline,
+  MoonOutline,
+  CloudyOutline,
+  UmbrellaOutline,
+  GiftOutline,
+  SparklesOutline,
+  TrophyOutline,
+  WineOutline,
+  CafeOutline,
+  PizzaOutline,
+  MedicalOutline,
+  WalletOutline,
+  KeyOutline,
+  LockClosedOutline,
+  GlobeOutline,
+  MapOutline,
+  TimeOutline,
+  BoatOutline,
+  BeerOutline,
+  BugOutline,
+  FishOutline,
+  BulbOutline,
+  ExtensionPuzzleOutline,
+  RibbonOutline,
 } from '@vicons/ionicons5'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
@@ -47,6 +79,38 @@ const iconMap: Record<string, typeof FolderOutline> = {
   ColorPaletteOutline,
   CubeOutline,
   DiamondOutline,
+  HomeOutline,
+  CarOutline,
+  WalkOutline,
+  AirplaneOutline,
+  PawOutline,
+  LeafOutline,
+  FlameOutline,
+  WaterOutline,
+  SunnyOutline,
+  MoonOutline,
+  CloudyOutline,
+  UmbrellaOutline,
+  GiftOutline,
+  SparklesOutline,
+  TrophyOutline,
+  WineOutline,
+  CafeOutline,
+  PizzaOutline,
+  MedicalOutline,
+  WalletOutline,
+  KeyOutline,
+  LockClosedOutline,
+  GlobeOutline,
+  MapOutline,
+  TimeOutline,
+  BoatOutline,
+  BeerOutline,
+  BugOutline,
+  FishOutline,
+  BulbOutline,
+  ExtensionPuzzleOutline,
+  RibbonOutline,
 }
 
 function getCategoryIcon(iconName: string | undefined) {
@@ -201,7 +265,7 @@ async function handleDeleteSubCategoryConfirm() {
       <NButton
         size="tiny"
         type="primary"
-        @click="showCategoryForm = true"
+        @click="editingCategory = null; showCategoryForm = true"
       >
         <template #icon>
           <NIcon :size="14"><AddOutline /></NIcon>

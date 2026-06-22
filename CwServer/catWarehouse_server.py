@@ -34,7 +34,22 @@ async def lifespan(app: FastAPI):
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_migrate_tables)
     yield
+
+
+def _migrate_tables(conn):
+    from sqlalchemy import text
+    inspector_columns = conn.execute(
+        text("PRAGMA table_info(specific_items)")
+    ).fetchall()
+    col_names = {row[1] for row in inspector_columns}
+    if "expire_date" not in col_names:
+        conn.execute(text("ALTER TABLE specific_items ADD COLUMN expire_date DATETIME"))
+        logger.info("Migrated: added expire_date to specific_items")
+    if "is_expired" not in col_names:
+        conn.execute(text("ALTER TABLE specific_items ADD COLUMN is_expired INTEGER DEFAULT 0"))
+        logger.info("Migrated: added is_expired to specific_items")
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)

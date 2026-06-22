@@ -76,6 +76,8 @@ function formatDate(dateStr: string | null): string {
                 <div>库存: {{ item.quantity }} {{ item.unit }}</div>
                 <div>更新日期: {{ formatDate(item.update_date) }}</div>
                 <div>描述: {{ item.description || '-' }}</div>
+                <div>过期时间: {{ item.expire_date ? formatDate(item.expire_date) : '-' }}</div>
+                <div>已过期: {{ item.is_expired ? '是' : '否' }}</div>
                 <div>录入人: {{ item.recorder }}</div>
               </div>
               <template #footer>

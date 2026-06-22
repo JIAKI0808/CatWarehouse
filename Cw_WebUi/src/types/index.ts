@@ -51,6 +51,8 @@ export interface Item {
   name: string
   entry_date: string | null
   update_date: string | null
+  expire_date: string | null
+  is_expired: boolean
   recorder: string
   price: number
   description: string
@@ -62,6 +64,8 @@ export interface ItemCreate {
   recorder?: string
   price?: number
   description?: string
+  expire_date?: string | null
+  is_expired?: boolean
 }
 
 export interface ItemUpdate {
@@ -71,6 +75,8 @@ export interface ItemUpdate {
   description?: string
   quantity?: number
   unit?: string
+  expire_date?: string | null
+  is_expired?: boolean
 }
 
 export type ViewMode = 'table' | 'card'

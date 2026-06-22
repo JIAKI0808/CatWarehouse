@@ -9,6 +9,8 @@ class SpecificItemCreate(BaseModel):
     recorder: str = ""
     price: float = 0.0
     description: str = ""
+    expire_date: datetime | None = None
+    is_expired: bool = False
 
 
 class SpecificItemUpdate(BaseModel):
@@ -18,6 +20,8 @@ class SpecificItemUpdate(BaseModel):
     description: str | None = None
     quantity: int | None = None
     unit: str | None = None
+    expire_date: datetime | None = None
+    is_expired: bool | None = None
 
 
 class SpecificItemResponse(BaseModel):
@@ -29,6 +33,8 @@ class SpecificItemResponse(BaseModel):
     name: str
     entry_date: datetime | None = None
     update_date: datetime | None = None
+    expire_date: datetime | None = None
+    is_expired: bool = False
     recorder: str
     price: float
     description: str

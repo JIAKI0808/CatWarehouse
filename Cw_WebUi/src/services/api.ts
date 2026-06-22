@@ -108,3 +108,55 @@ export const settingsApi = {
     }),
   getVersion: () => request<VersionResponse>('/api/settings/version'),
 }
+
+export interface ExportData {
+  categories: Array<{
+    name: string
+    description: string
+    icon: string
+    sub_categories: Array<{
+      name: string
+      unit: string
+      description: string
+      notes: string
+      items: Array<{
+        name: string
+        recorder: string
+        price: number
+        description: string
+        expire_date: string | null
+        is_expired: boolean
+      }>
+    }>
+  }>
+}
+
+export interface ConflictItem {
+  type: string
+  name: string
+  existing_id: number
+  imported_data: Record<string, unknown>
+}
+
+export interface ImportResult {
+  categories_created: number
+  sub_categories_created: number
+  items_created: number
+}
+
+export const exportApi = {
+  getData: () => request<ExportData>('/api/export'),
+}
+
+export const importApi = {
+  checkConflicts: (data: ExportData) =>
+    request<{ has_conflicts: boolean; conflicts: ConflictItem[] }>(
+      '/api/import/conflicts',
+      { method: 'POST', body: JSON.stringify(data) }
+    ),
+  execute: (data: ExportData, skipConflicts: string[] = []) =>
+    request<ImportResult>('/api/import/execute', {
+      method: 'POST',
+      body: JSON.stringify({ categories: data.categories, skip_conflicts: skipConflicts }),
+    }),
+}

@@ -46,6 +46,12 @@ const columns: DataTableColumns<Item> = [
     render: (row) =>
       row.update_date ? new Date(row.update_date).toLocaleDateString() : '-',
   },
+  {
+    title: '过期时间',
+    key: 'expire_date',
+    render: (row) =>
+      row.expire_date ? new Date(row.expire_date).toLocaleDateString() : '-',
+  },
   { title: '描述', key: 'description' },
   { title: '录入人', key: 'recorder' },
   {

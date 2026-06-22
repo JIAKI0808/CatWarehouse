@@ -15,6 +15,8 @@ class SpecificItem(Base):
     recorder = Column(String, default="")
     price = Column(Float, default=0.0)
     description = Column(String, default="")
+    expire_date = Column(DateTime, nullable=True)
+    is_expired = Column(Integer, default=0)
     extra = Column(String, default="{}")
 
     sub_category = relationship("SubCategory", back_populates="specific_items")
