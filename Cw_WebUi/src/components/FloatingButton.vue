@@ -3,10 +3,12 @@ import { ref } from 'vue'
 import { NButton, NDropdown, NIcon, useMessage } from 'naive-ui'
 import { ArrowUpOutline } from '@vicons/ionicons5'
 import { exportApi } from '@/services/api'
+import { useCategoryStore } from '@/stores/category'
 import UploadModal from './UploadModal.vue'
 import ImportModal from './ImportModal.vue'
 
 const message = useMessage()
+const categoryStore = useCategoryStore()
 const showUploadModal = ref(false)
 const showImportModal = ref(false)
 
@@ -43,6 +45,10 @@ async function handleExport() {
   }
 }
 
+function handleImported() {
+  categoryStore.fetchAll()
+}
+
 async function handleUpload(file: File) {
   const formData = new FormData()
   formData.append('file', file)
@@ -76,6 +82,6 @@ async function handleUpload(file: File) {
       @upload="handleUpload"
     />
 
-    <ImportModal v-model:visible="showImportModal" />
+    <ImportModal v-model:visible="showImportModal" @imported="handleImported" />
   </div>
 </template>

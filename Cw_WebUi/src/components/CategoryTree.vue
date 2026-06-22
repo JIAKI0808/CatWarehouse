@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { NSpin, NButton, NIcon, NModal, NTooltip } from 'naive-ui'
 import {
   AddOutline,
@@ -59,6 +59,7 @@ import {
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
+import { useServerConfigStore } from '@/stores/serverConfig'
 import CategoryForm from './CategoryForm.vue'
 import ItemForm from './ItemForm.vue'
 
@@ -120,6 +121,7 @@ function getCategoryIcon(iconName: string | undefined) {
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
 const itemStore = useItemStore()
+const serverConfigStore = useServerConfigStore()
 
 const expandedCategories = ref<Set<number>>(new Set())
 const showCategoryForm = ref(false)
@@ -138,6 +140,13 @@ const editingSubCategory = ref<{ id: number; name: string; description: string; 
 onMounted(() => {
   categoryStore.fetchAll()
 })
+
+watch(() => serverConfigStore.config, () => {
+  categoryStore.categories = []
+  subCategoryStore.subCategoriesByCategory = {}
+  itemStore.items = []
+  categoryStore.fetchAll()
+}, { deep: true })
 
 function toggleCategory(catId: number) {
   if (expandedCategories.value.has(catId)) {

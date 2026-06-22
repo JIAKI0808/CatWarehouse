@@ -77,3 +77,8 @@ async def get_version():
         description=APP_DESCRIPTION,
         start_time=_start_time,
     )
+
+
+@router.get("/test-connection")
+async def test_connection():
+    return {"ok": True}

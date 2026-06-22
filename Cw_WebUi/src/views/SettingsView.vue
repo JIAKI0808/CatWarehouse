@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   NInput,
   NInputNumber,
@@ -10,9 +10,13 @@ import {
   useMessage,
 } from 'naive-ui'
 import { useSettingsStore } from '@/stores/settings'
+import { useServerConfigStore } from '@/stores/serverConfig'
+import { connectionApi } from '@/services/api'
 
 const store = useSettingsStore()
+const serverConfigStore = useServerConfigStore()
 const message = useMessage()
+const testing = ref(false)
 
 onMounted(async () => {
   await Promise.all([store.fetchSettings(), store.fetchVersion()])
@@ -24,6 +28,18 @@ async function handleSave() {
     message.success('配置已保存')
   } catch {
     message.error('保存失败，请重试')
+  }
+}
+
+async function handleTestConnection() {
+  testing.value = true
+  try {
+    await connectionApi.test()
+    message.success('连接成功')
+  } catch {
+    message.error('连接失败，请检查地址和端口')
+  } finally {
+    testing.value = false
   }
 }
 </script>
@@ -86,6 +102,41 @@ async function handleSave() {
                 @click="handleSave"
               >
                 保存配置
+              </NButton>
+            </div>
+          </template>
+        </NCard>
+
+        <div class="border-t border-gray-200" />
+
+        <!-- 服务器配置 -->
+        <NCard title="服务器配置" :bordered="false" class="shadow-sm">
+          <div class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                服务器地址
+              </label>
+              <NInput
+                v-model:value="serverConfigStore.config.host"
+                placeholder="localhost"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                端口
+              </label>
+              <NInputNumber
+                v-model:value="serverConfigStore.config.port"
+                :min="1"
+                :max="65535"
+                class="w-full"
+              />
+            </div>
+          </div>
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <NButton :loading="testing" @click="handleTestConnection">
+                测试连接
               </NButton>
             </div>
           </template>

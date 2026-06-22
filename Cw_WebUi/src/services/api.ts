@@ -12,11 +12,18 @@ import type {
   SettingsUpdate,
   VersionResponse,
 } from '@/types'
+import { useServerConfigStore } from '@/stores/serverConfig'
 
-const API_BASE_URL = 'http://localhost:11222'
+function getBaseUrl(): string {
+  try {
+    return useServerConfigStore().getBaseUrl()
+  } catch {
+    return 'http://localhost:11222'
+  }
+}
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const response = await fetch(`${getBaseUrl()}${url}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
@@ -159,4 +166,8 @@ export const importApi = {
       method: 'POST',
       body: JSON.stringify({ categories: data.categories, skip_conflicts: skipConflicts }),
     }),
+}
+
+export const connectionApi = {
+  test: () => request<{ ok: boolean }>('/api/settings/test-connection'),
 }
