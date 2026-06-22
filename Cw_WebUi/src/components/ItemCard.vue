@@ -66,7 +66,7 @@ function formatDate(dateStr: string | null): string {
         <div v-if="itemStore.items.length === 0 && !itemStore.loading" class="flex flex-col items-center justify-center h-64 text-gray-400">
           <div class="text-6xl mb-4">📦</div>
           <div class="text-lg">暂无数据</div>
-          <div class="text-sm mt-1">点击右下角按钮添加物品</div>
+          <div class="text-sm mt-1">等待录入好东西</div>
         </div>
         <NGrid v-else :cols="3" :x-gap="12" :y-gap="12">
           <NGridItem v-for="item in itemStore.items" :key="item.id">
