@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +13,7 @@ from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate, SubCatego
 from schemas.specific_item import SpecificItemCreate, SpecificItemResponse, SpecificItemUpdate
 from api.settings_router import router as settings_router
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["inventory"])
 
 
@@ -19,7 +22,9 @@ router = APIRouter(prefix="/api", tags=["inventory"])
 @router.get("/categories", response_model=list[CategoryResponse])
 async def list_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Category))
-    return result.scalars().all()
+    categories = result.scalars().all()
+    logger.debug("Listed %d categories", len(categories))
+    return categories
 
 
 @router.post("/categories", response_model=CategoryResponse)
@@ -28,6 +33,7 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
     db.add(cat)
     await db.commit()
     await db.refresh(cat)
+    logger.info("Created category id=%d name=%s", cat.id, cat.name)
     return cat
 
 
@@ -35,6 +41,7 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
 async def get_category(cat_id: int, db: AsyncSession = Depends(get_db)):
     cat = await db.get(Category, cat_id)
     if not cat:
+        logger.warning("Category not found id=%d", cat_id)
         raise HTTPException(404, "Category not found")
     return cat
 
@@ -45,12 +52,26 @@ async def update_category(
 ):
     cat = await db.get(Category, cat_id)
     if not cat:
+        logger.warning("Category not found id=%d", cat_id)
         raise HTTPException(404, "Category not found")
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(cat, key, value)
     await db.commit()
     await db.refresh(cat)
+    logger.info("Updated category id=%d", cat_id)
     return cat
+
+
+@router.delete("/categories/{cat_id}")
+async def delete_category(cat_id: int, db: AsyncSession = Depends(get_db)):
+    cat = await db.get(Category, cat_id)
+    if not cat:
+        logger.warning("Category not found id=%d", cat_id)
+        raise HTTPException(404, "Category not found")
+    await db.delete(cat)
+    await db.commit()
+    logger.info("Deleted category id=%d", cat_id)
+    return {"ok": True}
 
 
 # ── SubCategory CRUD ──
@@ -64,7 +85,9 @@ async def list_sub_categories(
     if category_id is not None:
         stmt = stmt.where(SubCategory.category_id == category_id)
     result = await db.execute(stmt)
-    return result.scalars().all()
+    subs = result.scalars().all()
+    logger.debug("Listed %d sub-categories (category_id=%s)", len(subs), category_id)
+    return subs
 
 
 @router.post("/sub-categories", response_model=SubCategoryResponse)
@@ -73,6 +96,7 @@ async def create_sub_category(data: SubCategoryCreate, db: AsyncSession = Depend
     db.add(sub)
     await db.commit()
     await db.refresh(sub)
+    logger.info("Created sub-category id=%d name=%s", sub.id, sub.name)
     return sub
 
 
@@ -80,6 +104,7 @@ async def create_sub_category(data: SubCategoryCreate, db: AsyncSession = Depend
 async def get_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
     sub = await db.get(SubCategory, sub_id)
     if not sub:
+        logger.warning("SubCategory not found id=%d", sub_id)
         raise HTTPException(404, "SubCategory not found")
     return sub
 
@@ -90,11 +115,13 @@ async def update_sub_category(
 ):
     sub = await db.get(SubCategory, sub_id)
     if not sub:
+        logger.warning("SubCategory not found id=%d", sub_id)
         raise HTTPException(404, "SubCategory not found")
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(sub, key, value)
     await db.commit()
     await db.refresh(sub)
+    logger.info("Updated sub-category id=%d", sub_id)
     return sub
 
 
@@ -102,12 +129,25 @@ async def update_sub_category(
 async def get_sub_category_quantity(sub_id: int, db: AsyncSession = Depends(get_db)):
     sub = await db.get(SubCategory, sub_id)
     if not sub:
+        logger.warning("SubCategory not found id=%d", sub_id)
         raise HTTPException(404, "SubCategory not found")
     result = await db.execute(
         select(SpecificItem).where(SpecificItem.sub_category_id == sub_id)
     )
     count = len(result.scalars().all())
     return {"sub_category_id": sub_id, "quantity": count}
+
+
+@router.delete("/sub-categories/{sub_id}")
+async def delete_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
+    sub = await db.get(SubCategory, sub_id)
+    if not sub:
+        logger.warning("SubCategory not found id=%d", sub_id)
+        raise HTTPException(404, "SubCategory not found")
+    await db.delete(sub)
+    await db.commit()
+    logger.info("Deleted sub-category id=%d", sub_id)
+    return {"ok": True}
 
 
 # ── SpecificItem CRUD ──
@@ -117,11 +157,32 @@ async def list_items(
     sub_category_id: int | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    stmt = select(SpecificItem)
+    stmt = (
+        select(SpecificItem, SubCategory)
+        .join(SubCategory, SpecificItem.sub_category_id == SubCategory.id)
+    )
     if sub_category_id is not None:
         stmt = stmt.where(SpecificItem.sub_category_id == sub_category_id)
     result = await db.execute(stmt)
-    return result.scalars().all()
+    rows = result.all()
+    items = [
+        SpecificItemResponse(
+            id=item.id,
+            sub_category_id=item.sub_category_id,
+            sub_category_name=sub.name,
+            quantity=sub.quantity,
+            unit=sub.unit,
+            name=item.name,
+            entry_date=item.entry_date,
+            update_date=item.update_date,
+            recorder=item.recorder,
+            price=item.price,
+            description=item.description,
+        )
+        for item, sub in rows
+    ]
+    logger.debug("Listed %d items (sub_category_id=%s)", len(items), sub_category_id)
+    return items
 
 
 @router.post("/items", response_model=SpecificItemResponse)
@@ -130,6 +191,7 @@ async def create_item(data: SpecificItemCreate, db: AsyncSession = Depends(get_d
     db.add(item)
     await db.commit()
     await db.refresh(item)
+    logger.info("Created item id=%d name=%s", item.id, item.name)
     return item
 
 
@@ -137,6 +199,7 @@ async def create_item(data: SpecificItemCreate, db: AsyncSession = Depends(get_d
 async def get_item(item_id: int, db: AsyncSession = Depends(get_db)):
     item = await db.get(SpecificItem, item_id)
     if not item:
+        logger.warning("Item not found id=%d", item_id)
         raise HTTPException(404, "Item not found")
     return item
 
@@ -147,11 +210,21 @@ async def update_item(
 ):
     item = await db.get(SpecificItem, item_id)
     if not item:
+        logger.warning("Item not found id=%d", item_id)
         raise HTTPException(404, "Item not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
+    item_data = data.model_dump(exclude_unset=True, exclude={"quantity", "unit"})
+    for key, value in item_data.items():
         setattr(item, key, value)
+    if data.quantity is not None or data.unit is not None:
+        sub = await db.get(SubCategory, item.sub_category_id)
+        if sub:
+            if data.quantity is not None:
+                sub.quantity = data.quantity
+            if data.unit is not None:
+                sub.unit = data.unit
     await db.commit()
     await db.refresh(item)
+    logger.info("Updated item id=%d", item_id)
     return item
 
 
@@ -159,9 +232,11 @@ async def update_item(
 async def delete_item(item_id: int, db: AsyncSession = Depends(get_db)):
     item = await db.get(SpecificItem, item_id)
     if not item:
+        logger.warning("Item not found id=%d", item_id)
         raise HTTPException(404, "Item not found")
     await db.delete(item)
     await db.commit()
+    logger.info("Deleted item id=%d", item_id)
     return {"ok": True}
 
 

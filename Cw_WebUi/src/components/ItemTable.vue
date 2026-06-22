@@ -34,12 +34,11 @@ const columns: DataTableColumns<Item> = [
     sorter: true,
     render: (row) => `¥${row.price.toFixed(2)}`,
   },
-  { title: '录入人', key: 'recorder' },
   {
-    title: '录入日期',
-    key: 'entry_date',
-    render: (row) =>
-      row.entry_date ? new Date(row.entry_date).toLocaleDateString() : '-',
+    title: '库存',
+    key: 'quantity',
+    sorter: true,
+    render: (row) => `${row.quantity} ${row.unit}`,
   },
   {
     title: '更新日期',
@@ -48,6 +47,7 @@ const columns: DataTableColumns<Item> = [
       row.update_date ? new Date(row.update_date).toLocaleDateString() : '-',
   },
   { title: '描述', key: 'description' },
+  { title: '录入人', key: 'recorder' },
   {
     title: '操作',
     key: 'actions',

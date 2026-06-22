@@ -45,6 +45,9 @@ export interface SubCategoryUpdate {
 export interface Item {
   id: number
   sub_category_id: number
+  sub_category_name: string
+  quantity: number
+  unit: string
   name: string
   entry_date: string | null
   update_date: string | null
@@ -66,6 +69,8 @@ export interface ItemUpdate {
   recorder?: string
   price?: number
   description?: string
+  quantity?: number
+  unit?: string
 }
 
 export type ViewMode = 'table' | 'card'

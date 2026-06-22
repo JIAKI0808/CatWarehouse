@@ -16,11 +16,16 @@ class SpecificItemUpdate(BaseModel):
     recorder: str | None = None
     price: float | None = None
     description: str | None = None
+    quantity: int | None = None
+    unit: str | None = None
 
 
 class SpecificItemResponse(BaseModel):
     id: int
     sub_category_id: int
+    sub_category_name: str = ""
+    quantity: int = 0
+    unit: str = ""
     name: str
     entry_date: datetime | None = None
     update_date: datetime | None = None

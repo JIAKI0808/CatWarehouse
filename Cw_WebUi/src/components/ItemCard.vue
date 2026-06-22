@@ -73,10 +73,10 @@ function formatDate(dateStr: string | null): string {
             <NCard :title="item.name" size="small" style="background-color: #fce7f3; color: black;" :header-style="{ color: 'black', fontSize: '18px', fontWeight: 'bold' }">
               <div class="space-y-2" style="color: black;">
                 <div>价格: ¥{{ item.price.toFixed(2) }}</div>
-                <div>录入人: {{ item.recorder }}</div>
-                <div>录入日期: {{ formatDate(item.entry_date) }}</div>
+                <div>库存: {{ item.quantity }} {{ item.unit }}</div>
                 <div>更新日期: {{ formatDate(item.update_date) }}</div>
                 <div>描述: {{ item.description || '-' }}</div>
+                <div>录入人: {{ item.recorder }}</div>
               </div>
               <template #footer>
                 <NSpace>

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useMessage } from 'naive-ui'
 import type { AIConfig, PluginConfig, VersionResponse } from '@/types'
 import { settingsApi } from '@/services/api'
 
@@ -26,6 +27,8 @@ export const useSettingsStore = defineStore('settings', () => {
       const data = await settingsApi.get()
       aiConfig.value = data.ai_config
       pluginConfig.value = data.plugin_config
+    } catch (e: any) {
+      useMessage().error(e.message || '获取配置失败')
     } finally {
       loading.value = false
     }
@@ -40,13 +43,19 @@ export const useSettingsStore = defineStore('settings', () => {
       })
       aiConfig.value = data.ai_config
       pluginConfig.value = data.plugin_config
+    } catch (e: any) {
+      useMessage().error(e.message || '保存配置失败')
     } finally {
       saving.value = false
     }
   }
 
   async function fetchVersion() {
-    version.value = await settingsApi.getVersion()
+    try {
+      version.value = await settingsApi.getVersion()
+    } catch (e: any) {
+      useMessage().error(e.message || '获取版本失败')
+    }
   }
 
   return {

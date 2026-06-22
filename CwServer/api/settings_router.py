@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+
+logger = logging.getLogger(__name__)
 from models.settings import Settings
 from schemas.settings import (
     AIConfig,
@@ -39,6 +43,7 @@ async def _get_or_create_settings(db: AsyncSession) -> Settings:
 @router.get("", response_model=SettingsResponse)
 async def get_settings(db: AsyncSession = Depends(get_db)):
     settings = await _get_or_create_settings(db)
+    logger.debug("Fetched settings")
     return SettingsResponse(
         ai_config=AIConfig(**(settings.ai_config or {})),
         plugin_config=PluginConfig(**(settings.plugin_config or {})),
@@ -57,6 +62,7 @@ async def update_settings(
         settings.plugin_config = data.plugin_config.model_dump()
     await db.commit()
     await db.refresh(settings)
+    logger.info("Updated settings")
     return SettingsResponse(
         ai_config=AIConfig(**(settings.ai_config or {})),
         plugin_config=PluginConfig(**(settings.plugin_config or {})),

@@ -65,6 +65,8 @@ const contextCategoryId = ref<number | null>(null)
 const contextSubCategoryId = ref<number | null>(null)
 const showDeleteConfirm = ref(false)
 const categoryToDelete = ref<{ id: number; name: string } | null>(null)
+const showSubDeleteConfirm = ref(false)
+const subCategoryToDelete = ref<{ id: number; name: string; categoryId: number } | null>(null)
 
 const editingCategory = ref<{ id: number; name: string; description: string; icon: string } | null>(null)
 const editingSubCategory = ref<{ id: number; name: string; description: string; unit: string; notes: string } | null>(null)
@@ -171,8 +173,23 @@ async function handleCategorySubmit(data: Record<string, string>) {
 
 async function handleDeleteCategoryConfirm() {
   if (categoryToDelete.value) {
+    await categoryStore.remove(categoryToDelete.value.id)
     showDeleteConfirm.value = false
     categoryToDelete.value = null
+  }
+}
+
+function handleDeleteSubCategory(sub: { id: number; name: string }, categoryId: number) {
+  subCategoryToDelete.value = { id: sub.id, name: sub.name, categoryId }
+  showSubDeleteConfirm.value = true
+}
+
+async function handleDeleteSubCategoryConfirm() {
+  if (subCategoryToDelete.value) {
+    const { categoryId, id } = subCategoryToDelete.value
+    await subCategoryStore.remove(categoryId, id)
+    showSubDeleteConfirm.value = false
+    subCategoryToDelete.value = null
   }
 }
 </script>
@@ -291,6 +308,17 @@ async function handleDeleteCategoryConfirm() {
                             <NIcon :size="12"><CreateOutline /></NIcon>
                           </template>
                         </NButton>
+                        <NButton
+                          size="tiny"
+                          quaternary
+                          circle
+                          type="error"
+                          @click.stop="handleDeleteSubCategory(sub, category.id)"
+                        >
+                          <template #icon>
+                            <NIcon :size="12"><TrashOutline /></NIcon>
+                          </template>
+                        </NButton>
                       </div>
                     </div>
                   </template>
@@ -344,6 +372,18 @@ async function handleDeleteCategoryConfirm() {
       type="error"
       @positive-click="handleDeleteCategoryConfirm"
       @negative-click="showDeleteConfirm = false"
+    />
+
+    <NModal
+      v-model:show="showSubDeleteConfirm"
+      preset="dialog"
+      title="确认删除"
+      :content="`确定要删除子分类「${subCategoryToDelete?.name}」吗？`"
+      positive-text="删除"
+      negative-text="取消"
+      type="error"
+      @positive-click="handleDeleteSubCategoryConfirm"
+      @negative-click="showSubDeleteConfirm = false"
     />
   </div>
 </template>

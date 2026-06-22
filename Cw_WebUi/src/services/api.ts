@@ -21,7 +21,12 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   })
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`)
+    let detail = `请求失败 (${response.status})`
+    try {
+      const body = await response.json()
+      if (body.detail) detail = body.detail
+    } catch {}
+    throw new Error(detail)
   }
   return response.json()
 }
@@ -38,6 +43,10 @@ export const categoryApi = {
     request<Category>(`/api/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    request(`/api/categories/${id}`, {
+      method: 'DELETE',
     }),
 }
 
@@ -57,6 +66,10 @@ export const subCategoryApi = {
     request<SubCategory>(`/api/sub-categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    request(`/api/sub-categories/${id}`, {
+      method: 'DELETE',
     }),
   getQuantity: (id: number) =>
     request<{ sub_category_id: number; quantity: number }>(
