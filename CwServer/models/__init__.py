@@ -9,3 +9,4 @@ class Base(DeclarativeBase):
 from models.category import Category  # noqa: E402, F401
 from models.sub_category import SubCategory  # noqa: E402, F401
 from models.specific_item import SpecificItem  # noqa: E402, F401
+from models.settings import Settings  # noqa: E402, F401
