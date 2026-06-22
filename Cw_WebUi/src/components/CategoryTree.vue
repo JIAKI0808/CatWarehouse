@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { NSpin, NButton, NIcon, NModal } from 'naive-ui'
+import { NSpin, NButton, NIcon, NModal, NTooltip } from 'naive-ui'
 import {
   AddOutline,
   TrashOutline,
@@ -115,40 +115,45 @@ async function handleDeleteCategoryConfirm() {
             :key="category.id"
           >
             <!-- 大类 -->
-            <div
-              class="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100"
-              @click="toggleCategory(category.id)"
-            >
-              <NIcon :size="16" class="text-amber-500 flex-shrink-0">
-                <FolderOpenOutline v-if="expandedCategories.has(category.id)" />
-                <FolderOutline v-else />
-              </NIcon>
-              <span class="text-sm font-medium truncate flex-1">{{ category.name }}</span>
+            <NTooltip trigger="hover" placement="right">
+              <template #trigger>
+                <div
+                  class="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100"
+                  @click="toggleCategory(category.id)"
+                >
+                  <NIcon :size="16" class="text-amber-500 flex-shrink-0">
+                    <FolderOpenOutline v-if="expandedCategories.has(category.id)" />
+                    <FolderOutline v-else />
+                  </NIcon>
+                  <span class="text-sm font-medium truncate flex-1">{{ category.name }}</span>
 
-              <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <NButton
-                  size="tiny"
-                  quaternary
-                  circle
-                  @click.stop="handleAddSubCategory(category.id)"
-                >
-                  <template #icon>
-                    <NIcon :size="12"><AddOutline /></NIcon>
-                  </template>
-                </NButton>
-                <NButton
-                  size="tiny"
-                  quaternary
-                  circle
-                  type="error"
-                  @click.stop="handleDeleteCategory({ id: category.id, name: category.name })"
-                >
-                  <template #icon>
-                    <NIcon :size="12"><TrashOutline /></NIcon>
-                  </template>
-                </NButton>
-              </div>
-            </div>
+                  <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <NButton
+                      size="tiny"
+                      quaternary
+                      circle
+                      @click.stop="handleAddSubCategory(category.id)"
+                    >
+                      <template #icon>
+                        <NIcon :size="12"><AddOutline /></NIcon>
+                      </template>
+                    </NButton>
+                    <NButton
+                      size="tiny"
+                      quaternary
+                      circle
+                      type="error"
+                      @click.stop="handleDeleteCategory({ id: category.id, name: category.name })"
+                    >
+                      <template #icon>
+                        <NIcon :size="12"><TrashOutline /></NIcon>
+                      </template>
+                    </NButton>
+                  </div>
+                </div>
+              </template>
+              {{ category.description || '暂无描述' }}
+            </NTooltip>
 
             <!-- 子分类列表 -->
             <div
@@ -158,30 +163,42 @@ async function handleDeleteCategoryConfirm() {
               <div
                 v-for="sub in subCategoryStore.subCategories.filter(s => s.category_id === category.id)"
                 :key="sub.id"
-                class="group/sub flex items-center gap-2 px-2 py-1 cursor-pointer rounded text-sm"
-                :class="subCategoryStore.selectedId === sub.id
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-gray-600 hover:bg-gray-50'"
-                @click.stop="handleSelectSubCategory(sub.id)"
               >
-                <NIcon :size="14" class="flex-shrink-0">
-                  <DocumentOutline />
-                </NIcon>
-                <span class="truncate flex-1">{{ sub.name }}</span>
-                <span class="text-xs text-gray-400">{{ sub.quantity }}</span>
+                <NTooltip trigger="hover" placement="right">
+                  <template #trigger>
+                    <div
+                      class="group/sub flex items-center gap-2 px-2 py-1 cursor-pointer rounded text-sm"
+                      :class="subCategoryStore.selectedId === sub.id
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50'"
+                      @click.stop="handleSelectSubCategory(sub.id)"
+                    >
+                      <NIcon :size="14" class="flex-shrink-0">
+                        <DocumentOutline />
+                      </NIcon>
+                      <span class="truncate flex-1">{{ sub.name }}</span>
+                      <span class="text-xs text-gray-400">{{ sub.quantity }}</span>
 
-                <div class="flex gap-0.5 opacity-0 group-hover/sub:opacity-100 transition-opacity">
-                  <NButton
-                    size="tiny"
-                    quaternary
-                    circle
-                    @click.stop="handleAddItem(sub.id)"
-                  >
-                    <template #icon>
-                      <NIcon :size="12"><AddOutline /></NIcon>
-                    </template>
-                  </NButton>
-                </div>
+                      <div class="flex gap-0.5 opacity-0 group-hover/sub:opacity-100 transition-opacity">
+                        <NButton
+                          size="tiny"
+                          quaternary
+                          circle
+                          @click.stop="handleAddItem(sub.id)"
+                        >
+                          <template #icon>
+                            <NIcon :size="12"><AddOutline /></NIcon>
+                          </template>
+                        </NButton>
+                      </div>
+                    </div>
+                  </template>
+                  <div v-if="sub.description || sub.notes">
+                    <div v-if="sub.description">{{ sub.description }}</div>
+                    <div v-if="sub.notes" class="text-xs text-gray-400 mt-1">{{ sub.notes }}</div>
+                  </div>
+                  <div v-else>暂无描述</div>
+                </NTooltip>
               </div>
               <div
                 v-if="subCategoryStore.subCategories.filter(s => s.category_id === category.id).length === 0"
