@@ -82,6 +82,14 @@ async function handleItemSubmit(data: Record<string, unknown>) {
       description: data.description as string,
     })
     itemStore.fetchBySubCategory(contextSubCategoryId.value)
+
+    // 刷新子分类数量
+    const sub = subCategoryStore.subCategories.find(
+      s => s.id === contextSubCategoryId.value
+    )
+    if (sub) {
+      subCategoryStore.fetchByCategory(sub.category_id)
+    }
   }
 }
 
