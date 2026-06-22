@@ -76,9 +76,5 @@ function handleMenuSelect(key: string) {
     />
 
     <div class="flex-1" />
-
-    <div class="flex items-center gap-2 text-xs text-gray-500">
-      <span>v0.1.0</span>
-    </div>
   </div>
 </template>
