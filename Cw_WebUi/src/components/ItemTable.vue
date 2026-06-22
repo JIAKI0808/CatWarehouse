@@ -1,20 +1,15 @@
 <script setup lang="ts">
 import { ref, h, watch, nextTick } from 'vue'
-import { NDataTable, NButton, NSpace, NSpin, NDropdown } from 'naive-ui'
+import { NDataTable, NButton, NSpace, NSpin } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
-import { AddOutline } from '@vicons/ionicons5'
 import { gsap } from 'gsap'
 import { useItemStore } from '@/stores/item'
-import { useCategoryStore } from '@/stores/category'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
-import CategoryForm from './CategoryForm.vue'
 
 const itemStore = useItemStore()
-const categoryStore = useCategoryStore()
 
 const showItemForm = ref(false)
-const showCategoryForm = ref(false)
 const editingItem = ref<Item | null>(null)
 
 watch(
@@ -29,10 +24,6 @@ watch(
     })
   }
 )
-
-const addOptions = [
-  { label: '新增大类', key: 'category' },
-]
 
 const columns: DataTableColumns<Item> = [
   { title: '名称', key: 'name', sorter: true },
@@ -72,15 +63,6 @@ const columns: DataTableColumns<Item> = [
   },
 ]
 
-function handleAdd(key: string) {
-  if (key === 'category') {
-    showCategoryForm.value = true
-  } else {
-    editingItem.value = null
-    showItemForm.value = true
-  }
-}
-
 function handleEdit(item: Item) {
   editingItem.value = item
   showItemForm.value = true
@@ -97,14 +79,10 @@ async function handleSubmit(data: Record<string, unknown>) {
     await itemStore.create(data as any)
   }
 }
-
-async function handleCategorySubmit(data: Record<string, string>) {
-  await categoryStore.create(data.name, data.description)
-}
 </script>
 
 <template>
-  <div class="h-full flex flex-col relative">
+  <div class="h-full flex flex-col">
     <div class="flex-1 overflow-auto p-4 min-h-0">
       <NSpin :show="itemStore.loading">
         <NDataTable
@@ -117,25 +95,10 @@ async function handleCategorySubmit(data: Record<string, string>) {
       </NSpin>
     </div>
 
-    <div class="absolute bottom-6 right-6">
-      <NDropdown :options="addOptions" @select="handleAdd">
-        <NButton type="primary" circle size="large">
-          <AddOutline :size="24" />
-        </NButton>
-      </NDropdown>
-    </div>
-
     <ItemForm
       v-model:visible="showItemForm"
       :item="editingItem"
       @submit="handleSubmit"
-    />
-
-    <CategoryForm
-      v-model:visible="showCategoryForm"
-      type="category"
-      title="新增大类"
-      @submit="handleCategorySubmit"
     />
   </div>
 </template>

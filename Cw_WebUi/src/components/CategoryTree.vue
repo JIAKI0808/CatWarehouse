@@ -19,6 +19,7 @@ const subCategoryStore = useSubCategoryStore()
 const itemStore = useItemStore()
 
 const expandedCategories = ref<Set<number>>(new Set())
+const showCategoryForm = ref(false)
 const showSubCategoryForm = ref(false)
 const showItemForm = ref(false)
 const contextCategoryId = ref<number | null>(null)
@@ -93,6 +94,10 @@ async function handleItemSubmit(data: Record<string, unknown>) {
   }
 }
 
+async function handleCategorySubmit(data: Record<string, string>) {
+  await categoryStore.create(data.name, data.description)
+}
+
 async function handleDeleteCategoryConfirm() {
   if (categoryToDelete.value) {
     console.log('删除大类:', categoryToDelete.value.id)
@@ -106,6 +111,15 @@ async function handleDeleteCategoryConfirm() {
   <div class="h-full flex flex-col">
     <div class="p-3 border-b flex items-center justify-between">
       <h3 class="text-sm font-semibold text-gray-600">分类</h3>
+      <NButton
+        size="tiny"
+        type="primary"
+        @click="showCategoryForm = true"
+      >
+        <template #icon>
+          <NIcon :size="14"><AddOutline /></NIcon>
+        </template>
+      </NButton>
     </div>
     <div class="flex-1 overflow-auto p-2">
       <NSpin :show="categoryStore.loading">
@@ -211,6 +225,13 @@ async function handleDeleteCategoryConfirm() {
         </div>
       </NSpin>
     </div>
+
+    <CategoryForm
+      v-model:visible="showCategoryForm"
+      type="category"
+      title="新增大类"
+      @submit="handleCategorySubmit"
+    />
 
     <CategoryForm
       v-model:visible="showSubCategoryForm"
