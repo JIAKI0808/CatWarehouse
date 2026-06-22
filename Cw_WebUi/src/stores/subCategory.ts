@@ -1,19 +1,22 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import type { SubCategory } from '@/types'
 import { subCategoryApi } from '@/services/api'
 
 export const useSubCategoryStore = defineStore('subCategory', () => {
-  const subCategories = ref<SubCategory[]>([])
+  const subCategoriesByCategory = reactive<Record<number, SubCategory[]>>({})
   const selectedId = ref<number | null>(null)
   const loading = ref(false)
+
+  function getSubCategories(categoryId: number): SubCategory[] {
+    return subCategoriesByCategory[categoryId] ?? []
+  }
 
   async function fetchByCategory(categoryId: number) {
     loading.value = true
     try {
       const categories = await subCategoryApi.getByCategory(categoryId)
 
-      // 获取每个子分类的实际数量
       const categoriesWithQuantity = await Promise.all(
         categories.map(async (cat) => {
           const quantityData = await subCategoryApi.getQuantity(cat.id)
@@ -21,7 +24,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
         })
       )
 
-      subCategories.value = categoriesWithQuantity
+      subCategoriesByCategory[categoryId] = categoriesWithQuantity
     } finally {
       loading.value = false
     }
@@ -41,7 +44,9 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
       description,
       notes,
     })
-    subCategories.value.push({ ...newSubCategory, quantity: 0 })
+    const list = subCategoriesByCategory[categoryId] ?? []
+    list.push({ ...newSubCategory, quantity: 0 })
+    subCategoriesByCategory[categoryId] = list
     return newSubCategory
   }
 
@@ -50,9 +55,10 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
   }
 
   return {
-    subCategories,
+    subCategoriesByCategory,
     selectedId,
     loading,
+    getSubCategories,
     fetchByCategory,
     create,
     select,

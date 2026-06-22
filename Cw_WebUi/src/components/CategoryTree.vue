@@ -85,11 +85,13 @@ async function handleItemSubmit(data: Record<string, unknown>) {
     itemStore.fetchBySubCategory(contextSubCategoryId.value)
 
     // 直接更新子分类数量
-    const subIndex = subCategoryStore.subCategories.findIndex(
-      s => s.id === contextSubCategoryId.value
-    )
-    if (subIndex !== -1) {
-      subCategoryStore.subCategories[subIndex].quantity++
+    for (const catId of Object.keys(subCategoryStore.subCategoriesByCategory)) {
+      const list = subCategoryStore.subCategoriesByCategory[Number(catId)]
+      const subIndex = list.findIndex(s => s.id === contextSubCategoryId.value)
+      if (subIndex !== -1) {
+        list[subIndex].quantity++
+        break
+      }
     }
   }
 }
@@ -175,7 +177,7 @@ async function handleDeleteCategoryConfirm() {
               class="ml-5 border-l-2 border-gray-200"
             >
               <div
-                v-for="sub in subCategoryStore.subCategories.filter(s => s.category_id === category.id)"
+                v-for="sub in subCategoryStore.getSubCategories(category.id)"
                 :key="sub.id"
               >
                 <NTooltip trigger="hover" placement="right">
@@ -215,7 +217,7 @@ async function handleDeleteCategoryConfirm() {
                 </NTooltip>
               </div>
               <div
-                v-if="subCategoryStore.subCategories.filter(s => s.category_id === category.id).length === 0"
+                v-if="subCategoryStore.getSubCategories(category.id).length === 0"
                 class="px-2 py-1 text-xs text-gray-400 italic"
               >
                 暂无子分类
