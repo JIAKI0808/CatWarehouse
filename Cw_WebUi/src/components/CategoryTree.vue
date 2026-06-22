@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { NTree, NTreeOption, NSpin, NDropdown } from 'naive-ui'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { NTree, NTreeOption, NSpin } from 'naive-ui'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
@@ -13,6 +13,10 @@ const itemStore = useItemStore()
 const selectedCategoryId = ref<number | null>(null)
 const showSubCategoryForm = ref(false)
 const contextCategoryId = ref<number | null>(null)
+
+const contextMenuVisible = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
 
 const treeData = computed<NTreeOption[]>(() =>
   categoryStore.categories.map((cat) => ({
@@ -36,12 +40,15 @@ const selectedKeys = computed(() => {
   return []
 })
 
-const contextMenuOptions = [
-  { label: '新增子分类', key: 'addSubCategory' },
-]
-
 onMounted(() => {
   categoryStore.fetchAll()
+  document.addEventListener('click', closeContextMenu)
+  document.addEventListener('contextmenu', closeContextMenu)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeContextMenu)
+  document.removeEventListener('contextmenu', closeContextMenu)
 })
 
 function handleExpand(keys: string[]) {
@@ -63,18 +70,34 @@ function handleSelect(keys: string[]) {
   }
 }
 
-function handleContextMenu({ option, key }: { option: any; key: string }) {
-  if (key === 'addSubCategory' && contextCategoryId.value) {
-    showSubCategoryForm.value = true
+function handleNodeContextmenu(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  const nodeEl = target.closest('.n-tree-node')
+
+  if (nodeEl) {
+    const keyAttr = nodeEl.querySelector('[data-key]')?.getAttribute('data-key')
+    if (keyAttr && keyAttr.startsWith('cat-')) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      const catId = parseInt(keyAttr.replace('cat-', ''), 10)
+      contextCategoryId.value = catId
+      contextMenuX.value = e.clientX
+      contextMenuY.value = e.clientY
+      contextMenuVisible.value = true
+    }
   }
 }
 
-function handleNodeContextmenu({ option }: { option: any }) {
-  const key = option.key as string
-  if (key.startsWith('cat-')) {
-    const catId = parseInt(key.replace('cat-', ''), 10)
-    contextCategoryId.value = catId
+function closeContextMenu() {
+  contextMenuVisible.value = false
+}
+
+function handleContextMenuAction() {
+  if (contextCategoryId.value) {
+    showSubCategoryForm.value = true
   }
+  closeContextMenu()
 }
 
 async function handleSubCategorySubmit(data: Record<string, string>) {
@@ -98,21 +121,28 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
     </div>
     <div class="flex-1 overflow-auto p-2">
       <NSpin :show="categoryStore.loading">
-        <NDropdown
-          trigger="contextmenu"
-          :options="contextMenuOptions"
-          @select="handleContextMenu"
-        >
-          <NTree
-            :data="treeData"
-            :selected-keys="selectedKeys"
-            default-expand-all
-            @update:expanded-keys="handleExpand"
-            @update:selected-keys="handleSelect"
-            @contextmenu="handleNodeContextmenu"
-          />
-        </NDropdown>
+        <NTree
+          :data="treeData"
+          :selected-keys="selectedKeys"
+          default-expand-all
+          @update:expanded-keys="handleExpand"
+          @update:selected-keys="handleSelect"
+          @contextmenu="handleNodeContextmenu"
+        />
       </NSpin>
+    </div>
+
+    <div
+      v-if="contextMenuVisible"
+      class="fixed bg-white border rounded-lg shadow-lg py-1 z-50"
+      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+    >
+      <div
+        class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+        @click="handleContextMenuAction"
+      >
+        新增子分类
+      </div>
     </div>
 
     <CategoryForm
