@@ -95,7 +95,7 @@ async function handleSave() {
 
         <!-- 插件功能 -->
         <NCard title="插件功能" :bordered="false" class="shadow-sm">
-          <div class="space-y-5">
+          <div class="space-y-8">
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">AI 分类建议</span>
               <NSwitch v-model:value="store.pluginConfig.ai_category_suggestion" />
