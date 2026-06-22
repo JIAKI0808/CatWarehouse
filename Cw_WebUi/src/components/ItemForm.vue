@@ -18,6 +18,8 @@ const form = ref({
   price: 0,
   recorder: '',
   description: '',
+  quantity: 0,
+  unit: '个',
 })
 
 watch(
@@ -29,6 +31,8 @@ watch(
         price: props.item.price,
         recorder: props.item.recorder,
         description: props.item.description,
+        quantity: props.item.quantity,
+        unit: props.item.unit,
       }
     } else if (!val) {
       resetForm()
@@ -42,6 +46,8 @@ function resetForm() {
     price: 0,
     recorder: '',
     description: '',
+    quantity: 0,
+    unit: '个',
   }
 }
 
@@ -69,6 +75,12 @@ function handleSubmit() {
           <NInputNumber v-model:value="form.price" :min="0" :precision="2">
             <template #prefix>¥</template>
           </NInputNumber>
+        </NFormItem>
+        <NFormItem label="库存数量">
+          <NInputNumber v-model:value="form.quantity" :min="0" />
+        </NFormItem>
+        <NFormItem label="单位">
+          <NInput v-model:value="form.unit" placeholder="请输入单位" />
         </NFormItem>
         <NFormItem label="录入人">
           <NInput v-model:value="form.recorder" placeholder="请输入录入人" />

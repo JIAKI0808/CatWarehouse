@@ -68,7 +68,7 @@ app.include_router(router)
 
 @app.get("/")
 async def root():
-    return {"message": "CatWarehouse API"}
+    return {"message": "CatWareHouse API"}
 
 
 if __name__ == '__main__':

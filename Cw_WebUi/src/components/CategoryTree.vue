@@ -333,7 +333,7 @@ async function handleDeleteSubCategoryConfirm() {
                 v-if="subCategoryStore.getSubCategories(category.id).length === 0"
                 class="px-2 py-1 text-xs text-gray-400 italic"
               >
-                暂无子分类
+                暂无数据
               </div>
             </div>
           </div>

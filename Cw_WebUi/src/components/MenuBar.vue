@@ -63,7 +63,7 @@ function handleMenuSelect(key: string) {
       <NIcon :size="16" class="text-white mr-1">
         <WalletOutline />
       </NIcon>
-      <span class="text-xs font-medium text-white">CatWarehouse</span>
+      <span class="text-xs font-medium text-white">CatWareHouse</span>
     </div>
   </div>
 </template>

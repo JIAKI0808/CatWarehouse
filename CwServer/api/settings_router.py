@@ -18,8 +18,8 @@ from schemas.settings import (
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
-APP_VERSION = "0.1.0"
-APP_NAME = "CatWarehouse"
+APP_VERSION = "0.1.1"
+APP_NAME = "CatWareHouse"
 APP_DESCRIPTION = "科学的管理每一颗螺丝钉"
 _start_time: str = ""
 
