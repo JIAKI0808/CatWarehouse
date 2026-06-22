@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, h } from 'vue'
-import { NSpin, NButton, NIcon, NModal, NText } from 'naive-ui'
-import { AddOutline, TrashOutline } from '@vicons/ionicons5'
+import { ref, onMounted } from 'vue'
+import { NSpin, NButton, NIcon, NModal } from 'naive-ui'
+import {
+  AddOutline,
+  TrashOutline,
+  FolderOutline,
+  FolderOpenOutline,
+  DocumentOutline,
+} from '@vicons/ionicons5'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
@@ -11,90 +17,38 @@ const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
 const itemStore = useItemStore()
 
-const selectedCategoryId = ref<number | null>(null)
+const expandedCategories = ref<Set<number>>(new Set())
 const showSubCategoryForm = ref(false)
 const contextCategoryId = ref<number | null>(null)
 const showDeleteConfirm = ref(false)
 const categoryToDelete = ref<{ id: number; name: string } | null>(null)
 
-interface TreeNode {
-  key: string
-  label: string
-  isLeaf: boolean
-  children?: TreeNode[]
-  suffix?: () => any
-}
-
-const treeData = computed<TreeNode[]>(() =>
-  categoryStore.categories.map((cat) => ({
-    key: `cat-${cat.id}`,
-    label: cat.name,
-    isLeaf: false,
-    suffix: () => h('span', { class: 'flex gap-1' }, [
-      h(NButton, {
-        size: 'tiny',
-        quaternary: true,
-        circle: true,
-        onClick: (e: Event) => {
-          e.stopPropagation()
-          contextCategoryId.value = cat.id
-          showSubCategoryForm.value = true
-        },
-      }, {
-        default: () => h(NIcon, { size: 14 }, { default: () => h(AddOutline) }),
-      }),
-      h(NButton, {
-        size: 'tiny',
-        quaternary: true,
-        circle: true,
-        type: 'error',
-        onClick: (e: Event) => {
-          e.stopPropagation()
-          categoryToDelete.value = { id: cat.id, name: cat.name }
-          showDeleteConfirm.value = true
-        },
-      }, {
-        default: () => h(NIcon, { size: 14 }, { default: () => h(TrashOutline) }),
-      }),
-    ]),
-    children: subCategoryStore.subCategories
-      .filter((sub) => sub.category_id === cat.id)
-      .map((sub) => ({
-        key: `sub-${sub.id}`,
-        label: `${sub.name} (${sub.quantity})`,
-        isLeaf: true,
-      })),
-  }))
-)
-
-const selectedKeys = computed(() => {
-  if (subCategoryStore.selectedId) {
-    return [`sub-${subCategoryStore.selectedId}`]
-  }
-  return []
-})
-
 onMounted(() => {
   categoryStore.fetchAll()
 })
 
-function handleExpand(keys: string[]) {
-  const categoryId = keys
-    .filter((k) => k.startsWith('cat-'))
-    .map((k) => parseInt(k.replace('cat-', ''), 10))[0]
-  if (categoryId) {
-    selectedCategoryId.value = categoryId
-    subCategoryStore.fetchByCategory(categoryId)
+function toggleCategory(catId: number) {
+  if (expandedCategories.value.has(catId)) {
+    expandedCategories.value.delete(catId)
+  } else {
+    expandedCategories.value.add(catId)
+    subCategoryStore.fetchByCategory(catId)
   }
 }
 
-function handleSelect(keys: string[]) {
-  const subKey = keys.find((k) => k.startsWith('sub-'))
-  if (subKey) {
-    const subId = parseInt(subKey.replace('sub-', ''), 10)
-    subCategoryStore.select(subId)
-    itemStore.fetchBySubCategory(subId)
-  }
+function handleSelectSubCategory(subId: number) {
+  subCategoryStore.select(subId)
+  itemStore.fetchBySubCategory(subId)
+}
+
+function handleAddSubCategory(catId: number) {
+  contextCategoryId.value = catId
+  showSubCategoryForm.value = true
+}
+
+function handleDeleteCategory(cat: { id: number; name: string }) {
+  categoryToDelete.value = cat
+  showDeleteConfirm.value = true
 }
 
 async function handleSubCategorySubmit(data: Record<string, string>) {
@@ -110,9 +64,8 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
   }
 }
 
-async function handleDeleteCategory() {
+async function handleDeleteCategoryConfirm() {
   if (categoryToDelete.value) {
-    // TODO: 实现删除大类的 API
     console.log('删除大类:', categoryToDelete.value.id)
     showDeleteConfirm.value = false
     categoryToDelete.value = null
@@ -122,31 +75,36 @@ async function handleDeleteCategory() {
 
 <template>
   <div class="h-full flex flex-col">
-    <div class="p-3 border-b">
+    <div class="p-3 border-b flex items-center justify-between">
       <h3 class="text-sm font-semibold text-gray-600">分类</h3>
     </div>
     <div class="flex-1 overflow-auto p-2">
       <NSpin :show="categoryStore.loading">
-        <div class="space-y-1">
+        <div class="space-y-0.5">
           <div
-            v-for="category in treeData"
-            :key="category.key"
-            class="group"
+            v-for="category in categoryStore.categories"
+            :key="category.id"
           >
+            <!-- 大类 -->
             <div
-              class="flex items-center justify-between px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer"
-              @click="handleExpand([category.key])"
+              class="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100"
+              @click="toggleCategory(category.id)"
             >
-              <span class="text-sm truncate">{{ category.label }}</span>
-              <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <NIcon :size="16" class="text-amber-500 flex-shrink-0">
+                <FolderOpenOutline v-if="expandedCategories.has(category.id)" />
+                <FolderOutline v-else />
+              </NIcon>
+              <span class="text-sm font-medium truncate flex-1">{{ category.name }}</span>
+
+              <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <NButton
                   size="tiny"
                   quaternary
                   circle
-                  @click.stop="contextCategoryId = parseInt(category.key.replace('cat-', ''), 10); showSubCategoryForm = true"
+                  @click.stop="handleAddSubCategory(category.id)"
                 >
                   <template #icon>
-                    <NIcon :size="14"><AddOutline /></NIcon>
+                    <NIcon :size="12"><AddOutline /></NIcon>
                   </template>
                 </NButton>
                 <NButton
@@ -154,29 +112,40 @@ async function handleDeleteCategory() {
                   quaternary
                   circle
                   type="error"
-                  @click.stop="categoryToDelete = { id: parseInt(category.key.replace('cat-', ''), 10), name: category.label }; showDeleteConfirm = true"
+                  @click.stop="handleDeleteCategory({ id: category.id, name: category.name })"
                 >
                   <template #icon>
-                    <NIcon :size="14"><TrashOutline /></NIcon>
+                    <NIcon :size="12"><TrashOutline /></NIcon>
                   </template>
                 </NButton>
               </div>
             </div>
 
+            <!-- 子分类列表 -->
             <div
-              v-if="selectedCategoryId === parseInt(category.key.replace('cat-', ''), 10)"
-              class="ml-4 space-y-0.5"
+              v-if="expandedCategories.has(category.id)"
+              class="ml-5 border-l-2 border-gray-200"
             >
               <div
-                v-for="child in category.children"
-                :key="child.key"
-                class="flex items-center px-2 py-1 rounded cursor-pointer text-sm"
-                :class="subCategoryStore.selectedId === parseInt(child.key.replace('sub-', ''), 10)
-                  ? 'bg-blue-100 text-blue-600'
-                  : 'hover:bg-gray-100'"
-                @click="handleSelect([child.key])"
+                v-for="sub in subCategoryStore.subCategories.filter(s => s.category_id === category.id)"
+                :key="sub.id"
+                class="flex items-center gap-2 px-2 py-1 cursor-pointer rounded text-sm"
+                :class="subCategoryStore.selectedId === sub.id
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-600 hover:bg-gray-50'"
+                @click.stop="handleSelectSubCategory(sub.id)"
               >
-                {{ child.label }}
+                <NIcon :size="14" class="flex-shrink-0">
+                  <DocumentOutline />
+                </NIcon>
+                <span class="truncate flex-1">{{ sub.name }}</span>
+                <span class="text-xs text-gray-400">{{ sub.quantity }}</span>
+              </div>
+              <div
+                v-if="subCategoryStore.subCategories.filter(s => s.category_id === category.id).length === 0"
+                class="px-2 py-1 text-xs text-gray-400 italic"
+              >
+                暂无子分类
               </div>
             </div>
           </div>
@@ -199,7 +168,7 @@ async function handleDeleteCategory() {
       positive-text="删除"
       negative-text="取消"
       type="error"
-      @positive-click="handleDeleteCategory"
+      @positive-click="handleDeleteCategoryConfirm"
       @negative-click="showDeleteConfirm = false"
     />
   </div>
