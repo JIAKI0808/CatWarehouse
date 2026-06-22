@@ -11,6 +11,12 @@ export interface CategoryCreate {
   icon?: string
 }
 
+export interface CategoryUpdate {
+  name?: string
+  description?: string
+  icon?: string
+}
+
 export interface SubCategory {
   id: number
   category_id: number
@@ -24,6 +30,13 @@ export interface SubCategory {
 export interface SubCategoryCreate {
   category_id: number
   name: string
+  unit?: string
+  description?: string
+  notes?: string
+}
+
+export interface SubCategoryUpdate {
+  name?: string
   unit?: string
   description?: string
   notes?: string

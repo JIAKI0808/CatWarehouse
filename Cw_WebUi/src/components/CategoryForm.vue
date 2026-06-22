@@ -39,10 +39,19 @@ const iconOptions = [
   { name: 'DiamondOutline', label: '钻石', component: DiamondOutline },
 ]
 
+interface EditData {
+  name: string
+  description?: string
+  icon?: string
+  unit?: string
+  notes?: string
+}
+
 const props = defineProps<{
   visible: boolean
   type: 'category' | 'subCategory'
   title: string
+  editData?: EditData
 }>()
 
 const emit = defineEmits<{
@@ -65,7 +74,15 @@ const selectedIcon = computed(() =>
 watch(
   () => props.visible,
   (val) => {
-    if (!val) {
+    if (val && props.editData) {
+      form.value = {
+        name: props.editData.name ?? '',
+        description: props.editData.description ?? '',
+        icon: props.editData.icon ?? 'FolderOutline',
+        unit: props.editData.unit ?? '个',
+        notes: props.editData.notes ?? '',
+      }
+    } else if (!val) {
       resetForm()
     }
   }

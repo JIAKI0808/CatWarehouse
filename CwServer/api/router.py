@@ -6,8 +6,8 @@ from core.database import get_db
 from models.category import Category
 from models.sub_category import SubCategory
 from models.specific_item import SpecificItem
-from schemas.category import CategoryCreate, CategoryResponse
-from schemas.sub_category import SubCategoryCreate, SubCategoryResponse
+from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate, SubCategoryResponse
 from schemas.specific_item import SpecificItemCreate, SpecificItemResponse, SpecificItemUpdate
 from api.settings_router import router as settings_router
 
@@ -39,6 +39,20 @@ async def get_category(cat_id: int, db: AsyncSession = Depends(get_db)):
     return cat
 
 
+@router.put("/categories/{cat_id}", response_model=CategoryResponse)
+async def update_category(
+    cat_id: int, data: CategoryUpdate, db: AsyncSession = Depends(get_db)
+):
+    cat = await db.get(Category, cat_id)
+    if not cat:
+        raise HTTPException(404, "Category not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(cat, key, value)
+    await db.commit()
+    await db.refresh(cat)
+    return cat
+
+
 # ── SubCategory CRUD ──
 
 @router.get("/sub-categories", response_model=list[SubCategoryResponse])
@@ -67,6 +81,20 @@ async def get_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
     sub = await db.get(SubCategory, sub_id)
     if not sub:
         raise HTTPException(404, "SubCategory not found")
+    return sub
+
+
+@router.put("/sub-categories/{sub_id}", response_model=SubCategoryResponse)
+async def update_sub_category(
+    sub_id: int, data: SubCategoryUpdate, db: AsyncSession = Depends(get_db)
+):
+    sub = await db.get(SubCategory, sub_id)
+    if not sub:
+        raise HTTPException(404, "SubCategory not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(sub, key, value)
+    await db.commit()
+    await db.refresh(sub)
     return sub
 
 

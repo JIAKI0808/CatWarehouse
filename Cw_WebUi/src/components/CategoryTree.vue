@@ -4,6 +4,7 @@ import { NSpin, NButton, NIcon, NModal, NTooltip } from 'naive-ui'
 import {
   AddOutline,
   TrashOutline,
+  CreateOutline,
   FolderOutline,
   FolderOpenOutline,
   DocumentOutline,
@@ -65,6 +66,9 @@ const contextSubCategoryId = ref<number | null>(null)
 const showDeleteConfirm = ref(false)
 const categoryToDelete = ref<{ id: number; name: string } | null>(null)
 
+const editingCategory = ref<{ id: number; name: string; description: string; icon: string } | null>(null)
+const editingSubCategory = ref<{ id: number; name: string; description: string; unit: string; notes: string } | null>(null)
+
 onMounted(() => {
   categoryStore.fetchAll()
 })
@@ -98,8 +102,26 @@ function handleDeleteCategory(cat: { id: number; name: string }) {
   showDeleteConfirm.value = true
 }
 
+function handleEditCategory(category: { id: number; name: string; description: string; icon: string }) {
+  editingCategory.value = { ...category }
+  showCategoryForm.value = true
+}
+
+function handleEditSubCategory(sub: { id: number; name: string; description: string; unit: string; notes: string }) {
+  editingSubCategory.value = { ...sub }
+  showSubCategoryForm.value = true
+}
+
 async function handleSubCategorySubmit(data: Record<string, string>) {
-  if (contextCategoryId.value) {
+  if (editingSubCategory.value) {
+    await subCategoryStore.update(editingSubCategory.value.id, {
+      name: data.name,
+      unit: data.unit,
+      description: data.description,
+      notes: data.notes,
+    })
+    editingSubCategory.value = null
+  } else if (contextCategoryId.value) {
     await subCategoryStore.create(
       contextCategoryId.value,
       data.name,
@@ -135,7 +157,16 @@ async function handleItemSubmit(data: Record<string, unknown>) {
 }
 
 async function handleCategorySubmit(data: Record<string, string>) {
-  await categoryStore.create(data.name, data.description, data.icon)
+  if (editingCategory.value) {
+    await categoryStore.update(editingCategory.value.id, {
+      name: data.name,
+      description: data.description,
+      icon: data.icon,
+    })
+    editingCategory.value = null
+  } else {
+    await categoryStore.create(data.name, data.description, data.icon)
+  }
 }
 
 async function handleDeleteCategoryConfirm() {
@@ -193,6 +224,16 @@ async function handleDeleteCategoryConfirm() {
                       size="tiny"
                       quaternary
                       circle
+                      @click.stop="handleEditCategory(category)"
+                    >
+                      <template #icon>
+                        <NIcon :size="12"><CreateOutline /></NIcon>
+                      </template>
+                    </NButton>
+                    <NButton
+                      size="tiny"
+                      quaternary
+                      circle
                       type="error"
                       @click.stop="handleDeleteCategory({ id: category.id, name: category.name })"
                     >
@@ -241,6 +282,16 @@ async function handleDeleteCategoryConfirm() {
                             <NIcon :size="12"><AddOutline /></NIcon>
                           </template>
                         </NButton>
+                        <NButton
+                          size="tiny"
+                          quaternary
+                          circle
+                          @click.stop="handleEditSubCategory(sub)"
+                        >
+                          <template #icon>
+                            <NIcon :size="12"><CreateOutline /></NIcon>
+                          </template>
+                        </NButton>
                       </div>
                     </div>
                   </template>
@@ -266,14 +317,16 @@ async function handleDeleteCategoryConfirm() {
     <CategoryForm
       v-model:visible="showCategoryForm"
       type="category"
-      title="新增大类"
+      :title="editingCategory ? '编辑大类' : '新增大类'"
+      :edit-data="editingCategory ?? undefined"
       @submit="handleCategorySubmit"
     />
 
     <CategoryForm
       v-model:visible="showSubCategoryForm"
       type="subCategory"
-      title="新增子分类"
+      :title="editingSubCategory ? '编辑子分类' : '新增子分类'"
+      :edit-data="editingSubCategory ?? undefined"
       @submit="handleSubCategorySubmit"
     />
 

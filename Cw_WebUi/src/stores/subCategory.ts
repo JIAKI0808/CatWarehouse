@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import type { SubCategory } from '@/types'
+import type { SubCategory, SubCategoryUpdate } from '@/types'
 import { subCategoryApi } from '@/services/api'
 
 export const useSubCategoryStore = defineStore('subCategory', () => {
@@ -50,6 +50,19 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
     return newSubCategory
   }
 
+  async function update(id: number, data: SubCategoryUpdate) {
+    const updated = await subCategoryApi.update(id, data)
+    for (const catId of Object.keys(subCategoriesByCategory)) {
+      const list = subCategoriesByCategory[Number(catId)]
+      const index = list.findIndex(s => s.id === id)
+      if (index !== -1) {
+        list[index] = { ...list[index], ...updated }
+        break
+      }
+    }
+    return updated
+  }
+
   function select(id: number | null) {
     selectedId.value = id
   }
@@ -61,6 +74,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
     getSubCategories,
     fetchByCategory,
     create,
+    update,
     select,
   }
 })

@@ -1,8 +1,10 @@
 import type {
   Category,
   CategoryCreate,
+  CategoryUpdate,
   SubCategory,
   SubCategoryCreate,
+  SubCategoryUpdate,
   Item,
   ItemCreate,
   ItemUpdate,
@@ -32,6 +34,11 @@ export const categoryApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  update: (id: number, data: CategoryUpdate) =>
+    request<Category>(`/api/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 }
 
 export const subCategoryApi = {
@@ -44,6 +51,11 @@ export const subCategoryApi = {
   create: (data: SubCategoryCreate) =>
     request<SubCategory>('/api/sub-categories', {
       method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: SubCategoryUpdate) =>
+    request<SubCategory>(`/api/sub-categories/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     }),
   getQuantity: (id: number) =>

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Category } from '@/types'
+import type { Category, CategoryUpdate } from '@/types'
 import { categoryApi } from '@/services/api'
 
 export const useCategoryStore = defineStore('category', () => {
@@ -23,6 +23,15 @@ export const useCategoryStore = defineStore('category', () => {
     return newCategory
   }
 
+  async function update(id: number, data: CategoryUpdate) {
+    const updated = await categoryApi.update(id, data)
+    const index = categories.value.findIndex(c => c.id === id)
+    if (index !== -1) {
+      categories.value[index] = updated
+    }
+    return updated
+  }
+
   function select(id: number | null) {
     selectedId.value = id
   }
@@ -33,6 +42,7 @@ export const useCategoryStore = defineStore('category', () => {
     loading,
     fetchAll,
     create,
+    update,
     select,
   }
 })
