@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NLayoutSider, NIcon, NTooltip } from 'naive-ui'
+import { NLayoutSider, NIcon, NTooltip, NMessageProvider } from 'naive-ui'
 import {
   WalletOutline,
   AnalyticsOutline,
@@ -24,6 +24,7 @@ function handleNavigate(view: string) {
 </script>
 
 <template>
+  <NMessageProvider>
   <div class="h-screen flex flex-col">
     <MenuBar @navigate="handleNavigate" />
 
@@ -81,4 +82,5 @@ function handleNavigate(view: string) {
       </div>
     </div>
   </div>
+  </NMessageProvider>
 </template>
