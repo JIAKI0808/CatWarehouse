@@ -13,7 +13,7 @@ const subCategoryStore = useSubCategoryStore()
 
 <template>
   <div class="h-full flex flex-col">
-    <div class="h-48 border-b bg-white flex">
+    <div class="h-20 border-b bg-white flex">
       <div class="w-64 border-r">
         <CategoryTree />
       </div>
