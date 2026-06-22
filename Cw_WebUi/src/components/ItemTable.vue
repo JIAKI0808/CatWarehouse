@@ -121,7 +121,7 @@ async function handleSubCategorySubmit(data: Record<string, string>) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <div class="h-full flex flex-col relative">
     <div class="flex-1 overflow-auto p-4">
       <NSpin :show="itemStore.loading">
         <NDataTable

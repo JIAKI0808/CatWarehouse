@@ -86,7 +86,7 @@ function formatDate(dateStr: string | null): string {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <div class="h-full flex flex-col relative">
     <div class="flex-1 overflow-auto p-4">
       <NSpin :show="itemStore.loading">
         <NGrid :cols="3" :x-gap="12" :y-gap="12">
