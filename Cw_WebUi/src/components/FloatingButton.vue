@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NButton, NDropdown } from 'naive-ui'
+import { NButton, NDropdown, NIcon } from 'naive-ui'
 import { ArrowUpOutline } from '@vicons/ionicons5'
 import UploadModal from './UploadModal.vue'
 
@@ -38,7 +38,9 @@ async function handleUpload(file: File) {
   <div class="fixed bottom-6 right-6 z-50">
     <NDropdown :options="addOptions" @select="handleAdd">
       <NButton type="primary" circle size="large">
-        <ArrowUpOutline :size="24" />
+        <template #icon>
+          <NIcon :size="24"><ArrowUpOutline /></NIcon>
+        </template>
       </NButton>
     </NDropdown>
 
