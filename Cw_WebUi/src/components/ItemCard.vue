@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { NCard, NGrid, NGridItem, NButton, NSpace, NSpin } from 'naive-ui'
 import { AddOutline } from '@vicons/ionicons5'
+import { gsap } from 'gsap'
 import { useItemStore } from '@/stores/item'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
@@ -9,6 +10,19 @@ import ItemForm from './ItemForm.vue'
 const itemStore = useItemStore()
 const showItemForm = ref(false)
 const editingItem = ref<Item | null>(null)
+
+watch(
+  () => itemStore.items.length,
+  async () => {
+    await nextTick()
+    gsap.from('.n-card', {
+      opacity: 0,
+      scale: 0.8,
+      duration: 0.3,
+      stagger: 0.05,
+    })
+  }
+)
 
 function handleAdd() {
   editingItem.value = null

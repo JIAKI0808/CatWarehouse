@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, h } from 'vue'
+import { ref, h, watch, nextTick } from 'vue'
 import { NDataTable, NButton, NSpace, NSpin } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { AddOutline } from '@vicons/ionicons5'
+import { gsap } from 'gsap'
 import { useItemStore } from '@/stores/item'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
@@ -10,6 +11,19 @@ import ItemForm from './ItemForm.vue'
 const itemStore = useItemStore()
 const showItemForm = ref(false)
 const editingItem = ref<Item | null>(null)
+
+watch(
+  () => itemStore.items.length,
+  async () => {
+    await nextTick()
+    gsap.from('.n-data-table-tr', {
+      opacity: 0,
+      y: 20,
+      duration: 0.3,
+      stagger: 0.05,
+    })
+  }
+)
 
 const columns: DataTableColumns<Item> = [
   { title: '名称', key: 'name', sorter: true },
