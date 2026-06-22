@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NLayout, NLayoutSider, NLayoutContent, NIcon, NTooltip } from 'naive-ui'
+import { NLayoutSider, NIcon, NTooltip } from 'naive-ui'
 import {
   WalletOutline,
   AnalyticsOutline,
@@ -73,11 +73,11 @@ function handleNavigate(view: string) {
         </div>
       </NLayoutSider>
 
-      <NLayoutContent :native-scrollbar="false" class="h-full">
+      <div class="flex-1 overflow-hidden">
         <HomeView v-if="activeView === 'inventory'" />
         <AnalyticsView v-else-if="activeView === 'analytics'" />
         <SettingsView v-else-if="activeView === 'settings'" />
-      </NLayoutContent>
+      </div>
     </div>
   </div>
 </template>
