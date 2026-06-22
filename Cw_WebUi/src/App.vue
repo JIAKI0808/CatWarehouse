@@ -73,7 +73,7 @@ function handleNavigate(view: string) {
         </div>
       </NLayoutSider>
 
-      <NLayoutContent :native-scrollbar="false">
+      <NLayoutContent :native-scrollbar="false" class="h-full">
         <HomeView v-if="activeView === 'inventory'" />
         <AnalyticsView v-else-if="activeView === 'analytics'" />
         <SettingsView v-else-if="activeView === 'settings'" />
