@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 
 
-class ItemCreate(BaseModel):
+class CategoryCreate(BaseModel):
     name: str
-    quantity: int = 0
+    description: str = ""
 
 
-class ItemResponse(BaseModel):
+class CategoryResponse(BaseModel):
     id: int
     name: str
-    quantity: int
+    description: str
 
     model_config = {"from_attributes": True}
