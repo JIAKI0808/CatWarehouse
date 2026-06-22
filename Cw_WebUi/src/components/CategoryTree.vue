@@ -7,12 +7,50 @@ import {
   FolderOutline,
   FolderOpenOutline,
   DocumentOutline,
+  CartOutline,
+  ShirtOutline,
+  HardwareChipOutline,
+  NutritionOutline,
+  CameraOutline,
+  GameControllerOutline,
+  BookOutline,
+  MusicalNotesOutline,
+  FitnessOutline,
+  HeartOutline,
+  StarOutline,
+  FlashlightOutline,
+  ColorPaletteOutline,
+  CubeOutline,
+  DiamondOutline,
 } from '@vicons/ionicons5'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
 import CategoryForm from './CategoryForm.vue'
 import ItemForm from './ItemForm.vue'
+
+const iconMap: Record<string, typeof FolderOutline> = {
+  FolderOutline,
+  CartOutline,
+  ShirtOutline,
+  HardwareChipOutline,
+  NutritionOutline,
+  CameraOutline,
+  GameControllerOutline,
+  BookOutline,
+  MusicalNotesOutline,
+  FitnessOutline,
+  HeartOutline,
+  StarOutline,
+  FlashlightOutline,
+  ColorPaletteOutline,
+  CubeOutline,
+  DiamondOutline,
+}
+
+function getCategoryIcon(iconName: string | undefined) {
+  return iconMap[iconName ?? 'FolderOutline'] ?? FolderOutline
+}
 
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
@@ -97,7 +135,7 @@ async function handleItemSubmit(data: Record<string, unknown>) {
 }
 
 async function handleCategorySubmit(data: Record<string, string>) {
-  await categoryStore.create(data.name, data.description)
+  await categoryStore.create(data.name, data.description, data.icon)
 }
 
 async function handleDeleteCategoryConfirm() {
@@ -137,10 +175,7 @@ async function handleDeleteCategoryConfirm() {
                   class="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100"
                   @click="toggleCategory(category.id)"
                 >
-                  <NIcon :size="16" class="text-amber-500 flex-shrink-0">
-                    <FolderOpenOutline v-if="expandedCategories.has(category.id)" />
-                    <FolderOutline v-else />
-                  </NIcon>
+                  <NIcon :size="16" class="text-amber-500 flex-shrink-0" :component="getCategoryIcon(category.icon)" />
                   <span class="text-sm font-medium truncate flex-1">{{ category.name }}</span>
 
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

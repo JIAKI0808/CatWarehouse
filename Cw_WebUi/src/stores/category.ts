@@ -17,8 +17,8 @@ export const useCategoryStore = defineStore('category', () => {
     }
   }
 
-  async function create(name: string, description: string = '') {
-    const newCategory = await categoryApi.create({ name, description })
+  async function create(name: string, description: string = '', icon: string = 'FolderOutline') {
+    const newCategory = await categoryApi.create({ name, description, icon })
     categories.value.push(newCategory)
     return newCategory
   }
