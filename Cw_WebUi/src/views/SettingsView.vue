@@ -29,8 +29,8 @@ async function handleSave() {
 </script>
 
 <template>
-  <div class="h-full overflow-auto bg-gray-50">
-    <div class="max-w-xl mx-auto px-6 py-10 space-y-8">
+  <div class="h-full overflow-y-auto bg-gray-50 flex justify-center">
+    <div class="w-full max-w-xl px-6 py-10 space-y-8">
       <h1 class="text-2xl font-bold text-center">设置</h1>
 
       <NSpin :show="store.loading">
@@ -93,20 +93,20 @@ async function handleSave() {
 
         <!-- 插件功能 -->
         <NCard title="插件功能" :bordered="false" class="shadow-sm">
-          <div class="space-y-4">
-            <div class="flex items-center justify-between py-1">
+          <div class="space-y-5">
+            <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">AI 分类建议</span>
               <NSwitch v-model:value="store.pluginConfig.ai_category_suggestion" />
             </div>
-            <div class="flex items-center justify-between py-1">
+            <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">智能补全</span>
               <NSwitch v-model:value="store.pluginConfig.smart_autocomplete" />
             </div>
-            <div class="flex items-center justify-between py-1">
+            <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">描述生成</span>
               <NSwitch v-model:value="store.pluginConfig.description_generation" />
             </div>
-            <div class="flex items-center justify-between py-1">
+            <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">语音输入</span>
               <NSwitch v-model:value="store.pluginConfig.voice_input" />
             </div>
@@ -127,19 +127,19 @@ async function handleSave() {
         <!-- 版本信息 -->
         <NCard title="版本信息" :bordered="false" class="shadow-sm">
           <div class="space-y-3">
-            <div class="flex justify-between py-1">
+            <div class="flex justify-between">
               <span class="text-sm text-gray-600">应用名称</span>
               <span class="text-sm font-medium">
                 {{ store.version?.app_name ?? '-' }}
               </span>
             </div>
-            <div class="flex justify-between py-1">
+            <div class="flex justify-between">
               <span class="text-sm text-gray-600">版本号</span>
               <span class="text-sm font-medium">
                 v{{ store.version?.version ?? '-' }}
               </span>
             </div>
-            <div class="flex justify-between py-1">
+            <div class="flex justify-between">
               <span class="text-sm text-gray-600">描述</span>
               <span class="text-sm font-medium">
                 {{ store.version?.description ?? '-' }}
