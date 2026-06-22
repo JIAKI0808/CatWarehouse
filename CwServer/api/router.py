@@ -18,6 +18,7 @@ from schemas.import_export import (
     ImportExecuteRequest,
     ImportResult,
 )
+from schemas.analytics import TrendResponse, TrendPoint
 from api.settings_router import router as settings_router
 
 logger = logging.getLogger(__name__)
@@ -414,6 +415,43 @@ async def execute_import(
         categories_created=cats_created,
         sub_categories_created=subs_created,
         items_created=items_created,
+    )
+
+
+# ── Analytics ──
+
+@router.get("/analytics/trend", response_model=TrendResponse)
+async def get_trend(
+    sub_category_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    sub = await db.get(SubCategory, sub_category_id)
+    if not sub:
+        raise HTTPException(404, "SubCategory not found")
+
+    result = await db.execute(
+        select(SpecificItem).where(SpecificItem.sub_category_id == sub_category_id)
+    )
+    items = result.scalars().all()
+
+    date_map: dict[str, dict] = {}
+    for item in items:
+        date_str = item.entry_date.strftime("%Y-%m-%d") if item.entry_date else "unknown"
+        if date_str not in date_map:
+            date_map[date_str] = {"quantity": 0, "price": 0.0}
+        date_map[date_str]["quantity"] += 1
+        date_map[date_str]["price"] += item.price
+
+    data = [
+        TrendPoint(date=d, quantity=v["quantity"], price=v["price"])
+        for d, v in sorted(date_map.items())
+    ]
+
+    return TrendResponse(
+        sub_category_id=sub.id,
+        sub_category_name=sub.name,
+        unit=sub.unit,
+        data=data,
     )
 
 
