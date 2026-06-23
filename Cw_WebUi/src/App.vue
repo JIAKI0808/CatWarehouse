@@ -10,9 +10,11 @@ import {
 } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import MenuBar from './components/MenuBar.vue'
+import IntroAnimation from './animations/IntroAnimation.vue'
 
 const router = useRouter()
 const isDark = ref(false)
+const showIntro = ref(true)
 
 const theme = computed(() => isDark.value ? darkTheme : null)
 
@@ -53,6 +55,10 @@ function toggleTheme() {
   updateDarkClass()
 }
 
+function handleIntroComplete() {
+  showIntro.value = false
+}
+
 const navItems = [
   { path: '/', label: '库存', icon: WalletOutline },
   { path: '/analytics', label: '数据分析', icon: AnalyticsOutline },
@@ -65,9 +71,11 @@ const navItems = [
   <NConfigProvider :theme="theme">
   <NMessageProvider>
   <div class="h-screen flex flex-col">
-    <MenuBar :is-dark="isDark" @toggle-theme="toggleTheme" />
+    <IntroAnimation v-if="showIntro" @complete="handleIntroComplete" />
 
-    <div class="flex-1 flex overflow-hidden">
+    <MenuBar v-show="!showIntro" :is-dark="isDark" @toggle-theme="toggleTheme" />
+
+    <div v-show="!showIntro" class="flex-1 flex overflow-hidden">
       <NLayoutSider
         bordered
         :width="64"
