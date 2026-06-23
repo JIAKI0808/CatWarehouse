@@ -50,6 +50,12 @@ def _migrate_tables(conn):
     if "is_expired" not in col_names:
         conn.execute(text("ALTER TABLE specific_items ADD COLUMN is_expired INTEGER DEFAULT 0"))
         logger.info("Migrated: added is_expired to specific_items")
+    if "currency" not in col_names:
+        conn.execute(text("ALTER TABLE specific_items ADD COLUMN currency VARCHAR DEFAULT 'CNY'"))
+        logger.info("Migrated: added currency to specific_items")
+    if "image_path" not in col_names:
+        conn.execute(text("ALTER TABLE specific_items ADD COLUMN image_path VARCHAR"))
+        logger.info("Migrated: added image_path to specific_items")
 
     inspector_columns = conn.execute(
         text("PRAGMA table_info(categories)")

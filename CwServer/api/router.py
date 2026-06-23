@@ -8,9 +8,20 @@ from core.database import get_db
 from models.category import Category
 from models.sub_category import SubCategory
 from models.specific_item import SpecificItem
+from models.ledger import Ledger
 from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
 from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate, SubCategoryResponse
 from schemas.specific_item import SpecificItemCreate, SpecificItemResponse, SpecificItemUpdate
+from schemas.ledger import LedgerCreate, LedgerUpdate, LedgerResponse, LedgerStats
+from schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse
+from schemas.notification import NotificationResponse
+from schemas.tag import TagCreate, TagUpdate, TagResponse
+from schemas.recurring import RecurringBillCreate, RecurringBillUpdate, RecurringBillResponse
+from schemas.pricing import PricingCreate, PricingUpdate, PricingResponse
+from schemas.pricing_category import (
+    PricingCategoryCreate, PricingCategoryUpdate, PricingCategoryResponse,
+    PricingSubCategoryCreate, PricingSubCategoryUpdate, PricingSubCategoryResponse,
+)
 from schemas.import_export import (
     ImportRequest,
     ConflictCheckResponse,
@@ -163,6 +174,7 @@ async def delete_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
 @router.get("/items", response_model=list[SpecificItemResponse])
 async def list_items(
     sub_category_id: int | None = None,
+    q: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     stmt = (
@@ -171,6 +183,10 @@ async def list_items(
     )
     if sub_category_id is not None:
         stmt = stmt.where(SpecificItem.sub_category_id == sub_category_id)
+    if q:
+        stmt = stmt.where(
+            SpecificItem.name.contains(q) | SpecificItem.description.contains(q)
+        )
     result = await db.execute(stmt)
     rows = result.all()
     items = [
@@ -459,6 +475,808 @@ async def get_trend(
         unit=sub.unit,
         data=data,
     )
+
+
+# ── Ledger CRUD ──
+
+@router.get("/ledger", response_model=list[LedgerResponse])
+async def list_ledger(
+    q: str | None = None,
+    type: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(Ledger).order_by(Ledger.date.desc())
+    if q:
+        stmt = stmt.where(
+            Ledger.description.contains(q) | Ledger.platform.contains(q) | Ledger.person.contains(q)
+        )
+    if type:
+        stmt = stmt.where(Ledger.type == type)
+    if start_date:
+        stmt = stmt.where(Ledger.date >= start_date)
+    if end_date:
+        stmt = stmt.where(Ledger.date <= end_date)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.post("/ledger", response_model=LedgerResponse)
+async def create_ledger(data: LedgerCreate, db: AsyncSession = Depends(get_db)):
+    item = Ledger(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.put("/ledger/{item_id}", response_model=LedgerResponse)
+async def update_ledger(
+    item_id: int, data: LedgerUpdate, db: AsyncSession = Depends(get_db)
+):
+    item = await db.get(Ledger, item_id)
+    if not item:
+        raise HTTPException(404, "Ledger item not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.delete("/ledger/{item_id}")
+async def delete_ledger(item_id: int, db: AsyncSession = Depends(get_db)):
+    item = await db.get(Ledger, item_id)
+    if not item:
+        raise HTTPException(404, "Ledger item not found")
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/ledger/stats", response_model=list[LedgerStats])
+async def get_ledger_stats(
+    range: str = "month",
+    db: AsyncSession = Depends(get_db),
+):
+    from sqlalchemy import func, extract
+
+    result = await db.execute(select(Ledger))
+    items = result.scalars().all()
+
+    period_map: dict[str, dict[str, float]] = {}
+    for item in items:
+        if range == "year":
+            key = item.date.strftime("%Y")
+        elif range == "month":
+            key = item.date.strftime("%Y-%m")
+        elif range == "week":
+            key = item.date.strftime("%Y-W%W")
+        else:
+            key = item.date.strftime("%Y-%m-%d")
+
+        if key not in period_map:
+            period_map[key] = {"income": 0.0, "expense": 0.0}
+
+        if item.type == "income":
+            period_map[key]["income"] += item.amount
+        else:
+            period_map[key]["expense"] += item.amount
+
+    return [
+        LedgerStats(period=k, income=v["income"], expense=v["expense"])
+        for k, v in sorted(period_map.items())
+    ]
+
+
+# ── Budget CRUD ──
+
+@router.get("/budget", response_model=list[BudgetResponse])
+async def list_budget(month: str | None = None, db: AsyncSession = Depends(get_db)):
+    from models.budget import Budget
+    from models.category import Category
+
+    stmt = select(Budget)
+    if month:
+        stmt = stmt.where(Budget.month == month)
+    result = await db.execute(stmt)
+    budgets = result.scalars().all()
+
+    cat_ids = {b.category_id for b in budgets}
+    cats = (await db.execute(select(Category).where(Category.id.in_(cat_ids)))).scalars().all()
+    cat_map = {c.id: c.name for c in cats}
+
+    return [
+        BudgetResponse(
+            id=b.id,
+            category_id=b.category_id,
+            category_name=cat_map.get(b.category_id, ""),
+            month=b.month,
+            amount=b.amount,
+            spent=0.0,
+        )
+        for b in budgets
+    ]
+
+
+@router.post("/budget", response_model=BudgetResponse)
+async def create_budget(data: BudgetCreate, db: AsyncSession = Depends(get_db)):
+    from models.budget import Budget
+
+    item = Budget(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return BudgetResponse(
+        id=item.id,
+        category_id=item.category_id,
+        category_name="",
+        month=item.month,
+        amount=item.amount,
+        spent=0.0,
+    )
+
+
+@router.put("/budget/{budget_id}", response_model=BudgetResponse)
+async def update_budget(
+    budget_id: int, data: BudgetUpdate, db: AsyncSession = Depends(get_db)
+):
+    from models.budget import Budget
+
+    item = await db.get(Budget, budget_id)
+    if not item:
+        raise HTTPException(404, "Budget not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return BudgetResponse(
+        id=item.id,
+        category_id=item.category_id,
+        category_name="",
+        month=item.month,
+        amount=item.amount,
+        spent=0.0,
+    )
+
+
+@router.delete("/budget/{budget_id}")
+async def delete_budget(budget_id: int, db: AsyncSession = Depends(get_db)):
+    from models.budget import Budget
+
+    item = await db.get(Budget, budget_id)
+    if not item:
+        raise HTTPException(404, "Budget not found")
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/budget/summary")
+async def get_budget_summary(month: str, db: AsyncSession = Depends(get_db)):
+    from models.budget import Budget
+    from models.category import Category
+    from models.sub_category import SubCategory
+
+    budgets = (
+        await db.execute(select(Budget).where(Budget.month == month))
+    ).scalars().all()
+
+    cat_ids = {b.category_id for b in budgets}
+    cats = (await db.execute(select(Category).where(Category.id.in_(cat_ids)))).scalars().all()
+    cat_map = {c.id: c.name for c in cats}
+
+    sub_cats = (
+        await db.execute(select(SubCategory).where(SubCategory.category_id.in_(cat_ids)))
+    ).scalars().all()
+    sub_cat_map = {sc.id: sc for sc in sub_cats}
+
+    summary = []
+    for b in budgets:
+        spent = sub_cat_map.get(b.category_id, None)
+        summary.append({
+            "budget_id": b.id,
+            "category_id": b.category_id,
+            "category_name": cat_map.get(b.category_id, ""),
+            "amount": b.amount,
+            "spent": 0.0,
+            "percentage": 0.0,
+        })
+
+    return summary
+
+
+# ── Analytics Overview ──
+
+@router.get("/analytics/overview")
+async def get_analytics_overview(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import func
+
+    items = (await db.execute(select(SpecificItem))).scalars().all()
+    total_items = len(items)
+    total_value = sum(item.price for item in items)
+
+    ledger_items = (await db.execute(select(Ledger))).scalars().all()
+    total_income = sum(l.amount for l in ledger_items if l.type == "income")
+    total_expense = sum(l.amount for l in ledger_items if l.type == "expense")
+
+    return {
+        "total_items": total_items,
+        "total_value": total_value,
+        "total_income": total_income,
+        "total_expense": total_expense,
+    }
+
+
+@router.get("/analytics/category-stats")
+async def get_category_stats(db: AsyncSession = Depends(get_db)):
+    categories = (await db.execute(select(Category))).scalars().all()
+    sub_cats = (await db.execute(select(SubCategory))).scalars().all()
+
+    cat_map = {c.id: c.name for c in categories}
+    cat_sub_map: dict[int, int] = {}
+    for sc in sub_cats:
+        cat_sub_map[sc.category_id] = cat_sub_map.get(sc.category_id, 0) + sc.quantity
+
+    return [
+        {"name": cat_map.get(cid, ""), "value": qty}
+        for cid, qty in cat_sub_map.items()
+    ]
+
+
+@router.get("/analytics/monthly-compare")
+async def get_monthly_compare(db: AsyncSession = Depends(get_db)):
+    from datetime import datetime
+
+    ledger_items = (await db.execute(select(Ledger))).scalars().all()
+    month_map: dict[str, dict[str, float]] = {}
+
+    for item in ledger_items:
+        key = item.date.strftime("%Y-%m")
+        if key not in month_map:
+            month_map[key] = {"income": 0.0, "expense": 0.0}
+        if item.type == "income":
+            month_map[key]["income"] += item.amount
+        else:
+            month_map[key]["expense"] += item.amount
+
+    return [
+        {"month": k, "income": v["income"], "expense": v["expense"]}
+        for k, v in sorted(month_map.items())
+    ]
+
+
+# ── Notification CRUD ──
+
+@router.get("/notifications", response_model=list[NotificationResponse])
+async def list_notifications(db: AsyncSession = Depends(get_db)):
+    from models.notification import Notification
+
+    result = await db.execute(
+        select(Notification).order_by(Notification.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+@router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: int, db: AsyncSession = Depends(get_db)):
+    from models.notification import Notification
+
+    item = await db.get(Notification, notification_id)
+    if not item:
+        raise HTTPException(404, "Notification not found")
+    item.is_read = True
+    await db.commit()
+    return {"ok": True}
+
+
+@router.post("/notifications/check")
+async def check_notifications(db: AsyncSession = Depends(get_db)):
+    from models.notification import Notification
+    from models.specific_item import SpecificItem
+    from models.budget import Budget
+
+    created = 0
+
+    # Check expired items
+    items = (await db.execute(select(SpecificItem))).scalars().all()
+    now = datetime.now()
+    for item in items:
+        if item.expire_date and item.expire_date < now:
+            existing = (
+                await db.execute(
+                    select(Notification).where(
+                        Notification.type == "expiry",
+                        Notification.related_id == item.id,
+                        Notification.is_read == False,
+                    )
+                )
+            ).scalars().first()
+            if not existing:
+                n = Notification(
+                    type="expiry",
+                    message=f"物品 {item.name} 已过期",
+                    related_id=item.id,
+                )
+                db.add(n)
+                created += 1
+
+    await db.commit()
+    return {"created": created}
+
+
+# ── Tag CRUD ──
+
+@router.get("/tags", response_model=list[TagResponse])
+async def list_tags(db: AsyncSession = Depends(get_db)):
+    from models.tag import Tag
+
+    result = await db.execute(select(Tag))
+    return result.scalars().all()
+
+
+@router.post("/tags", response_model=TagResponse)
+async def create_tag(data: TagCreate, db: AsyncSession = Depends(get_db)):
+    from models.tag import Tag
+
+    item = Tag(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.put("/tags/{tag_id}", response_model=TagResponse)
+async def update_tag(
+    tag_id: int, data: TagUpdate, db: AsyncSession = Depends(get_db)
+):
+    from models.tag import Tag
+
+    item = await db.get(Tag, tag_id)
+    if not item:
+        raise HTTPException(404, "Tag not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.delete("/tags/{tag_id}")
+async def delete_tag(tag_id: int, db: AsyncSession = Depends(get_db)):
+    from models.tag import Tag
+    from models.item_tag import ItemTag
+
+    item = await db.get(Tag, tag_id)
+    if not item:
+        raise HTTPException(404, "Tag not found")
+    await db.execute(delete(ItemTag).where(ItemTag.tag_id == tag_id))
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.post("/items/{item_id}/tags/{tag_id}")
+async def add_tag_to_item(item_id: int, tag_id: int, db: AsyncSession = Depends(get_db)):
+    from models.item_tag import ItemTag
+
+    existing = (
+        await db.execute(
+            select(ItemTag).where(ItemTag.item_id == item_id, ItemTag.tag_id == tag_id)
+        )
+    ).scalars().first()
+    if existing:
+        return {"ok": True}
+
+    item_tag = ItemTag(item_id=item_id, tag_id=tag_id)
+    db.add(item_tag)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.delete("/items/{item_id}/tags/{tag_id}")
+async def remove_tag_from_item(item_id: int, tag_id: int, db: AsyncSession = Depends(get_db)):
+    from models.item_tag import ItemTag
+
+    await db.execute(
+        delete(ItemTag).where(ItemTag.item_id == item_id, ItemTag.tag_id == tag_id)
+    )
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/items/{item_id}/tags", response_model=list[TagResponse])
+async def get_item_tags(item_id: int, db: AsyncSession = Depends(get_db)):
+    from models.tag import Tag
+    from models.item_tag import ItemTag
+
+    result = await db.execute(
+        select(Tag).join(ItemTag, ItemTag.tag_id == Tag.id).where(ItemTag.item_id == item_id)
+    )
+    return result.scalars().all()
+
+
+# ── Stock Alert ──
+
+@router.get("/alerts")
+async def get_stock_alerts(threshold: int = 5, db: AsyncSession = Depends(get_db)):
+    sub_cats = (await db.execute(select(SubCategory))).scalars().all()
+    alerts = []
+    for sc in sub_cats:
+        if sc.quantity <= threshold:
+            alerts.append({
+                "id": sc.id,
+                "type": "low_stock",
+                "message": f"{sc.name} 库存不足 (剩余 {sc.quantity} {sc.unit})",
+                "quantity": sc.quantity,
+                "threshold": threshold,
+            })
+    return alerts
+
+
+@router.get("/alerts/config")
+async def get_alert_config():
+    return {"threshold": 5}
+
+
+@router.put("/alerts/config")
+async def update_alert_config(threshold: int = 5):
+    return {"threshold": threshold}
+
+
+# ── Recurring Bill CRUD ──
+
+@router.get("/recurring", response_model=list[RecurringBillResponse])
+async def list_recurring(db: AsyncSession = Depends(get_db)):
+    from models.recurring import RecurringBill
+
+    result = await db.execute(select(RecurringBill))
+    return result.scalars().all()
+
+
+@router.post("/recurring", response_model=RecurringBillResponse)
+async def create_recurring(data: RecurringBillCreate, db: AsyncSession = Depends(get_db)):
+    from models.recurring import RecurringBill
+
+    item = RecurringBill(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.put("/recurring/{bill_id}", response_model=RecurringBillResponse)
+async def update_recurring(
+    bill_id: int, data: RecurringBillUpdate, db: AsyncSession = Depends(get_db)
+):
+    from models.recurring import RecurringBill
+
+    item = await db.get(RecurringBill, bill_id)
+    if not item:
+        raise HTTPException(404, "Recurring bill not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.delete("/recurring/{bill_id}")
+async def delete_recurring(bill_id: int, db: AsyncSession = Depends(get_db)):
+    from models.recurring import RecurringBill
+
+    item = await db.get(RecurringBill, bill_id)
+    if not item:
+        raise HTTPException(404, "Recurring bill not found")
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.post("/recurring/generate")
+async def generate_recurring_bills(db: AsyncSession = Depends(get_db)):
+    from models.recurring import RecurringBill
+
+    now = datetime.now()
+    result = await db.execute(
+        select(RecurringBill).where(
+            RecurringBill.is_active == True,
+            RecurringBill.next_date <= now,
+        )
+    )
+    bills = result.scalars().all()
+    created = 0
+
+    for bill in bills:
+        ledger_item = Ledger(
+            amount=bill.amount,
+            date=now,
+            platform=bill.platform,
+            description=bill.description,
+            person=bill.person,
+            type=bill.type,
+        )
+        db.add(ledger_item)
+
+        if bill.frequency == "monthly":
+            bill.next_date = bill.next_date.replace(month=bill.next_date.month + 1) if bill.next_date.month < 12 else bill.next_date.replace(year=bill.next_date.year + 1, month=1)
+        elif bill.frequency == "yearly":
+            bill.next_date = bill.next_date.replace(year=bill.next_date.year + 1)
+        created += 1
+
+    await db.commit()
+    return {"created": created}
+
+
+# ── File Upload ──
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    import os
+    from pathlib import Path
+
+    upload_dir = Path(__file__).parent.parent / "uploads"
+    upload_dir.mkdir(exist_ok=True)
+
+    file_ext = file.filename.split(".")[-1] if file.filename else "bin"
+    file_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+    file_path = upload_dir / file_name
+
+    contents = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    return {"path": str(file_path), "filename": file_name}
+
+
+# ── Backup ──
+
+@router.post("/backup")
+async def create_backup_endpoint(db: AsyncSession = Depends(get_db)):
+    from core.backup import create_backup
+
+    categories = (await db.execute(select(Category))).scalars().all()
+    sub_cats = (await db.execute(select(SubCategory))).scalars().all()
+    items = (await db.execute(select(SpecificItem))).scalars().all()
+    ledger_items = (await db.execute(select(Ledger))).scalars().all()
+
+    data = {
+        "categories": [{"id": c.id, "name": c.name, "description": c.description, "icon": c.icon} for c in categories],
+        "sub_categories": [{"id": s.id, "category_id": s.category_id, "name": s.name, "unit": s.unit, "quantity": s.quantity} for s in sub_cats],
+        "items": [{"id": i.id, "name": i.name, "price": i.price, "description": i.description} for i in items],
+        "ledger": [{"id": l.id, "amount": l.amount, "date": str(l.date), "type": l.type, "description": l.description} for l in ledger_items],
+    }
+
+    filename = create_backup(data)
+    return {"filename": filename}
+
+
+@router.get("/backup/list")
+async def list_backups_endpoint():
+    from core.backup import list_backups
+
+    return list_backups()
+
+
+# ── Currencies ──
+
+CURRENCIES = [
+    {"code": "CNY", "name": "人民币", "symbol": "¥"},
+    {"code": "USD", "name": "美元", "symbol": "$"},
+    {"code": "EUR", "name": "欧元", "symbol": "€"},
+    {"code": "GBP", "name": "英镑", "symbol": "£"},
+    {"code": "JPY", "name": "日元", "symbol": "¥"},
+    {"code": "KRW", "name": "韩元", "symbol": "₩"},
+    {"code": "HKD", "name": "港币", "symbol": "HK$"},
+    {"code": "TWD", "name": "新台币", "symbol": "NT$"},
+]
+
+
+@router.get("/currencies")
+async def list_currencies():
+    return CURRENCIES
+
+
+# ── Pricing CRUD ──
+
+@router.get("/pricing", response_model=list[PricingResponse])
+async def list_pricing(
+    sub_category_id: int | None = None,
+    q: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    from models.pricing import Pricing
+    from models.sub_category import SubCategory
+
+    stmt = (
+        select(Pricing, SubCategory)
+        .join(SubCategory, Pricing.sub_category_id == SubCategory.id)
+    )
+    if sub_category_id is not None:
+        stmt = stmt.where(Pricing.sub_category_id == sub_category_id)
+    if q:
+        stmt = stmt.where(Pricing.name.contains(q) | Pricing.description.contains(q))
+    result = await db.execute(stmt)
+    rows = result.all()
+    return [
+        PricingResponse(
+            id=p.id,
+            sub_category_id=p.sub_category_id,
+            sub_category_name=sc.name,
+            name=p.name,
+            cost=p.cost,
+            suggested_price=p.suggested_price,
+            discount=p.discount,
+            description=p.description,
+            notes=p.notes,
+            record_date=p.record_date,
+        )
+        for p, sc in rows
+    ]
+
+
+@router.post("/pricing", response_model=PricingResponse)
+async def create_pricing(data: PricingCreate, db: AsyncSession = Depends(get_db)):
+    from models.pricing import Pricing
+
+    item = Pricing(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return PricingResponse(
+        id=item.id,
+        sub_category_id=item.sub_category_id,
+        sub_category_name="",
+        name=item.name,
+        cost=item.cost,
+        suggested_price=item.suggested_price,
+        discount=item.discount,
+        description=item.description,
+        notes=item.notes,
+        record_date=item.record_date,
+    )
+
+
+@router.put("/pricing/{pricing_id}", response_model=PricingResponse)
+async def update_pricing(
+    pricing_id: int, data: PricingUpdate, db: AsyncSession = Depends(get_db)
+):
+    from models.pricing import Pricing
+
+    item = await db.get(Pricing, pricing_id)
+    if not item:
+        raise HTTPException(404, "Pricing not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return PricingResponse(
+        id=item.id,
+        sub_category_id=item.sub_category_id,
+        sub_category_name="",
+        name=item.name,
+        cost=item.cost,
+        suggested_price=item.suggested_price,
+        discount=item.discount,
+        description=item.description,
+        notes=item.notes,
+        record_date=item.record_date,
+    )
+
+
+@router.delete("/pricing/{pricing_id}")
+async def delete_pricing(pricing_id: int, db: AsyncSession = Depends(get_db)):
+    from models.pricing import Pricing
+
+    item = await db.get(Pricing, pricing_id)
+    if not item:
+        raise HTTPException(404, "Pricing not found")
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
+
+
+# ── Pricing Category CRUD ──
+
+@router.get("/pricing-categories", response_model=list[PricingCategoryResponse])
+async def list_pricing_categories(db: AsyncSession = Depends(get_db)):
+    from models.pricing_category import PricingCategory
+
+    result = await db.execute(select(PricingCategory))
+    return result.scalars().all()
+
+
+@router.post("/pricing-categories", response_model=PricingCategoryResponse)
+async def create_pricing_category(data: PricingCategoryCreate, db: AsyncSession = Depends(get_db)):
+    from models.pricing_category import PricingCategory
+
+    item = PricingCategory(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.put("/pricing-categories/{cat_id}", response_model=PricingCategoryResponse)
+async def update_pricing_category(
+    cat_id: int, data: PricingCategoryUpdate, db: AsyncSession = Depends(get_db)
+):
+    from models.pricing_category import PricingCategory
+
+    item = await db.get(PricingCategory, cat_id)
+    if not item:
+        raise HTTPException(404, "Pricing category not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.delete("/pricing-categories/{cat_id}")
+async def delete_pricing_category(cat_id: int, db: AsyncSession = Depends(get_db)):
+    from models.pricing_category import PricingCategory
+
+    item = await db.get(PricingCategory, cat_id)
+    if not item:
+        raise HTTPException(404, "Pricing category not found")
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/pricing-sub-categories", response_model=list[PricingSubCategoryResponse])
+async def list_pricing_sub_categories(
+    category_id: int | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    from models.pricing_sub_category import PricingSubCategory
+
+    stmt = select(PricingSubCategory)
+    if category_id is not None:
+        stmt = stmt.where(PricingSubCategory.category_id == category_id)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.post("/pricing-sub-categories", response_model=PricingSubCategoryResponse)
+async def create_pricing_sub_category(data: PricingSubCategoryCreate, db: AsyncSession = Depends(get_db)):
+    from models.pricing_sub_category import PricingSubCategory
+
+    item = PricingSubCategory(**data.model_dump())
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.put("/pricing-sub-categories/{sub_id}", response_model=PricingSubCategoryResponse)
+async def update_pricing_sub_category(
+    sub_id: int, data: PricingSubCategoryUpdate, db: AsyncSession = Depends(get_db)
+):
+    from models.pricing_sub_category import PricingSubCategory
+
+    item = await db.get(PricingSubCategory, sub_id)
+    if not item:
+        raise HTTPException(404, "Pricing sub-category not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(item, key, value)
+    await db.commit()
+    await db.refresh(item)
+    return item
+
+
+@router.delete("/pricing-sub-categories/{sub_id}")
+async def delete_pricing_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
+    from models.pricing_sub_category import PricingSubCategory
+
+    item = await db.get(PricingSubCategory, sub_id)
+    if not item:
+        raise HTTPException(404, "Pricing sub-category not found")
+    await db.delete(item)
+    await db.commit()
+    return {"ok": True}
 
 
 @router.post("/image-analysis")

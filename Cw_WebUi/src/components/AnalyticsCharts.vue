@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { NSelect, NSpin, NEmpty } from 'naive-ui'
+import { ref, onMounted, watch } from 'vue'
+import { NSelect, NSpin, NEmpty, NGrid, NGridItem, NCard } from 'naive-ui'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -14,7 +14,7 @@ import {
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { analyticsApi } from '@/services/api'
-import type { TrendData } from '@/types'
+import type { TrendData, AnalyticsOverview, CategoryStat, MonthlyCompare } from '@/types'
 
 use([CanvasRenderer, LineChart, PieChart, BarChart, TitleComponent, TooltipComponent, GridComponent, LegendComponent])
 
@@ -24,10 +24,23 @@ const subCategoryStore = useSubCategoryStore()
 const selectedCategoryId = ref<number | null>(null)
 const selectedSubCategoryId = ref<number | null>(null)
 const trendData = ref<TrendData | null>(null)
+const overview = ref<AnalyticsOverview | null>(null)
+const categoryStats = ref<CategoryStat[]>([])
+const monthlyCompare = ref<MonthlyCompare[]>([])
 const loading = ref(false)
 
 const categoryOptions = ref<{ label: string; value: number }[]>([])
 const subCategoryOptions = ref<{ label: string; value: number }[]>([])
+
+onMounted(async () => {
+  try {
+    [overview.value, categoryStats.value, monthlyCompare.value] = await Promise.all([
+      analyticsApi.getOverview(),
+      analyticsApi.getCategoryStats(),
+      analyticsApi.getMonthlyCompare(),
+    ])
+  } catch {}
+})
 
 watch(() => categoryStore.categories, (cats) => {
   categoryOptions.value = cats.map(c => ({ label: c.name, value: c.id }))
@@ -154,11 +167,65 @@ function priceBarOption() {
   }
 }
 
+function categoryPieOption() {
+  return {
+    title: { text: '分类库存占比', left: 'center' },
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    series: [{
+      name: '库存', type: 'pie', radius: ['40%', '70%'],
+      data: categoryStats.value.map(s => ({ name: s.name, value: s.value })),
+    }],
+  }
+}
+
+function monthlyCompareOption() {
+  return {
+    title: { text: '月度收支对比', left: 'center' },
+    tooltip: { trigger: 'axis' },
+    legend: { top: 30 },
+    grid: { left: '12%', right: '12%', bottom: '15%', top: '60px' },
+    xAxis: { type: 'category', data: monthlyCompare.value.map(m => m.month) },
+    yAxis: { type: 'value', name: '金额 (¥)' },
+    series: [
+      { name: '收入', type: 'bar', data: monthlyCompare.value.map(m => m.income), itemStyle: { color: '#10b981' } },
+      { name: '支出', type: 'bar', data: monthlyCompare.value.map(m => m.expense), itemStyle: { color: '#ef4444' } },
+    ],
+  }
+}
+
 const hasData = () => trendData.value && trendData.value.data.length > 0
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-6">
+    <NGrid v-if="overview" :cols="4" :x-gap="16">
+      <NGridItem>
+        <NCard size="small" title="总库存数">
+          <div class="text-2xl font-bold text-blue-500">{{ overview.total_items }}</div>
+        </NCard>
+      </NGridItem>
+      <NGridItem>
+        <NCard size="small" title="总库存价值">
+          <div class="text-2xl font-bold text-amber-500">¥{{ overview.total_value.toFixed(0) }}</div>
+        </NCard>
+      </NGridItem>
+      <NGridItem>
+        <NCard size="small" title="总收入">
+          <div class="text-2xl font-bold text-green-500">¥{{ overview.total_income.toFixed(0) }}</div>
+        </NCard>
+      </NGridItem>
+      <NGridItem>
+        <NCard size="small" title="总支出">
+          <div class="text-2xl font-bold text-red-500">¥{{ overview.total_expense.toFixed(0) }}</div>
+        </NCard>
+      </NGridItem>
+    </NGrid>
+
+    <div class="chart-grid">
+      <VChart v-if="categoryStats.length" :option="categoryPieOption()" class="chart-cell" />
+      <VChart v-if="monthlyCompare.length" :option="monthlyCompareOption()" class="chart-cell" />
+    </div>
+
     <div class="flex gap-4">
       <NSelect
         v-model:value="selectedCategoryId"
