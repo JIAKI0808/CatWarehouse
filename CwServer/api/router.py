@@ -443,7 +443,13 @@ async def get_trend(
         date_map[date_str]["price"] += item.price
 
     data = [
-        TrendPoint(date=d, quantity=v["quantity"], price=v["price"])
+        TrendPoint(
+            date=d,
+            quantity=v["quantity"],
+            price=v["price"],
+            total_price=v["quantity"] * v["price"],
+            unit_price=v["price"] / v["quantity"] if v["quantity"] > 0 else 0.0,
+        )
         for d, v in sorted(date_map.items())
     ]
 

@@ -5,6 +5,8 @@ class TrendPoint(BaseModel):
     date: str
     quantity: int
     price: float
+    total_price: float
+    unit_price: float
 
 
 class TrendResponse(BaseModel):

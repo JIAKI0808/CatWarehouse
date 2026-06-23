@@ -119,6 +119,8 @@ export interface TrendPoint {
   date: string
   quantity: number
   price: number
+  total_price: number
+  unit_price: number
 }
 
 export interface TrendData {

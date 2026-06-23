@@ -75,7 +75,7 @@ function handleNavigate(view: string) {
         </div>
       </NLayoutSider>
 
-      <div class="flex-1 overflow-hidden">
+      <div class="flex-1 overflow-auto">
         <HomeView v-if="activeView === 'inventory'" />
         <AnalyticsView v-else-if="activeView === 'analytics'" />
         <SettingsView v-else-if="activeView === 'settings'" />
