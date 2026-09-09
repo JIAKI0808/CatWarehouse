@@ -10,6 +10,8 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, unique=True)
     description = Column(String, default="")
+    icon = Column(String, default="FolderOutline")
+    icon_color = Column(String, default="#f59e0b")
     extra = Column(String, default="{}")
 
     sub_categories = relationship("SubCategory", back_populates="category")

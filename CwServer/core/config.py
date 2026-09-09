@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "CatWarehouse"
+    APP_NAME: str = "CatWareHouse"
     DEBUG: bool = False
     DATABASE_URL: str = "sqlite+aiosqlite:///./catwarehouse.db"
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]

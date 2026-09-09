@@ -1,22 +1,127 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { NSpin, NButton, NIcon, NModal, NTooltip } from 'naive-ui'
 import {
   AddOutline,
   TrashOutline,
+  CreateOutline,
   FolderOutline,
   FolderOpenOutline,
   DocumentOutline,
+  CartOutline,
+  ShirtOutline,
+  HardwareChipOutline,
+  NutritionOutline,
+  CameraOutline,
+  GameControllerOutline,
+  BookOutline,
+  MusicalNotesOutline,
+  FitnessOutline,
+  HeartOutline,
+  StarOutline,
+  FlashlightOutline,
+  ColorPaletteOutline,
+  CubeOutline,
+  DiamondOutline,
+  HomeOutline,
+  CarOutline,
+  WalkOutline,
+  AirplaneOutline,
+  PawOutline,
+  LeafOutline,
+  FlameOutline,
+  WaterOutline,
+  SunnyOutline,
+  MoonOutline,
+  CloudyOutline,
+  UmbrellaOutline,
+  GiftOutline,
+  SparklesOutline,
+  TrophyOutline,
+  WineOutline,
+  CafeOutline,
+  PizzaOutline,
+  MedicalOutline,
+  WalletOutline,
+  KeyOutline,
+  LockClosedOutline,
+  GlobeOutline,
+  MapOutline,
+  TimeOutline,
+  BoatOutline,
+  BeerOutline,
+  BugOutline,
+  FishOutline,
+  BulbOutline,
+  ExtensionPuzzleOutline,
+  RibbonOutline,
 } from '@vicons/ionicons5'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
+import { useServerConfigStore } from '@/stores/serverConfig'
 import CategoryForm from './CategoryForm.vue'
 import ItemForm from './ItemForm.vue'
+
+const iconMap: Record<string, typeof FolderOutline> = {
+  FolderOutline,
+  CartOutline,
+  ShirtOutline,
+  HardwareChipOutline,
+  NutritionOutline,
+  CameraOutline,
+  GameControllerOutline,
+  BookOutline,
+  MusicalNotesOutline,
+  FitnessOutline,
+  HeartOutline,
+  StarOutline,
+  FlashlightOutline,
+  ColorPaletteOutline,
+  CubeOutline,
+  DiamondOutline,
+  HomeOutline,
+  CarOutline,
+  WalkOutline,
+  AirplaneOutline,
+  PawOutline,
+  LeafOutline,
+  FlameOutline,
+  WaterOutline,
+  SunnyOutline,
+  MoonOutline,
+  CloudyOutline,
+  UmbrellaOutline,
+  GiftOutline,
+  SparklesOutline,
+  TrophyOutline,
+  WineOutline,
+  CafeOutline,
+  PizzaOutline,
+  MedicalOutline,
+  WalletOutline,
+  KeyOutline,
+  LockClosedOutline,
+  GlobeOutline,
+  MapOutline,
+  TimeOutline,
+  BoatOutline,
+  BeerOutline,
+  BugOutline,
+  FishOutline,
+  BulbOutline,
+  ExtensionPuzzleOutline,
+  RibbonOutline,
+}
+
+function getCategoryIcon(iconName: string | undefined) {
+  return iconMap[iconName ?? 'FolderOutline'] ?? FolderOutline
+}
 
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
 const itemStore = useItemStore()
+const serverConfigStore = useServerConfigStore()
 
 const expandedCategories = ref<Set<number>>(new Set())
 const showCategoryForm = ref(false)
@@ -26,10 +131,22 @@ const contextCategoryId = ref<number | null>(null)
 const contextSubCategoryId = ref<number | null>(null)
 const showDeleteConfirm = ref(false)
 const categoryToDelete = ref<{ id: number; name: string } | null>(null)
+const showSubDeleteConfirm = ref(false)
+const subCategoryToDelete = ref<{ id: number; name: string; categoryId: number } | null>(null)
+
+const editingCategory = ref<{ id: number; name: string; description: string; icon: string; icon_color: string } | null>(null)
+const editingSubCategory = ref<{ id: number; name: string; description: string; unit: string; notes: string } | null>(null)
 
 onMounted(() => {
   categoryStore.fetchAll()
 })
+
+watch(() => serverConfigStore.config, () => {
+  categoryStore.categories = []
+  subCategoryStore.subCategoriesByCategory = {}
+  itemStore.items = []
+  categoryStore.fetchAll()
+}, { deep: true })
 
 function toggleCategory(catId: number) {
   if (expandedCategories.value.has(catId)) {
@@ -60,8 +177,26 @@ function handleDeleteCategory(cat: { id: number; name: string }) {
   showDeleteConfirm.value = true
 }
 
+function handleEditCategory(category: { id: number; name: string; description: string; icon: string; icon_color: string }) {
+  editingCategory.value = { ...category }
+  showCategoryForm.value = true
+}
+
+function handleEditSubCategory(sub: { id: number; name: string; description: string; unit: string; notes: string }) {
+  editingSubCategory.value = { ...sub }
+  showSubCategoryForm.value = true
+}
+
 async function handleSubCategorySubmit(data: Record<string, string>) {
-  if (contextCategoryId.value) {
+  if (editingSubCategory.value) {
+    await subCategoryStore.update(editingSubCategory.value.id, {
+      name: data.name,
+      unit: data.unit,
+      description: data.description,
+      notes: data.notes,
+    })
+    editingSubCategory.value = null
+  } else if (contextCategoryId.value) {
     await subCategoryStore.create(
       contextCategoryId.value,
       data.name,
@@ -85,24 +220,50 @@ async function handleItemSubmit(data: Record<string, unknown>) {
     itemStore.fetchBySubCategory(contextSubCategoryId.value)
 
     // 直接更新子分类数量
-    const subIndex = subCategoryStore.subCategories.findIndex(
-      s => s.id === contextSubCategoryId.value
-    )
-    if (subIndex !== -1) {
-      subCategoryStore.subCategories[subIndex].quantity++
+    for (const catId of Object.keys(subCategoryStore.subCategoriesByCategory)) {
+      const list = subCategoryStore.subCategoriesByCategory[Number(catId)]
+      const subIndex = list.findIndex(s => s.id === contextSubCategoryId.value)
+      if (subIndex !== -1) {
+        list[subIndex].quantity++
+        break
+      }
     }
   }
 }
 
 async function handleCategorySubmit(data: Record<string, string>) {
-  await categoryStore.create(data.name, data.description)
+  if (editingCategory.value) {
+    await categoryStore.update(editingCategory.value.id, {
+      name: data.name,
+      description: data.description,
+      icon: data.icon,
+      icon_color: data.icon_color,
+    })
+    editingCategory.value = null
+  } else {
+    await categoryStore.create(data.name, data.description, data.icon, data.icon_color)
+  }
 }
 
 async function handleDeleteCategoryConfirm() {
   if (categoryToDelete.value) {
-    console.log('删除大类:', categoryToDelete.value.id)
+    await categoryStore.remove(categoryToDelete.value.id)
     showDeleteConfirm.value = false
     categoryToDelete.value = null
+  }
+}
+
+function handleDeleteSubCategory(sub: { id: number; name: string }, categoryId: number) {
+  subCategoryToDelete.value = { id: sub.id, name: sub.name, categoryId }
+  showSubDeleteConfirm.value = true
+}
+
+async function handleDeleteSubCategoryConfirm() {
+  if (subCategoryToDelete.value) {
+    const { categoryId, id } = subCategoryToDelete.value
+    await subCategoryStore.remove(categoryId, id)
+    showSubDeleteConfirm.value = false
+    subCategoryToDelete.value = null
   }
 }
 </script>
@@ -114,7 +275,7 @@ async function handleDeleteCategoryConfirm() {
       <NButton
         size="tiny"
         type="primary"
-        @click="showCategoryForm = true"
+        @click="editingCategory = null; showCategoryForm = true"
       >
         <template #icon>
           <NIcon :size="14"><AddOutline /></NIcon>
@@ -135,10 +296,7 @@ async function handleDeleteCategoryConfirm() {
                   class="group flex items-center gap-1 px-2 py-1.5 rounded cursor-pointer hover:bg-gray-100"
                   @click="toggleCategory(category.id)"
                 >
-                  <NIcon :size="16" class="text-amber-500 flex-shrink-0">
-                    <FolderOpenOutline v-if="expandedCategories.has(category.id)" />
-                    <FolderOutline v-else />
-                  </NIcon>
+                  <NIcon :size="16" class="flex-shrink-0" :component="getCategoryIcon(category.icon)" :color="category.icon_color || '#f59e0b'" />
                   <span class="text-sm font-medium truncate flex-1">{{ category.name }}</span>
 
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -150,6 +308,16 @@ async function handleDeleteCategoryConfirm() {
                     >
                       <template #icon>
                         <NIcon :size="12"><AddOutline /></NIcon>
+                      </template>
+                    </NButton>
+                    <NButton
+                      size="tiny"
+                      quaternary
+                      circle
+                      @click.stop="handleEditCategory(category)"
+                    >
+                      <template #icon>
+                        <NIcon :size="12"><CreateOutline /></NIcon>
                       </template>
                     </NButton>
                     <NButton
@@ -175,7 +343,7 @@ async function handleDeleteCategoryConfirm() {
               class="ml-5 border-l-2 border-gray-200"
             >
               <div
-                v-for="sub in subCategoryStore.subCategories.filter(s => s.category_id === category.id)"
+                v-for="sub in subCategoryStore.getSubCategories(category.id)"
                 :key="sub.id"
               >
                 <NTooltip trigger="hover" placement="right">
@@ -204,6 +372,27 @@ async function handleDeleteCategoryConfirm() {
                             <NIcon :size="12"><AddOutline /></NIcon>
                           </template>
                         </NButton>
+                        <NButton
+                          size="tiny"
+                          quaternary
+                          circle
+                          @click.stop="handleEditSubCategory(sub)"
+                        >
+                          <template #icon>
+                            <NIcon :size="12"><CreateOutline /></NIcon>
+                          </template>
+                        </NButton>
+                        <NButton
+                          size="tiny"
+                          quaternary
+                          circle
+                          type="error"
+                          @click.stop="handleDeleteSubCategory(sub, category.id)"
+                        >
+                          <template #icon>
+                            <NIcon :size="12"><TrashOutline /></NIcon>
+                          </template>
+                        </NButton>
                       </div>
                     </div>
                   </template>
@@ -215,10 +404,10 @@ async function handleDeleteCategoryConfirm() {
                 </NTooltip>
               </div>
               <div
-                v-if="subCategoryStore.subCategories.filter(s => s.category_id === category.id).length === 0"
+                v-if="subCategoryStore.getSubCategories(category.id).length === 0"
                 class="px-2 py-1 text-xs text-gray-400 italic"
               >
-                暂无子分类
+                暂无数据
               </div>
             </div>
           </div>
@@ -229,14 +418,16 @@ async function handleDeleteCategoryConfirm() {
     <CategoryForm
       v-model:visible="showCategoryForm"
       type="category"
-      title="新增大类"
+      :title="editingCategory ? '编辑大类' : '新增大类'"
+      :edit-data="editingCategory ?? undefined"
       @submit="handleCategorySubmit"
     />
 
     <CategoryForm
       v-model:visible="showSubCategoryForm"
       type="subCategory"
-      title="新增子分类"
+      :title="editingSubCategory ? '编辑子分类' : '新增子分类'"
+      :edit-data="editingSubCategory ?? undefined"
       @submit="handleSubCategorySubmit"
     />
 
@@ -255,6 +446,18 @@ async function handleDeleteCategoryConfirm() {
       type="error"
       @positive-click="handleDeleteCategoryConfirm"
       @negative-click="showDeleteConfirm = false"
+    />
+
+    <NModal
+      v-model:show="showSubDeleteConfirm"
+      preset="dialog"
+      title="确认删除"
+      :content="`确定要删除子分类「${subCategoryToDelete?.name}」吗？`"
+      positive-text="删除"
+      negative-text="取消"
+      type="error"
+      @positive-click="handleDeleteSubCategoryConfirm"
+      @negative-click="showSubDeleteConfirm = false"
     />
   </div>
 </template>

@@ -14,7 +14,11 @@ class SpecificItem(Base):
     update_date = Column(DateTime, server_default=func.now(), onupdate=func.now())
     recorder = Column(String, default="")
     price = Column(Float, default=0.0)
+    currency = Column(String, default="CNY")
     description = Column(String, default="")
+    expire_date = Column(DateTime, nullable=True)
+    is_expired = Column(Integer, default=0)
+    image_path = Column(String, nullable=True)
     extra = Column(String, default="{}")
 
     sub_category = relationship("SubCategory", back_populates="specific_items")

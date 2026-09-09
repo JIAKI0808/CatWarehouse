@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
@@ -12,10 +10,52 @@ html, body, #app {
     Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-.n-layout-sider {
-  background: #fff;
+.dark {
+  color-scheme: dark;
 }
 
-.n-layout-content {
-  background: #f5f5f5;
+.dark body,
+.dark #app {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.dark .n-layout-sider {
+  background: #1a1a1a !important;
+}
+
+.dark .n-layout-content {
+  background: #242424 !important;
+}
+
+.dark .border-r {
+  border-color: #333 !important;
+}
+
+.dark .border-b {
+  border-color: #333 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #333 !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #333 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #242424 !important;
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-400 {
+  color: #9ca3af !important;
 }

@@ -16,7 +16,7 @@ const panelExpanded = ref(true)
   <div class="h-full flex">
     <!-- 左侧分类面板 -->
     <div
-      class="border-r bg-white flex flex-col transition-all duration-300"
+      class="border-r flex flex-col transition-all duration-300"
       :class="panelExpanded ? 'w-64' : 'w-10'"
     >
       <!-- 折叠按钮 -->
@@ -40,7 +40,7 @@ const panelExpanded = ref(true)
     </div>
 
     <!-- 右侧内容区域 -->
-    <div class="flex-1 overflow-hidden bg-gray-50">
+    <div class="flex-1 overflow-hidden">
       <ItemTable v-if="itemStore.viewMode === 'table'" />
       <ItemCard v-else />
     </div>

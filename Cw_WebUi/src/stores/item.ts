@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useMessage } from 'naive-ui'
 import type { Item, ItemCreate, ItemUpdate, ViewMode } from '@/types'
 import { itemApi } from '@/services/api'
 
@@ -12,29 +13,43 @@ export const useItemStore = defineStore('item', () => {
     loading.value = true
     try {
       items.value = await itemApi.getBySubCategory(subCategoryId)
+    } catch (e: any) {
+      useMessage().error(e.message || '获取物品失败')
     } finally {
       loading.value = false
     }
   }
 
   async function create(data: ItemCreate) {
-    const newItem = await itemApi.create(data)
-    items.value.push(newItem)
-    return newItem
+    try {
+      const newItem = await itemApi.create(data)
+      items.value.push(newItem)
+      return newItem
+    } catch (e: any) {
+      useMessage().error(e.message || '创建物品失败')
+    }
   }
 
   async function update(id: number, data: ItemUpdate) {
-    const updatedItem = await itemApi.update(id, data)
-    const index = items.value.findIndex((item) => item.id === id)
-    if (index !== -1) {
-      items.value[index] = updatedItem
+    try {
+      const updatedItem = await itemApi.update(id, data)
+      const index = items.value.findIndex((item) => item.id === id)
+      if (index !== -1) {
+        items.value[index] = updatedItem
+      }
+      return updatedItem
+    } catch (e: any) {
+      useMessage().error(e.message || '更新物品失败')
     }
-    return updatedItem
   }
 
   async function remove(id: number) {
-    await itemApi.delete(id)
-    items.value = items.value.filter((item) => item.id !== id)
+    try {
+      await itemApi.delete(id)
+      items.value = items.value.filter((item) => item.id !== id)
+    } catch (e: any) {
+      useMessage().error(e.message || '删除物品失败')
+    }
   }
 
   function setViewMode(mode: ViewMode) {

@@ -1,0 +1,108 @@
+import { defineStore } from 'pinia'
+import { ref, reactive } from 'vue'
+import { useMessage } from '@/composables/useMessage'
+import type { SubCategory, SubCategoryUpdate } from '@/types'
+import { subCategoryApi } from '@/services/api'
+
+export const useSubCategoryStore = defineStore('subCategory', () => {
+  const subCategoriesByCategory = reactive<Record<number, SubCategory[]>>({})
+  const selectedId = ref<number | null>(null)
+  const loading = ref(false)
+
+  function getSubCategories(categoryId: number): SubCategory[] {
+    return subCategoriesByCategory[categoryId] ?? []
+  }
+
+  async function fetchByCategory(categoryId: number) {
+    loading.value = true
+    try {
+      const categories = await subCategoryApi.getByCategory(categoryId)
+
+      const categoriesWithQuantity = await Promise.all(
+        categories.map(async (cat) => {
+          const quantityData = await subCategoryApi.getQuantity(cat.id)
+          return { ...cat, quantity: quantityData.quantity }
+        })
+      )
+
+      subCategoriesByCategory[categoryId] = categoriesWithQuantity
+    } catch (e: any) {
+      useMessage().error(e.message || '获取子分类失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function create(
+    categoryId: number,
+    name: string,
+    unit: string = '个',
+    description: string = '',
+    notes: string = ''
+  ) {
+    try {
+      const newSubCategory = await subCategoryApi.create({
+        category_id: categoryId,
+        name,
+        unit,
+        description,
+        notes,
+      })
+      const list = subCategoriesByCategory[categoryId] ?? []
+      list.push({ ...newSubCategory, quantity: 0 })
+      subCategoriesByCategory[categoryId] = list
+      return newSubCategory
+    } catch (e: any) {
+      useMessage().error(e.message || '创建子分类失败')
+    }
+  }
+
+  async function update(id: number, data: SubCategoryUpdate) {
+    try {
+      const updated = await subCategoryApi.update(id, data)
+      for (const catId of Object.keys(subCategoriesByCategory)) {
+        const list = subCategoriesByCategory[Number(catId)]
+        if (!list) continue
+        const index = list.findIndex(s => s.id === id)
+        if (index !== -1) {
+          list[index] = { ...list[index], ...updated }
+          break
+        }
+      }
+      return updated
+    } catch (e: any) {
+      useMessage().error(e.message || '更新子分类失败')
+    }
+  }
+
+  async function remove(categoryId: number, id: number) {
+    try {
+      await subCategoryApi.delete(id)
+      const list = subCategoriesByCategory[categoryId]
+      if (list) {
+        subCategoriesByCategory[categoryId] = list.filter(s => s.id !== id)
+      }
+      if (selectedId.value === id) {
+        selectedId.value = null
+      }
+    } catch (e: any) {
+      useMessage().error(e.message || '删除子分类失败')
+    }
+  }
+
+  function select(id: number | null) {
+    selectedId.value = id
+  }
+
+  return {
+    subCategoriesByCategory,
+    selectedId,
+    loading,
+    getSubCategories,
+    fetchByCategory,
+    create,
+    update,
+    remove,
+    select,
+  }
+})

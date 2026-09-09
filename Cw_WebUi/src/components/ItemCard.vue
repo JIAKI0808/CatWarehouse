@@ -47,7 +47,7 @@ async function handleSubmit(data: Record<string, unknown>) {
 }
 
 async function handleCategorySubmit(data: Record<string, string>) {
-  await categoryStore.create(data.name, data.description)
+  await categoryStore.create(data.name, data.description, data.icon, data.icon_color)
 }
 
 function formatDate(dateStr: string | null): string {
@@ -63,15 +63,22 @@ function formatDate(dateStr: string | null): string {
     </div>
     <div class="flex-1 overflow-auto p-4">
       <NSpin :show="itemStore.loading">
-        <NGrid :cols="3" :x-gap="12" :y-gap="12">
+        <div v-if="itemStore.items.length === 0 && !itemStore.loading" class="flex flex-col items-center justify-center h-64 text-gray-400">
+          <div class="text-6xl mb-4">📦</div>
+          <div class="text-lg">暂无数据</div>
+          <div class="text-sm mt-1">等待录入好东西</div>
+        </div>
+        <NGrid v-else :cols="3" :x-gap="12" :y-gap="12">
           <NGridItem v-for="item in itemStore.items" :key="item.id">
             <NCard :title="item.name" size="small" style="background-color: #fce7f3; color: black;" :header-style="{ color: 'black', fontSize: '18px', fontWeight: 'bold' }">
               <div class="space-y-2" style="color: black;">
                 <div>价格: ¥{{ item.price.toFixed(2) }}</div>
-                <div>录入人: {{ item.recorder }}</div>
-                <div>录入日期: {{ formatDate(item.entry_date) }}</div>
+                <div>库存: {{ item.quantity }} {{ item.unit }}</div>
                 <div>更新日期: {{ formatDate(item.update_date) }}</div>
                 <div>描述: {{ item.description || '-' }}</div>
+                <div>过期时间: {{ item.expire_date ? formatDate(item.expire_date) : '-' }}</div>
+                <div>已过期: {{ item.is_expired ? '是' : '否' }}</div>
+                <div>录入人: {{ item.recorder }}</div>
               </div>
               <template #footer>
                 <NSpace>

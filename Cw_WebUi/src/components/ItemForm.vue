@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton } from 'naive-ui'
+import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NDatePicker, NSwitch } from 'naive-ui'
 import type { Item } from '@/types'
 
 const props = defineProps<{
@@ -18,6 +18,10 @@ const form = ref({
   price: 0,
   recorder: '',
   description: '',
+  quantity: 0,
+  unit: '个',
+  expire_date: null as number | null,
+  is_expired: false,
 })
 
 watch(
@@ -29,6 +33,12 @@ watch(
         price: props.item.price,
         recorder: props.item.recorder,
         description: props.item.description,
+        quantity: props.item.quantity,
+        unit: props.item.unit,
+        expire_date: props.item.expire_date
+          ? new Date(props.item.expire_date).getTime()
+          : null,
+        is_expired: props.item.is_expired,
       }
     } else if (!val) {
       resetForm()
@@ -42,6 +52,10 @@ function resetForm() {
     price: 0,
     recorder: '',
     description: '',
+    quantity: 0,
+    unit: '个',
+    expire_date: null,
+    is_expired: false,
   }
 }
 
@@ -50,7 +64,11 @@ function handleClose() {
 }
 
 function handleSubmit() {
-  emit('submit', { ...form.value })
+  const data: Record<string, unknown> = { ...form.value }
+  if (data.expire_date) {
+    data.expire_date = new Date(data.expire_date as number).toISOString()
+  }
+  emit('submit', data)
   handleClose()
 }
 </script>
@@ -70,8 +88,25 @@ function handleSubmit() {
             <template #prefix>¥</template>
           </NInputNumber>
         </NFormItem>
+        <NFormItem label="库存数量">
+          <NInputNumber v-model:value="form.quantity" :min="0" />
+        </NFormItem>
+        <NFormItem label="单位">
+          <NInput v-model:value="form.unit" placeholder="请输入单位" />
+        </NFormItem>
         <NFormItem label="录入人">
           <NInput v-model:value="form.recorder" placeholder="请输入录入人" />
+        </NFormItem>
+        <NFormItem label="过期时间">
+          <NDatePicker
+            v-model:value="form.expire_date"
+            type="date"
+            clearable
+            placeholder="请选择过期时间"
+          />
+        </NFormItem>
+        <NFormItem label="已过期">
+          <NSwitch v-model:value="form.is_expired" />
         </NFormItem>
         <NFormItem label="描述">
           <NInput

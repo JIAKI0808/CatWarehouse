@@ -1,33 +1,81 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NLayoutSider, NIcon, NTooltip } from 'naive-ui'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { NLayoutSider, NIcon, NTooltip, NMessageProvider, NConfigProvider, darkTheme, useDialog } from 'naive-ui'
 import {
   WalletOutline,
   AnalyticsOutline,
   SettingsOutline,
+  CashOutline,
+  PricetagOutline,
 } from '@vicons/ionicons5'
+import { useRouter } from 'vue-router'
 import MenuBar from './components/MenuBar.vue'
-import HomeView from './views/HomeView.vue'
-import AnalyticsView from './views/AnalyticsView.vue'
-import SettingsView from './views/SettingsView.vue'
+import IntroAnimation from './animations/IntroAnimation.vue'
 
-const activeView = ref('inventory')
+const router = useRouter()
+const isDark = ref(false)
+const showIntro = ref(true)
+
+const theme = computed(() => isDark.value ? darkTheme : null)
+
+onMounted(() => {
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') isDark.value = true
+  else if (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches) isDark.value = true
+  updateDarkClass()
+
+  window.addEventListener('keydown', handleKeydown)
+})
+
+function updateDarkClass() {
+  document.documentElement.classList.toggle('dark', isDark.value)
+}
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault()
+    window.dispatchEvent(new CustomEvent('shortcut-add'))
+  }
+  if (e.ctrlKey && e.key === 'f') {
+    e.preventDefault()
+    window.dispatchEvent(new CustomEvent('shortcut-search'))
+  }
+  if (e.key === 'Escape') {
+    window.dispatchEvent(new CustomEvent('shortcut-escape'))
+  }
+}
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  updateDarkClass()
+}
+
+function handleIntroComplete() {
+  showIntro.value = false
+}
 
 const navItems = [
-  { key: 'inventory', label: '库存', icon: WalletOutline },
-  { key: 'analytics', label: '数据分析', icon: AnalyticsOutline },
+  { path: '/', label: '库存', icon: WalletOutline },
+  { path: '/analytics', label: '数据分析', icon: AnalyticsOutline },
+  { path: '/ledger', label: '账本', icon: CashOutline },
+  { path: '/pricing', label: '售价管理', icon: PricetagOutline },
 ]
-
-function handleNavigate(view: string) {
-  activeView.value = view
-}
 </script>
 
 <template>
+  <NConfigProvider :theme="theme">
+  <NMessageProvider>
   <div class="h-screen flex flex-col">
-    <MenuBar @navigate="handleNavigate" />
+    <IntroAnimation v-if="showIntro" @complete="handleIntroComplete" />
 
-    <div class="flex-1 flex overflow-hidden">
+    <MenuBar v-show="!showIntro" :is-dark="isDark" @toggle-theme="toggleTheme" />
+
+    <div v-show="!showIntro" class="flex-1 flex overflow-hidden">
       <NLayoutSider
         bordered
         :width="64"
@@ -35,19 +83,18 @@ function handleNavigate(view: string) {
         class="flex flex-col relative"
       >
         <div class="flex flex-col items-center py-4 gap-2">
-          <NTooltip v-for="item in navItems" :key="item.key" placement="right">
+          <NTooltip v-for="item in navItems" :key="item.path" placement="right">
             <template #trigger>
-              <div
+              <router-link
+                :to="item.path"
                 class="w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200"
-                :class="activeView === item.key
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-500 hover:bg-gray-100'"
-                @click="activeView = item.key"
+                active-class="bg-blue-500 text-white"
+                exact-active-class="bg-blue-500 text-white"
               >
-                <NIcon :size="22">
+                <NIcon :size="22" class="text-gray-500 group-hover:text-white">
                   <component :is="item.icon" />
                 </NIcon>
-              </div>
+              </router-link>
             </template>
             {{ item.label }}
           </NTooltip>
@@ -57,28 +104,26 @@ function handleNavigate(view: string) {
           <div class="w-8 border-t border-gray-300 mb-4" />
           <NTooltip placement="right">
             <template #trigger>
-              <div
+              <router-link
+                to="/settings"
                 class="w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200"
-                :class="activeView === 'settings'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-500 hover:bg-gray-100'"
-                @click="activeView = 'settings'"
+                active-class="bg-blue-500 text-white"
               >
-                <NIcon :size="22">
+                <NIcon :size="22" class="text-gray-500">
                   <SettingsOutline />
                 </NIcon>
-              </div>
+              </router-link>
             </template>
             设置
           </NTooltip>
         </div>
       </NLayoutSider>
 
-      <div class="flex-1 overflow-hidden">
-        <HomeView v-if="activeView === 'inventory'" />
-        <AnalyticsView v-else-if="activeView === 'analytics'" />
-        <SettingsView v-else-if="activeView === 'settings'" />
+      <div class="flex-1 overflow-auto">
+        <router-view />
       </div>
     </div>
   </div>
+  </NMessageProvider>
+  </NConfigProvider>
 </template>

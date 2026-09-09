@@ -9,6 +9,13 @@ class SubCategoryCreate(BaseModel):
     notes: str = ""
 
 
+class SubCategoryUpdate(BaseModel):
+    name: str | None = None
+    unit: str | None = None
+    description: str | None = None
+    notes: str | None = None
+
+
 class SubCategoryResponse(BaseModel):
     id: int
     category_id: int
