@@ -950,3 +950,51 @@ function typeTag(t: string): string { return t === 'income' ? '收入' : '支出
 ECharts `Can't get DOM width or height`（4 次），与 §C3.2 第 12 项同类。
 **判定非本次引入**（文案替换不可能影响 DOM 尺寸），
 **但移动端的具体成因未验证，不臆测**。归属「交互优化」环。
+
+### `2bf52e2` — P4h 国际化 D-8：移动端设置页 + store/api 兜底文案迁移
+
+**迁移内容**
+| 范围 | 内容 |
+| --- | --- |
+| `views/SettingsView.vue` | 页面标题、外观/深色模式、服务器配置、模型供应商配置、插件功能、版本信息、4 条 toast |
+| `stores/actions.ts` | 三个零件改收**语言包 key**（`message`→`messageKey`、`messages`→`messageKeys`） |
+| 9 个 store | 兜底文案全部改为 key |
+| `services/api.ts` | `请求失败 ({status})`、`上传失败` |
+
+新增 `app.stores`（34 条补齐）、`app.settingsPage`（23 条）、`app.api`（2 条）。
+
+**关键设计（与网页端一致）**
+传 **key** 而非「直接传 `translate(key)` 的结果」—— store 是**单例**，
+配置对象在首次创建 store 时求值一次；那时取成常量会让兜底文案**停在旧语言直到刷新**。
+传 key、出错那一刻才查表，就没有这个问题。
+
+**设置页也接通了 `translateBackendMessage()`**
+版本描述由**后端**返回（`/api/settings/version` 的 description）。
+实测：`zh-CN` 显示「科学的管理每一颗螺丝钉」（映射到自身，与原状逐字一致），
+`en-US` 显示 **"Keep every last screw in order"**。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 4 文件 / 0 违规 |
+| **全仓扫描** | 排除语言包本身后，非语言包文件里**仅剩 7 处 `'个'`** 表单默认值（属数据） |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 设置 / 外观 / 深色模式 / 服务器配置 / 服务器地址 / 端口 / 测试连接 / 模型供应商配置 / 模型名称 / 保存配置 / 插件功能 / 4 项 / 版本信息 / 应用名称 / 版本号 / 描述 —— **与改动前一致** |
+| `zh-CN` 点「测试连接」 | 提示 **连接成功** |
+| `en-US` | Settings / Appearance / Dark mode / Server / Server address / Port / Test connection / Model provider / Model name / Save / Plugins / Version / Application / Description |
+| `en-US` 点 "Test connection" | 提示 **"Connected"** |
+| **整页零 CJK** | 脚本断言通过（含后端 tagline 已译出） |
+| 控制台 | 零 warn / 零 error |
+
+**⚠️ 一个尚未完成的缺口（如实记录，不当作已完成）**
+**移动端目前没有语言切换入口。** 网页端设置页有「语言」小节（P2b），
+移动端这一批只做了文案迁移，界面上没有任何地方能换语言 —— 用户只能靠改 localStorage。
+
+它属于合同第 3 条「完成移动端对后端接口的适配」的一部分：
+`/api/i18n/preference` 在移动端**完全没接**（连 `i18nApi` 都没有）。
+⇒ 单列为 **P4i**，不混在本批的「完成」里。
