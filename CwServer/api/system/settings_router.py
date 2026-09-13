@@ -1,13 +1,12 @@
 import logging
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 
 logger = logging.getLogger(__name__)
-from models.settings import Settings
+from models.settings import get_or_create
 from schemas.settings import (
     AIConfig,
     PluginConfig,
@@ -29,20 +28,9 @@ def set_start_time(t: str) -> None:
     _start_time = t
 
 
-async def _get_or_create_settings(db: AsyncSession) -> Settings:
-    result = await db.execute(select(Settings).where(Settings.id == 1))
-    settings = result.scalar_one_or_none()
-    if settings is None:
-        settings = Settings(id=1, ai_config={}, plugin_config={})
-        db.add(settings)
-        await db.commit()
-        await db.refresh(settings)
-    return settings
-
-
 @router.get("", response_model=SettingsResponse)
 async def get_settings(db: AsyncSession = Depends(get_db)):
-    settings = await _get_or_create_settings(db)
+    settings = await get_or_create(db)
     logger.debug("Fetched settings")
     return SettingsResponse(
         ai_config=AIConfig(**(settings.ai_config or {})),
@@ -55,7 +43,7 @@ async def update_settings(
     data: SettingsUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    settings = await _get_or_create_settings(db)
+    settings = await get_or_create(db)
     if data.ai_config is not None:
         settings.ai_config = data.ai_config.model_dump()
     if data.plugin_config is not None:

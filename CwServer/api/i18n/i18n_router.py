@@ -31,12 +31,11 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from locales import catalog
-from models.settings import Settings
+from models.settings import Settings, get_or_create
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/i18n", tags=["i18n"])
@@ -60,19 +59,13 @@ class MessagePackResponse(BaseModel):
 async def _settings_row(db: AsyncSession) -> Settings:
     """取（或建）`id=1` 的 Settings 行。
 
-    与 `api/system/settings_router._get_or_create_settings` 是**刻意重复**的 8 行：
-    `api/__init__.py` 的规则 3 写明「分区之间不互相 import」，
-    为这 8 行让 i18n 分区去依赖 system 分区，等于用分区独立性换省事。
-    与 `ocr/` 和 `voice/` 各自保留一份 `UpstreamRejectedError` 是同一个取舍。
+    2026-09-14「通用化」环：本函数原先在这里**刻重复制**了一份 8 行
+    （当时为遵守 `api/__init__.py` 规则 3「分区之间不互相 import」）。
+    货币分区会带来**第三份**，于是把实现上移到 `models/settings.py::get_or_create()` ——
+    放在 `models/` 而不是某个分区里，三个分区就都不必 import 另一个分区，
+    **既去了重、也没有破坏分区独立性**。
     """
-    result = await db.execute(select(Settings).where(Settings.id == 1))
-    row = result.scalar_one_or_none()
-    if row is None:
-        row = Settings(id=1, ai_config={}, plugin_config={})
-        db.add(row)
-        await db.commit()
-        await db.refresh(row)
-    return row
+    return await get_or_create(db)
 
 
 def _stored_locale(row: Settings) -> str | None:

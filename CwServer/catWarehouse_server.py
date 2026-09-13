@@ -72,6 +72,9 @@ def _migrate_tables(conn):
     if col_names and "locale" not in col_names:
         conn.execute(text("ALTER TABLE settings ADD COLUMN locale VARCHAR DEFAULT 'zh-CN'"))
         logger.info("Migrated: added locale to settings")
+    if col_names and "currency" not in col_names:
+        conn.execute(text("ALTER TABLE settings ADD COLUMN currency VARCHAR DEFAULT 'CNY'"))
+        logger.info("Migrated: added currency to settings")
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
