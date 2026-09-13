@@ -124,6 +124,45 @@ const zhCN = {
       inputProductName: '请输入商品名',
     },
 
+    analytics: {
+      title: '数据分析',
+      totalItems: '总库存数',
+      totalValue: '总库存价值',
+      totalIncome: '总收入',
+      totalExpense: '总支出',
+      pickCategory: '选择分类',
+      emptyData: '暂无数据',
+      emptyTrend: '选择大类和子类查看趋势',
+      tabTrend: '趋势',
+      tabDistribution: '分布',
+      // 「指标名」与「坐标轴名」分开：坐标轴带单位，指标名不带。
+      // 混成一个 key 会让饼图扇区叫成「数量 (斤)」，很怪。
+      metric: {
+        quantity: '数量',
+        price: '价格',
+        totalPrice: '总价',
+        unitPrice: '单价',
+        stock: '库存',
+      },
+      axis: {
+        quantity: '数量 ({unit})',
+        price: '价格 (¥)',
+        totalPrice: '总价 (¥)',
+        unitPrice: '单价 (¥)',
+        amount: '金额 (¥)',
+      },
+      chart: {
+        quantityTrend: '数量趋势',
+        priceTrend: '价格趋势',
+        totalPriceTrend: '总价趋势',
+        unitPriceTrend: '单价趋势',
+        quantityDistribution: '数量分布',
+        priceComparison: '价格对比',
+        categoryStockShare: '分类库存占比',
+        monthlyCompare: '月度收支对比',
+      },
+    },
+
     ledger: {
       title: '账本',
       scopeDay: '按天',

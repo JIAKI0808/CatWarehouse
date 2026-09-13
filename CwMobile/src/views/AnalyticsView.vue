@@ -4,6 +4,9 @@ import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, PieChart, BarChart } from 'echarts/charts'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 import {
   TitleComponent,
   TooltipComponent,
@@ -76,7 +79,7 @@ const selectionLabel = computed(() => {
   const sub = list.find((s) => s.id === selectedSubCategoryId.value)
   if (cat && sub) return `${cat.name} / ${sub.name}`
   if (cat) return cat.name
-  return '选择分类'
+  return t('app.analytics.pickCategory')
 })
 
 const hasData = computed(
@@ -170,12 +173,14 @@ function quantityLineOption() {
   if (!trendData.value) return {}
   const d = trendData.value.data
   return {
-    title: titled('数量趋势'),
+    title: titled(t('app.analytics.chart.quantityTrend')),
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis(`数量 (${trendData.value.unit})`),
-    series: [lineSerie('数量', d.map((t) => t.quantity), '#1989fa')],
+    yAxis: yAxis(t('app.analytics.axis.quantity', { unit: trendData.value.unit })),
+    series: [
+      lineSerie(t('app.analytics.metric.quantity'), d.map((t) => t.quantity), '#1989fa'),
+    ],
   }
 }
 
@@ -183,12 +188,12 @@ function priceLineOption() {
   if (!trendData.value) return {}
   const d = trendData.value.data
   return {
-    title: titled('价格趋势'),
+    title: titled(t('app.analytics.chart.priceTrend')),
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis('价格 (¥)'),
-    series: [lineSerie('价格', d.map((t) => t.price), '#f59e0b')],
+    yAxis: yAxis(t('app.analytics.axis.price')),
+    series: [lineSerie(t('app.analytics.metric.price'), d.map((t) => t.price), '#f59e0b')],
   }
 }
 
@@ -196,12 +201,14 @@ function totalPriceLineOption() {
   if (!trendData.value) return {}
   const d = trendData.value.data
   return {
-    title: titled('总价趋势'),
+    title: titled(t('app.analytics.chart.totalPriceTrend')),
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis('总价 (¥)'),
-    series: [lineSerie('总价', d.map((t) => t.total_price), '#10b981')],
+    yAxis: yAxis(t('app.analytics.axis.totalPrice')),
+    series: [
+      lineSerie(t('app.analytics.metric.totalPrice'), d.map((t) => t.total_price), '#10b981'),
+    ],
   }
 }
 
@@ -209,12 +216,14 @@ function unitPriceLineOption() {
   if (!trendData.value) return {}
   const d = trendData.value.data
   return {
-    title: titled('单价趋势'),
+    title: titled(t('app.analytics.chart.unitPriceTrend')),
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis('单价 (¥)'),
-    series: [lineSerie('单价', d.map((t) => t.unit_price), '#8b5cf6')],
+    yAxis: yAxis(t('app.analytics.axis.unitPrice')),
+    series: [
+      lineSerie(t('app.analytics.metric.unitPrice'), d.map((t) => t.unit_price), '#8b5cf6'),
+    ],
   }
 }
 
@@ -222,12 +231,12 @@ function quantityPieOption() {
   if (!trendData.value) return {}
   const p = chartPalette()
   return {
-    title: titled('数量分布'),
+    title: titled(t('app.analytics.chart.quantityDistribution')),
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { type: 'scroll', bottom: 0, textStyle: { color: p.text, fontSize: 10 } },
     series: [
       {
-        name: '数量',
+        name: t('app.analytics.metric.quantity'),
         type: 'pie',
         radius: ['40%', '68%'],
         center: ['50%', '46%'],
@@ -241,13 +250,18 @@ function priceBarOption() {
   if (!trendData.value) return {}
   const d = trendData.value.data
   return {
-    title: titled('价格对比'),
+    title: titled(t('app.analytics.chart.priceComparison')),
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis('价格 (¥)'),
+    yAxis: yAxis(t('app.analytics.axis.price')),
     series: [
-      { name: '价格', type: 'bar', data: d.map((t) => t.price), itemStyle: { color: '#f59e0b' } },
+      {
+        name: t('app.analytics.metric.price'),
+        type: 'bar',
+        data: d.map((t) => t.price),
+        itemStyle: { color: '#f59e0b' },
+      },
     ],
   }
 }
@@ -255,12 +269,12 @@ function priceBarOption() {
 function categoryPieOption() {
   const p = chartPalette()
   return {
-    title: titled('分类库存占比'),
+    title: titled(t('app.analytics.chart.categoryStockShare')),
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { type: 'scroll', bottom: 0, textStyle: { color: p.text, fontSize: 10 } },
     series: [
       {
-        name: '库存',
+        name: t('app.analytics.metric.stock'),
         type: 'pie',
         radius: ['40%', '68%'],
         center: ['50%', '46%'],
@@ -273,16 +287,21 @@ function categoryPieOption() {
 function monthlyCompareOption() {
   const p = chartPalette()
   return {
-    title: titled('月度收支对比'),
+    title: titled(t('app.analytics.chart.monthlyCompare')),
     tooltip: { trigger: 'axis' },
     legend: { top: 28, textStyle: { color: p.text, fontSize: 11 } },
     grid: { left: '12%', right: '6%', bottom: '12%', top: '72px' },
     xAxis: xAxis(monthlyCompare.value.map((m) => m.month)),
-    yAxis: yAxis('金额 (¥)'),
+    yAxis: yAxis(t('app.analytics.axis.amount')),
     series: [
-      { name: '收入', type: 'bar', data: monthlyCompare.value.map((m) => m.income), itemStyle: { color: '#10b981' } },
       {
-        name: '支出',
+        name: t('app.ledger.typeIncome'),
+        type: 'bar',
+        data: monthlyCompare.value.map((m) => m.income),
+        itemStyle: { color: '#10b981' },
+      },
+      {
+        name: t('app.ledger.typeExpense'),
         type: 'bar',
         data: monthlyCompare.value.map((m) => m.expense),
         itemStyle: { color: '#ef4444' },
@@ -298,27 +317,27 @@ function fmt(v: number): string {
 
 <template>
   <div class="page">
-    <van-nav-bar title="数据分析" />
+    <van-nav-bar :title="t('app.analytics.title')" />
     <div class="page-body">
     <div class="ov-grid">
       <div class="ov-card">
-        <div class="ov-label">总库存数</div>
+        <div class="ov-label">{{ t('app.analytics.totalItems') }}</div>
         <div class="ov-value blue">{{ overview ? fmt(overview.total_items) : '-' }}</div>
       </div>
       <div class="ov-card">
-        <div class="ov-label">总库存价值</div>
+        <div class="ov-label">{{ t('app.analytics.totalValue') }}</div>
         <div class="ov-value amber">
           {{ overview ? '¥' + fmt(overview.total_value) : '-' }}
         </div>
       </div>
       <div class="ov-card">
-        <div class="ov-label">总收入</div>
+        <div class="ov-label">{{ t('app.analytics.totalIncome') }}</div>
         <div class="ov-value green">
           {{ overview ? '¥' + fmt(overview.total_income) : '-' }}
         </div>
       </div>
       <div class="ov-card">
-        <div class="ov-label">总支出</div>
+        <div class="ov-label">{{ t('app.analytics.totalExpense') }}</div>
         <div class="ov-value red">
           {{ overview ? '¥' + fmt(overview.total_expense) : '-' }}
         </div>
@@ -340,18 +359,20 @@ function fmt(v: number): string {
     </div>
 
     <div class="trend">
-      <van-loading v-if="loading" class="tip" vertical>加载中</van-loading>
+      <van-loading v-if="loading" class="tip" vertical>
+        {{ t('app.common.loading') }}
+      </van-loading>
       <van-empty
         v-else-if="!hasData && selectedSubCategoryId"
-        description="暂无数据"
+        :description="t('app.analytics.emptyData')"
       />
       <van-empty
         v-else-if="!hasData"
-        description="选择大类和子类查看趋势"
+        :description="t('app.analytics.emptyTrend')"
       />
       <template v-else>
         <van-tabs v-model:active="trendTab" shrink>
-          <van-tab title="趋势" name="trend">
+          <van-tab :title="t('app.analytics.tabTrend')" name="trend">
             <div class="chart-card">
               <VChart :option="quantityLineOption()" autoresize class="chart" />
             </div>
@@ -365,7 +386,7 @@ function fmt(v: number): string {
               <VChart :option="unitPriceLineOption()" autoresize class="chart" />
             </div>
           </van-tab>
-          <van-tab title="分布" name="dist">
+          <van-tab :title="t('app.analytics.tabDistribution')" name="dist">
             <div class="chart-card">
               <VChart :option="quantityPieOption()" autoresize class="chart" />
             </div>
@@ -380,7 +401,7 @@ function fmt(v: number): string {
 
     <CascaderPicker
       v-model:show="showPicker"
-      title="选择分类"
+      :title="t('app.analytics.pickCategory')"
       :categories="pickerCategories"
       :subs-of="pickerSubsOf"
       :initial-category-id="selectedCategoryId ?? undefined"

@@ -104,6 +104,43 @@ const enUS: MessageSchema = {
       inputProductName: 'Enter a product name',
     },
 
+    analytics: {
+      title: 'Analytics',
+      totalItems: 'Total items',
+      totalValue: 'Total stock value',
+      totalIncome: 'Total income',
+      totalExpense: 'Total expense',
+      pickCategory: 'Choose category',
+      emptyData: 'No data',
+      emptyTrend: 'Pick a category and sub-category to see trends',
+      tabTrend: 'Trends',
+      tabDistribution: 'Distribution',
+      metric: {
+        quantity: 'Quantity',
+        price: 'Price',
+        totalPrice: 'Total price',
+        unitPrice: 'Unit price',
+        stock: 'Stock',
+      },
+      axis: {
+        quantity: 'Quantity ({unit})',
+        price: 'Price (¥)',
+        totalPrice: 'Total price (¥)',
+        unitPrice: 'Unit price (¥)',
+        amount: 'Amount (¥)',
+      },
+      chart: {
+        quantityTrend: 'Quantity trend',
+        priceTrend: 'Price trend',
+        totalPriceTrend: 'Total price trend',
+        unitPriceTrend: 'Unit price trend',
+        quantityDistribution: 'Quantity distribution',
+        priceComparison: 'Price comparison',
+        categoryStockShare: 'Stock share by category',
+        monthlyCompare: 'Monthly income vs. expense',
+      },
+    },
+
     ledger: {
       title: 'Ledger',
       scopeDay: 'Day',
