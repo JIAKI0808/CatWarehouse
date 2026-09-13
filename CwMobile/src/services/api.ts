@@ -39,6 +39,9 @@ import type {
   PricingSubCategory,
   PricingSubCategoryCreate,
   PricingSubCategoryUpdate,
+  LocaleListResponse,
+  LocalePreference,
+  MessagePackResponse,
 } from '@/types'
 import { useServerConfigStore } from '@/stores/serverConfig'
 import { translate } from '@/i18n'
@@ -306,4 +309,25 @@ export const pricingSubCategoryApi = {
   ...createWriteApi<PricingSubCategory, PricingSubCategoryCreate, PricingSubCategoryUpdate>(
     '/api/pricing-sub-categories'
   ),
+}
+
+/**
+ * 国际化（后端 `api/i18n` 分区）。
+ *
+ * 四个方法**全部实现**，即使界面当前只用到 preference 两个 ——
+ * 合同第 3 条是「完成移动端对后端接口的适配」，留一半没接就不叫完整。
+ *
+ * `getMessages` 的 locale 走 `encodeURIComponent`：路径段里的 `zh-CN` 安全，
+ * 但别的写法（语言标签允许带空格等）就未必，编码是零成本的保险。
+ */
+export const i18nApi = {
+  getLocales: () => request<LocaleListResponse>('/api/i18n/locales'),
+  getMessages: (locale: string) =>
+    request<MessagePackResponse>(`/api/i18n/messages/${encodeURIComponent(locale)}`),
+  getPreference: () => request<LocalePreference>('/api/i18n/preference'),
+  updatePreference: (locale: string) =>
+    request<LocalePreference>('/api/i18n/preference', {
+      method: 'PUT',
+      body: JSON.stringify({ locale }),
+    }),
 }

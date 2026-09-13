@@ -2,11 +2,20 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { showSuccessToast, showFailToast } from 'vant'
 import { useI18n } from 'vue-i18n'
-import { translateBackendMessage } from '@/i18n'
+import {
+  DEFAULT_LOCALE,
+  LOCALE_LABELS,
+  SUPPORTED_LOCALES,
+  currentLocale,
+  hasStoredLocale,
+  isSupportedLocale,
+  setLocale,
+  translateBackendMessage,
+} from '@/i18n'
 import { useSettingsStore } from '@/stores/settings'
 import { useServerConfigStore } from '@/stores/serverConfig'
 import { useThemeStore } from '@/stores/theme'
-import { connectionApi } from '@/services/api'
+import { connectionApi, i18nApi } from '@/services/api'
 
 const { t } = useI18n()
 const store = useSettingsStore()
@@ -31,10 +40,61 @@ watch([hostStr, portStr], () => {
   serverConfigStore.config.port = port
 })
 
+// 语言选择器。**收纳型控件**：平时只占一行 van-cell，点开才是动作面板，
+// 不往设置页里堆一排语言按钮。
+const showLangSheet = ref(false)
+// 显式 `ref<string>`：动作面板回调给的是 `string | undefined`，
+// 若让它推断成 `AppLocale`，赋值处会因收窄不上而报 TS2322。
+const langValue = ref<string>(currentLocale())
+const langActions = SUPPORTED_LOCALES.map((value) => ({
+  name: LOCALE_LABELS[value],
+  value,
+}))
+
+// 走一次 `isSupportedLocale` 收窄，模板里才能安全索引 `LOCALE_LABELS`。
+const langLabel = computed(() =>
+  isSupportedLocale(langValue.value)
+    ? LOCALE_LABELS[langValue.value]
+    : LOCALE_LABELS[DEFAULT_LOCALE]
+)
+
 onMounted(() => {
   store.fetchSettings()
   store.fetchVersion()
+  syncLocaleFromServer()
 })
+
+/**
+ * 从后端拉语言偏好。
+ *
+ * 采纳规则只有一条，免得「谁覆盖谁」说不清：**本机没显式选过时才采纳后端值**。
+ * 用户在本机选过的，不该被别的设备的选择覆盖。
+ * 服务器不可达是正常状态 —— 静默跳过，localStorage 始终是唯一真相。
+ */
+async function syncLocaleFromServer() {
+  try {
+    const pref = await i18nApi.getPreference()
+    if (!hasStoredLocale() && isSupportedLocale(pref.locale)) {
+      setLocale(pref.locale)
+    }
+    langValue.value = currentLocale()
+  } catch {
+    // 离线 / 连不上：保持本机设置，且**不提示** —— 这不是错误
+  }
+}
+
+/** 切语言：本机立即生效（不等待网络），再尽力同步给后端。 */
+async function handleLocaleSelect(action: { value?: string }) {
+  showLangSheet.value = false
+  const next = action.value ?? DEFAULT_LOCALE
+  langValue.value = next
+  const applied = setLocale(next)
+  try {
+    await i18nApi.updatePreference(applied)
+  } catch {
+    showFailToast(t('app.settingsPage.languageSyncFailed'))
+  }
+}
 
 async function handleSave() {
   try {
@@ -65,6 +125,13 @@ async function handleTestConnection() {
     <div class="card">
       <div class="card-title">{{ t('app.settingsPage.appearance') }}</div>
       <van-cell-group inset>
+        <!-- 语言：收纳型 —— 平时一行 cell，点开才是动作面板 -->
+        <van-cell
+          :title="t('app.settingsPage.language')"
+          :value="langLabel"
+          is-link
+          @click="showLangSheet = true"
+        />
         <van-cell :title="t('app.settingsPage.darkMode')" center>
           <template #right-icon>
             <van-switch
@@ -191,6 +258,13 @@ async function handleTestConnection() {
       </van-cell-group>
     </div>
     </div>
+
+    <van-action-sheet
+      v-model:show="showLangSheet"
+      :actions="langActions"
+      :cancel-text="t('app.common.cancel')"
+      @select="handleLocaleSelect"
+    />
   </div>
 </template>
 
