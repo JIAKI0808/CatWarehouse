@@ -3,10 +3,12 @@ import { ref, h, onMounted, computed } from 'vue'
 import { NDataTable, NButton, NInput, NSpace, NModal } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { usePricingStore } from '@/stores/pricing'
+import { useCurrencyStore } from '@/stores/currency'
 import PricingForm from './PricingForm.vue'
 import type { Pricing, PricingCreate } from '@/types'
 
 const store = usePricingStore()
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const showForm = ref(false)
@@ -21,12 +23,17 @@ onMounted(() => {
 
 const columns = computed(() => [
   { title: t('app.pricing.productName'), key: 'name', width: 120 },
-  { title: t('app.pricing.cost'), key: 'cost', width: 80, render: (row: Pricing) => `¥${row.cost.toFixed(2)}` },
+  {
+    title: t('app.pricing.cost'),
+    key: 'cost',
+    width: 80,
+    render: (row: Pricing) => `${currencyStore.symbol}${row.cost.toFixed(2)}`,
+  },
   {
     title: t('app.pricing.suggestedPrice'),
     key: 'suggested_price',
     width: 100,
-    render: (row: Pricing) => `¥${row.suggested_price.toFixed(2)}`,
+    render: (row: Pricing) => `${currencyStore.symbol}${row.suggested_price.toFixed(2)}`,
   },
   { title: t('app.pricing.discount'), key: 'discount', width: 80 },
   { title: t('app.common.description'), key: 'description', width: 150 },

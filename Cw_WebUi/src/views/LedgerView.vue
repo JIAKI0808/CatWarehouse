@@ -8,6 +8,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent, LegendComponent } from 'echarts/components'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 import { useLedgerStore } from '@/stores/ledger'
 import { useBudgetStore } from '@/stores/budget'
 import LedgerForm from '@/components/LedgerForm.vue'
@@ -17,6 +18,7 @@ use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent, 
 
 const store = useLedgerStore()
 const budgetStore = useBudgetStore()
+const currencyStore = useCurrencyStore()
 // tm() 取「原始消息」而不是编译后的译文 —— 月份/星期这类**数组**只能这样拿。
 const { t, tm } = useI18n()
 
@@ -123,7 +125,12 @@ const columns = computed(() => [
     render: (row: Ledger) =>
       row.type === 'income' ? t('app.ledger.typeIncome') : t('app.ledger.typeExpense'),
   },
-  { title: t('app.ledger.amount'), key: 'amount', width: 100, render: (row: Ledger) => `¥${row.amount.toFixed(2)}` },
+  {
+    title: t('app.ledger.amount'),
+    key: 'amount',
+    width: 100,
+    render: (row: Ledger) => `${currencyStore.symbol}${row.amount.toFixed(2)}`,
+  },
   { title: t('app.ledger.platform'), key: 'platform', width: 100 },
   { title: t('app.common.description'), key: 'description', width: 150 },
   { title: t('app.ledger.person'), key: 'person', width: 80 },
@@ -222,7 +229,11 @@ function getChartOption() {
       data: store.stats.map(s => s.period),
       axisLabel: { margin: 15 },
     },
-    yAxis: { type: 'value', name: t('app.ledger.chartAmountAxis'), nameGap: 20 },
+    yAxis: {
+      type: 'value',
+      name: t('app.ledger.chartAmountAxis', { symbol: currencyStore.symbol }),
+      nameGap: 20,
+    },
     series: [
       { name: t('app.ledger.typeIncome'), type: 'bar', data: store.stats.map(s => s.income), itemStyle: { color: '#10b981' }, barGap: '20%' },
       { name: t('app.ledger.typeExpense'), type: 'bar', data: store.stats.map(s => s.expense), itemStyle: { color: '#ef4444' } },
@@ -293,7 +304,10 @@ function getChartOption() {
           :show-indicator="true"
           style="flex: 1"
         />
-        <span class="w-20 text-xs text-right">¥{{ b.spent.toFixed(0) }} / ¥{{ b.amount.toFixed(0) }}</span>
+        <span class="w-20 text-xs text-right">
+          {{ currencyStore.symbol }}{{ b.spent.toFixed(0) }} /
+          {{ currencyStore.symbol }}{{ b.amount.toFixed(0) }}
+        </span>
       </div>
     </div>
 

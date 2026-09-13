@@ -122,7 +122,7 @@ const enUS: MessageSchema = {
       person: 'Recorded by',
       budgetOverview: 'Budget overview',
       chartTitle: 'Income vs. expense',
-      chartAmountAxis: 'Amount (¥)',
+      chartAmountAxis: 'Amount ({symbol})',
       searchPlaceholder: 'Search description / platform / person',
       create: 'Add',
       addBill: 'New entry',
@@ -157,10 +157,10 @@ const enUS: MessageSchema = {
       },
       axis: {
         quantity: 'Quantity ({unit})',
-        price: 'Price (¥)',
-        totalPrice: 'Total price (¥)',
-        unitPrice: 'Unit price (¥)',
-        amount: 'Amount (¥)',
+        price: 'Price ({symbol})',
+        totalPrice: 'Total price ({symbol})',
+        unitPrice: 'Unit price ({symbol})',
+        amount: 'Amount ({symbol})',
       },
       chart: {
         quantityTrend: 'Quantity trend',

@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import { useI18n } from 'vue-i18n'
 import { useItemStore } from '@/stores/item'
 import { useCategoryStore } from '@/stores/category'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
 import CategoryForm from './CategoryForm.vue'
@@ -12,6 +13,7 @@ import ViewToggle from './ViewToggle.vue'
 
 const itemStore = useItemStore()
 const categoryStore = useCategoryStore()
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const showItemForm = ref(false)
@@ -74,7 +76,7 @@ function formatDate(dateStr: string | null): string {
           <NGridItem v-for="item in itemStore.items" :key="item.id">
             <NCard :title="item.name" size="small" style="background-color: #fce7f3; color: black;" :header-style="{ color: 'black', fontSize: '18px', fontWeight: 'bold' }">
               <div class="space-y-2" style="color: black;">
-                <div>{{ t('app.common.price') }}: ¥{{ item.price.toFixed(2) }}</div>
+                <div>{{ t('app.common.price') }}: {{ currencyStore.symbol }}{{ item.price.toFixed(2) }}</div>
                 <div>{{ t('app.common.stock') }}: {{ item.quantity }} {{ item.unit }}</div>
                 <div>{{ t('app.common.updatedAt') }}: {{ formatDate(item.update_date) }}</div>
                 <div>{{ t('app.common.description') }}: {{ item.description || '-' }}</div>

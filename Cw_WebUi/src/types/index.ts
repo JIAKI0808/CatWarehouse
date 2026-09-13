@@ -354,6 +354,22 @@ export interface LocalePreference {
 }
 
 /**
+ * `GET|PUT /api/currencies/preference` —— 计价货币偏好。
+ * `symbol` 由服务端查表得到，客户端不该自己拼。
+ */
+export interface CurrencyPreference {
+  code: string
+  symbol: string
+}
+
+/** `GET /api/currencies` 的一条。 */
+export interface CurrencyInfo {
+  code: string
+  name: string
+  symbol: string
+}
+
+/**
  * `GET /api/i18n/messages/{locale}` —— 后端文案包。
  * `backend_messages` 的键是后端 `detail` 的**原文**，值是本地化文本。
  */

@@ -42,6 +42,8 @@ import type {
   LocaleListResponse,
   LocalePreference,
   MessagePackResponse,
+  CurrencyPreference,
+  CurrencyInfo,
 } from '@/types'
 import { useServerConfigStore } from '@/stores/serverConfig'
 import { translate } from '@/i18n'
@@ -290,8 +292,20 @@ export const backupApi = {
   list: () => request<{ filename: string; size: number; created: string }[]>('/api/backup/list'),
 }
 
+/**
+ * 货币。`getAll` 是既有的；`getPreference` / `updatePreference` 接
+ * `api/system/currency_router.py` 在「通用化」环新增的两个端点。
+ *
+ * 写 `updatePreference` 只传 `code` —— 符号由服务端查表，客户端自报会被忽略。
+ */
 export const currencyApi = {
-  getAll: () => request<{ code: string; name: string; symbol: string }[]>('/api/currencies'),
+  getAll: () => request<CurrencyInfo[]>('/api/currencies'),
+  getPreference: () => request<CurrencyPreference>('/api/currencies/preference'),
+  updatePreference: (code: string) =>
+    request<CurrencyPreference>('/api/currencies/preference', {
+      method: 'PUT',
+      body: JSON.stringify({ code }),
+    }),
 }
 
 export const pricingApi = {
