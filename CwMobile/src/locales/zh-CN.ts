@@ -82,6 +82,48 @@ const zhCN = {
       expiresOn: '过期 {date}',
     },
 
+    // store / api 层的兜底文案。本批（售价区）里有两个视图内联使用了同样的文案，
+    // 所以先建这一段、两个地方共用，避免同一个「获取分类失败」在语言包里出现两份。
+    stores: {
+      fetchCategoryFailed: '获取分类失败',
+      fetchSubCategoryFailed: '获取子分类失败',
+    },
+
+    // 售价区。这里的「分类 / 子分类」是 **PricingCategory / PricingSubCategory**，
+    // 与库存区的大类/子分类是**不同的领域对象** —— 即便中文逐字相同也各开各的 key。
+    pricing: {
+      title: '售价管理',
+      allPricing: '全部售价',
+      categoryTitle: '售价分类',
+      pickCategory: '选择售价分类',
+      addCategory: '新增售价分类',
+      editCategory: '编辑售价分类',
+      addSubCategory: '新增售价子分类',
+      editSubCategory: '编辑售价子分类',
+      deleteCategory: '删除售价分类',
+      deleteCategoryConfirm: '确定删除「{name}」及子分类吗？',
+      deleteSubCategory: '删除售价子分类',
+      deleteSubCategoryConfirm: '确定删除「{name}」吗？',
+      deleteRecord: '删除售价记录',
+      deleteRecordConfirm: '确定删除「{name}」吗？',
+      pickSubCategory: '请选择子分类',
+      pickSubCategoryFirst: '请先选择售价子分类',
+      searchPlaceholder: '搜索商品名/描述',
+      noRecords: '暂无售价记录',
+      noCategories: '暂无售价分类',
+      noSubCategories: '暂无子分类',
+      costSuggestedPrice: '成本 ¥{cost} · 建议售价 ¥{suggested} · 折扣 {discount}',
+      recordedOn: '记录日期 {date}',
+      productName: '商品名',
+      cost: '成本',
+      suggestedPrice: '建议售价',
+      discount: '折扣系数',
+      recordDate: '记录日期',
+      addPricing: '新增售价',
+      editPricing: '编辑售价',
+      inputProductName: '请输入商品名',
+    },
+
     ledger: {
       title: '账本',
       scopeDay: '按天',

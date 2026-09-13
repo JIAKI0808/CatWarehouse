@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import type { Pricing } from '@/types'
+
+const { t } = useI18n()
 
 export interface PricingFormData {
   name: string
@@ -79,7 +82,7 @@ function formatDate(ts: number): string {
 
 function submit() {
   if (!form.value.name.trim()) {
-    showToast('请输入商品名')
+    showToast(t('app.pricing.inputProductName'))
     return
   }
   emit('submit', {
@@ -103,22 +106,31 @@ function submit() {
   >
     <div class="form-popup">
       <van-nav-bar
-        :title="editData ? '编辑售价' : '新增售价'"
-        left-text="取消"
-        right-text="保存"
+        :title="editData ? t('app.pricing.editPricing') : t('app.pricing.addPricing')"
+        :left-text="t('app.common.cancel')"
+        :right-text="t('app.common.save')"
         @click-left="close"
         @click-right="submit"
       />
       <div class="form-body">
         <van-cell-group inset>
-          <van-field v-model="form.name" label="商品名" placeholder="请输入商品名" />
-          <van-field v-model="form.cost" type="number" label="成本" placeholder="0.00">
+          <van-field
+            v-model="form.name"
+            :label="t('app.pricing.productName')"
+            :placeholder="t('app.pricing.inputProductName')"
+          />
+          <van-field
+            v-model="form.cost"
+            type="number"
+            :label="t('app.pricing.cost')"
+            placeholder="0.00"
+          >
             <template #left-icon><span class="sym">¥</span></template>
           </van-field>
           <van-field
             v-model="form.suggested_price"
             type="number"
-            label="建议售价"
+            :label="t('app.pricing.suggestedPrice')"
             placeholder="0.00"
           >
             <template #left-icon><span class="sym">¥</span></template>
@@ -126,7 +138,7 @@ function submit() {
           <van-field
             v-model="form.discount"
             type="number"
-            label="折扣系数"
+            :label="t('app.pricing.discount')"
             placeholder="1.0"
           />
           <van-field
@@ -134,19 +146,19 @@ function submit() {
             rows="2"
             autosize
             type="textarea"
-            label="描述"
-            placeholder="请输入描述"
+            :label="t('app.common.description')"
+            :placeholder="t('app.common.inputDescription')"
           />
           <van-field
             v-model="form.notes"
             rows="2"
             autosize
             type="textarea"
-            label="备注"
-            placeholder="请输入备注"
+            :label="t('app.common.notes')"
+            :placeholder="t('app.common.inputNotes')"
           />
           <van-cell
-            title="记录日期"
+            :title="t('app.pricing.recordDate')"
             is-link
             :value="formatDate(form.record_date)"
             @click="showCalendar = true"

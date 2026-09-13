@@ -17,6 +17,9 @@ import type {
 } from '@/types'
 import PricingForm from '@/components/PricingForm.vue'
 import CascaderPicker from '@/components/CascaderPicker.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const store = usePricingStore()
 
@@ -54,7 +57,7 @@ const selectedSubName = computed(() => {
 const contextLabel = computed(() => {
   if (selectedSubId.value) return `${selectedCatName.value} / ${selectedSubName.value}`
   if (selectedCatId.value) return selectedCatName.value
-  return '全部售价'
+  return t('app.pricing.allPricing')
 })
 
 const subListOfActive = computed(() => {
@@ -76,7 +79,7 @@ async function refreshCategories() {
   try {
     categories.value = await pricingCategoryApi.getAll()
   } catch (e: any) {
-    showToast(e.message || '获取分类失败')
+    showToast(e.message || t('app.stores.fetchCategoryFailed'))
   } finally {
     catLoading.value = false
   }
@@ -86,7 +89,7 @@ async function loadSubs(catId: number) {
   try {
     subsByCat.value[catId] = await pricingSubCategoryApi.getAll(catId)
   } catch (e: any) {
-    showToast(e.message || '获取子分类失败')
+    showToast(e.message || t('app.stores.fetchSubCategoryFailed'))
   }
 }
 
@@ -135,7 +138,7 @@ async function openPicker() {
 
 function onPickerConfirm(r: { categoryId: number; subId: number | null }) {
   if (r.subId === null) {
-    showToast('请选择子分类')
+    showToast(t('app.pricing.pickSubCategory'))
     return
   }
   selectedCatId.value = r.categoryId
@@ -153,7 +156,7 @@ function openAddName() {
   editingCat.value = null
   editingSub.value = null
   nameKind.value = 'category'
-  nameFormTitle.value = '新增售价分类'
+  nameFormTitle.value = t('app.pricing.addCategory')
   nameValue.value = ''
   showNameForm.value = true
 }
@@ -162,7 +165,7 @@ function openAddSub(catId: number) {
   editingCat.value = null
   editingSub.value = null
   nameKind.value = 'sub'
-  nameFormTitle.value = '新增售价子分类'
+  nameFormTitle.value = t('app.pricing.addSubCategory')
   nameValue.value = ''
   showNameForm.value = true
 }
@@ -170,7 +173,7 @@ function openAddSub(catId: number) {
 function openEditCat(cat: PricingCategory) {
   editingCat.value = cat
   nameKind.value = 'category'
-  nameFormTitle.value = '编辑售价分类'
+  nameFormTitle.value = t('app.pricing.editCategory')
   nameValue.value = cat.name
   showNameForm.value = true
 }
@@ -178,7 +181,7 @@ function openEditCat(cat: PricingCategory) {
 function openEditSub(sub: PricingSubCategory) {
   editingSub.value = sub
   nameKind.value = 'sub'
-  nameFormTitle.value = '编辑售价子分类'
+  nameFormTitle.value = t('app.pricing.editSubCategory')
   nameValue.value = sub.name
   showNameForm.value = true
 }
@@ -186,7 +189,7 @@ function openEditSub(sub: PricingSubCategory) {
 async function submitName() {
   const name = nameValue.value.trim()
   if (!name) {
-    showToast('请输入名称')
+    showToast(t('app.common.inputName'))
     return
   }
   if (nameKind.value === 'category') {
@@ -210,9 +213,9 @@ async function submitName() {
 async function askDeleteCat(cat: PricingCategory) {
   try {
     await showConfirmDialog({
-      title: '删除售价分类',
-      message: `确定删除「${cat.name}」及子分类吗？`,
-      confirmButtonText: '删除',
+      title: t('app.pricing.deleteCategory'),
+      message: t('app.pricing.deleteCategoryConfirm', { name: cat.name }),
+      confirmButtonText: t('app.common.remove'),
       confirmButtonColor: '#ee0a24',
     })
   } catch {
@@ -231,9 +234,9 @@ async function askDeleteCat(cat: PricingCategory) {
 async function askDeleteSub(sub: PricingSubCategory) {
   try {
     await showConfirmDialog({
-      title: '删除售价子分类',
-      message: `确定删除「${sub.name}」吗？`,
-      confirmButtonText: '删除',
+      title: t('app.pricing.deleteSubCategory'),
+      message: t('app.pricing.deleteSubCategoryConfirm', { name: sub.name }),
+      confirmButtonText: t('app.common.remove'),
       confirmButtonColor: '#ee0a24',
     })
   } catch {
@@ -252,7 +255,7 @@ async function askDeleteSub(sub: PricingSubCategory) {
 
 function handleAdd() {
   if (!selectedSubId.value) {
-    showToast('请先选择售价子分类')
+    showToast(t('app.pricing.pickSubCategoryFirst'))
     return
   }
   editingItem.value = null
@@ -267,9 +270,9 @@ function handleEdit(item: Pricing) {
 async function askDelete(item: Pricing) {
   try {
     await showConfirmDialog({
-      title: '删除售价记录',
-      message: `确定删除「${item.name}」吗？`,
-      confirmButtonText: '删除',
+      title: t('app.pricing.deleteRecord'),
+      message: t('app.pricing.deleteRecordConfirm', { name: item.name }),
+      confirmButtonText: t('app.common.remove'),
       confirmButtonColor: '#ee0a24',
     })
   } catch {
@@ -306,7 +309,7 @@ function fmtDate(s: string | null): string {
 
 <template>
   <div class="pv">
-    <van-nav-bar title="售价管理">
+    <van-nav-bar :title="t('app.pricing.title')">
       <template #left>
         <van-icon name="apps-o" size="20" @click="openManager" />
       </template>
@@ -334,15 +337,17 @@ function fmtDate(s: string | null): string {
       <van-field
         v-model="searchQuery"
         clearable
-        placeholder="搜索商品名/描述"
+        :placeholder="t('app.pricing.searchPlaceholder')"
       />
     </div>
 
     <div class="list">
-      <van-loading v-if="store.loading" class="tip" vertical>加载中</van-loading>
+      <van-loading v-if="store.loading" class="tip" vertical>
+        {{ t('app.common.loading') }}
+      </van-loading>
       <van-empty
         v-else-if="!store.items.length"
-        description="暂无售价记录"
+        :description="t('app.pricing.noRecords')"
       />
       <div v-else class="pv-cards">
         <van-swipe-cell v-for="item in store.items" :key="item.id" class="pv-swipe">
@@ -351,15 +356,17 @@ function fmtDate(s: string | null): string {
               <div class="item-title">{{ item.name }}</div>
               <div class="item-sub">{{ item.sub_category_name || '-' }}</div>
               <div class="item-meta">
-                成本 ¥{{ item.cost.toFixed(2) }} · 建议售价
-                ¥{{ item.suggested_price.toFixed(2) }} · 折扣
-                {{ item.discount }}
+                {{ t('app.pricing.costSuggestedPrice', {
+                  cost: item.cost.toFixed(2),
+                  suggested: item.suggested_price.toFixed(2),
+                  discount: item.discount,
+                }) }}
               </div>
               <div v-if="item.description" class="item-meta">
                 {{ item.description }}
               </div>
               <div class="item-meta">
-                记录日期 {{ fmtDate(item.record_date) }}
+                {{ t('app.pricing.recordedOn', { date: fmtDate(item.record_date) }) }}
               </div>
             </template>
           </van-cell>
@@ -367,7 +374,7 @@ function fmtDate(s: string | null): string {
             <van-button
               square
               type="danger"
-              text="删除"
+              :text="t('app.common.remove')"
               class="del-btn"
               @click="askDelete(item)"
             />
@@ -385,7 +392,7 @@ function fmtDate(s: string | null): string {
 
     <CascaderPicker
       v-model:show="showPicker"
-      title="选择售价分类"
+      :title="t('app.pricing.pickCategory')"
       :categories="pickerCategories"
       :subs-of="pickerSubsOf"
       :initial-category-id="selectedCatId ?? undefined"
@@ -400,17 +407,21 @@ function fmtDate(s: string | null): string {
       @update:show="showManager = $event"
     >
       <div class="mgr">
-        <van-nav-bar title="售价分类" left-arrow @click-left="showManager = false">
+        <van-nav-bar
+          :title="t('app.pricing.categoryTitle')"
+          left-arrow
+          @click-left="showManager = false"
+        >
           <template #right>
             <van-icon name="plus" class="mgr-plus" @click="openAddName" />
           </template>
         </van-nav-bar>
         <div class="mgr-body">
-          <van-cell title="全部售价" is-link @click="pickAll" />
+          <van-cell :title="t('app.pricing.allPricing')" is-link @click="pickAll" />
           <van-loading v-if="catLoading" class="tip" />
           <van-empty
             v-else-if="!categories.length"
-            description="暂无售价分类"
+            :description="t('app.pricing.noCategories')"
           />
           <van-cell-group v-else inset>
             <div v-for="cat in categories" :key="cat.id">
@@ -431,7 +442,7 @@ function fmtDate(s: string | null): string {
               <div v-if="activeCatId === cat.id" class="subs">
                 <van-empty
                   v-if="!subListOfActive.length"
-                  description="暂无子分类"
+                  :description="t('app.pricing.noSubCategories')"
                 />
                 <van-cell
                   v-for="sub in subListOfActive"
@@ -459,16 +470,16 @@ function fmtDate(s: string | null): string {
       <div class="nameform">
         <van-nav-bar
           :title="nameFormTitle"
-          left-text="取消"
-          right-text="保存"
+          :left-text="t('app.common.cancel')"
+          :right-text="t('app.common.save')"
           @click-left="showNameForm = false"
           @click-right="submitName"
         />
         <van-cell-group inset class="name-body">
           <van-field
             v-model="nameValue"
-            label="名称"
-            placeholder="请输入名称"
+            :label="t('app.common.name')"
+            :placeholder="t('app.common.inputName')"
           />
         </van-cell-group>
       </div>
