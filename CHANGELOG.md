@@ -781,3 +781,49 @@ Vant 的语言包同样是单独一份：`van-config-provider` 的 `:locale` 要
 | `en-US` | Pick a sub-category / Pick a sub-category to see its items / Choose category / New item / picker `Cancel`·`Confirm`·`Choose category` / 物品行 `Price ¥5.00 · Stock 0 包`、`Delete` |
 | 剩余中文 | 只有**用户数据**（分类名、子分类名、单位「包」、商品名） |
 | 控制台 | 除既有的 `<meta>` 弃用提示外**零警告** |
+
+### `530464d` — P4d 国际化 D-4：移动端录入区与通知区文案迁移
+
+**迁移内容**
+| 文件 | 内容 |
+| --- | --- |
+| `DataActionsSheet.vue` | 说明文案、3 个动作名、取消、导出成功/失败提示 |
+| `UploadModal.vue` | 标题、选图提示、上传中…、取消、上传成功/失败提示 |
+| `ImportModal.vue` | 标题、选文件提示、冲突说明、类型单元格、确认导入、完成标题与结果描述、关闭、取消、解析/导入失败提示 |
+| `NotificationSheet.vue` | 消息中心、库存预警、低库存、系统通知、已读、暂无通知 |
+
+新增 `app.intake`（19 条）、`app.notify`（6 条）、`common.close`。
+
+**复用判断**：「上传单据」「导入数据」在**菜单项**与**弹层标题**两处出现，
+且指的是同一个东西 —— 各只有一个 key。不是巧合重名。
+
+导入结果描述改用具名插值（`{categories}/{subCategories}/{items}`），
+中文语序与英文不同，模板字符串拼接会把语序锁死。
+
+**⚠️ 发现一处现有设计覆盖不到的缺口（如实记录，本 Phase 不动）**
+
+库存预警的具体消息（`petg 库存不足 (剩余 0 卷)`）是**后端生成**的字符串 ——
+`GET /api/alerts` 返回的 `a.message` 在服务端拼好，前端只能原样显示。
+
+**为什么现有机制接不住**：
+- 它**动态**（含分类名与数量），静态的 `backend_messages` 对照表覆盖不了；
+- 改服务端生成逻辑会**改变既有响应**，与「既有接口零改动」的硬约束冲突。
+
+⇒ **「前端管界面文案、后端管自己的文案」这条边界，漏了第三类：
+后端生成的、读起来像界面文案的**数据**。**
+`notification.message` 同理。已记入 `plan.md` §C3.2 第 15 项。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+| 中文残留 | 四个文件**均为 0 行** |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 库存数据工具 / 上传单据·导出数据·导入数据 / 取消；消息中心 / 库存预警 / 低库存；导入数据 / 选择 JSON 备份文件 / 取消 —— **与改动前一致** |
+| `en-US` | Stock data tools / Upload receipt·Export·Import / Cancel；Notifications / Stock alerts / Low stock；Import / Choose a JSON backup file / Cancel |
+| 控制台 | 除既有的 `<meta>` 弃用提示外**零警告** |
