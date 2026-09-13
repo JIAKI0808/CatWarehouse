@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, h, onMounted } from 'vue'
+import { ref, h, onMounted, computed } from 'vue'
 import { NDataTable, NButton, NInput, NSpace, NModal } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { usePricingStore } from '@/stores/pricing'
 import PricingForm from './PricingForm.vue'
 import type { Pricing, PricingCreate } from '@/types'
 
 const store = usePricingStore()
+const { t } = useI18n()
 
 const showForm = ref(false)
 const editingItem = ref<Pricing | null>(null)
@@ -17,24 +19,39 @@ onMounted(() => {
   store.fetchAll()
 })
 
-const columns = [
-  { title: '商品名', key: 'name', width: 120 },
-  { title: '成本', key: 'cost', width: 80, render: (row: Pricing) => `¥${row.cost.toFixed(2)}` },
-  { title: '建议售价', key: 'suggested_price', width: 100, render: (row: Pricing) => `¥${row.suggested_price.toFixed(2)}` },
-  { title: '折扣系数', key: 'discount', width: 80 },
-  { title: '描述', key: 'description', width: 150 },
-  { title: '备注', key: 'notes', width: 100 },
-  { title: '记录日期', key: 'record_date', width: 100, render: (row: Pricing) => row.record_date ? new Date(row.record_date).toLocaleDateString() : '-' },
+const columns = computed(() => [
+  { title: t('app.pricing.productName'), key: 'name', width: 120 },
+  { title: t('app.pricing.cost'), key: 'cost', width: 80, render: (row: Pricing) => `¥${row.cost.toFixed(2)}` },
   {
-    title: '操作', key: 'actions', width: 120,
+    title: t('app.pricing.suggestedPrice'),
+    key: 'suggested_price',
+    width: 100,
+    render: (row: Pricing) => `¥${row.suggested_price.toFixed(2)}`,
+  },
+  { title: t('app.pricing.discount'), key: 'discount', width: 80 },
+  { title: t('app.common.description'), key: 'description', width: 150 },
+  { title: t('app.common.notes'), key: 'notes', width: 100 },
+  {
+    title: t('app.pricing.recordDate'),
+    key: 'record_date',
+    width: 100,
+    render: (row: Pricing) =>
+      row.record_date ? new Date(row.record_date).toLocaleDateString() : '-',
+  },
+  {
+    title: t('app.common.actions'), key: 'actions', width: 120,
     render: (row: Pricing) => {
       return h('div', { class: 'flex gap-1' }, [
-        h(NButton, { size: 'tiny', onClick: () => handleEdit(row) }, () => '编辑'),
-        h(NButton, { size: 'tiny', type: 'error', onClick: () => handleDelete(row.id) }, () => '删除'),
+        h(NButton, { size: 'tiny', onClick: () => handleEdit(row) }, () => t('app.common.edit')),
+        h(
+          NButton,
+          { size: 'tiny', type: 'error', onClick: () => handleDelete(row.id) },
+          () => t('app.common.remove')
+        ),
       ])
     },
   },
-]
+])
 
 function handleAdd() {
   editingItem.value = null
@@ -77,10 +94,16 @@ defineExpose({ handleAdd })
 <template>
   <div class="h-full flex flex-col p-4">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-bold">售价管理</h2>
+      <h2 class="text-lg font-bold">{{ t('app.pricing.title') }}</h2>
       <NSpace>
-        <NInput v-model:value="searchQuery" placeholder="搜索商品名" clearable style="width: 200px" @update:value="handleSearch" />
-        <NButton type="primary" @click="handleAdd">新增</NButton>
+        <NInput
+          v-model:value="searchQuery"
+          :placeholder="t('app.pricing.searchPlaceholder')"
+          clearable
+          style="width: 200px"
+          @update:value="handleSearch"
+        />
+        <NButton type="primary" @click="handleAdd">{{ t('app.common.create') }}</NButton>
       </NSpace>
     </div>
 
@@ -95,10 +118,10 @@ defineExpose({ handleAdd })
     <NModal
       v-model:show="showDeleteConfirm"
       preset="dialog"
-      title="确认删除"
-      content="确定要删除这条售价记录吗？"
-      positive-text="删除"
-      negative-text="取消"
+      :title="t('app.common.confirmDeleteTitle')"
+      :content="t('app.pricing.deleteConfirm')"
+      :positive-text="t('app.common.remove')"
+      :negative-text="t('app.common.cancel')"
       type="error"
       @positive-click="handleDeleteConfirm"
       @negative-click="showDeleteConfirm = false"

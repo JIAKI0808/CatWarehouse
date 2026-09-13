@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NButton, NSelect, NDatePicker } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import type { Ledger } from '@/types'
 
 interface FormData {
@@ -33,10 +34,12 @@ const form = ref<FormData>({
   type: 'expense',
 })
 
-const typeOptions = [
-  { label: '支出', value: 'expense' },
-  { label: '收入', value: 'income' },
-]
+const { t } = useI18n()
+
+const typeOptions = computed(() => [
+  { label: t('app.ledger.typeExpense'), value: 'expense' },
+  { label: t('app.ledger.typeIncome'), value: 'income' },
+])
 
 watch(() => props.visible, (val) => {
   if (val && props.editData) {
@@ -79,33 +82,34 @@ function handleSubmit() {
 <template>
   <NModal :show="visible" @update:show="emit('update:visible', $event)">
     <div class="bg-white rounded-lg p-6 w-96">
-      <h2 class="text-lg font-bold mb-4">{{ editData ? '编辑账单' : '新增账单' }}</h2>
+      <h2 class="text-lg font-bold mb-4">
+        {{ editData ? t('app.ledger.editBill') : t('app.ledger.addBill') }}
+      </h2>
       <NForm>
-        <NFormItem label="金额">
+        <NFormItem :label="t('app.ledger.amount')">
           <NInput v-model:value="form.amount" type="number" placeholder="0.00" />
         </NFormItem>
-        <NFormItem label="类型">
-          <NSelect v-model:value="form.type" :options="typeOptions" />
+        <NFormItem :label="t('app.ledger.type')">          <NSelect v-model:value="form.type" :options="typeOptions" />
         </NFormItem>
-        <NFormItem label="日期">
+        <NFormItem :label="t('app.ledger.date')">
           <NDatePicker v-model:value="form.date" type="date" style="width: 100%" />
         </NFormItem>
-        <NFormItem label="平台">
-          <NInput v-model:value="form.platform" placeholder="支付宝/微信/银行等" />
+        <NFormItem :label="t('app.ledger.platform')">
+          <NInput v-model:value="form.platform" :placeholder="t('app.ledger.inputPlatform')" />
         </NFormItem>
-        <NFormItem label="描述">
-          <NInput v-model:value="form.description" placeholder="消费描述" />
+        <NFormItem :label="t('app.common.description')">
+          <NInput v-model:value="form.description" :placeholder="t('app.ledger.inputDescription')" />
         </NFormItem>
-        <NFormItem label="记账人">
-          <NInput v-model:value="form.person" placeholder="谁记的" />
+        <NFormItem :label="t('app.ledger.person')">
+          <NInput v-model:value="form.person" :placeholder="t('app.ledger.inputPerson')" />
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="form.notes" type="textarea" placeholder="备注" />
+        <NFormItem :label="t('app.common.notes')">
+          <NInput v-model:value="form.notes" type="textarea" :placeholder="t('app.common.notes')" />
         </NFormItem>
       </NForm>
       <div class="flex justify-end gap-2 mt-4">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">保存</NButton>
+        <NButton @click="handleClose">{{ t('app.common.cancel') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ t('app.common.save') }}</NButton>
       </div>
     </div>
   </NModal>

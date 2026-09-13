@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NButton, NIcon, NColorPicker } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import {
   FolderOutline,
   CartOutline,
@@ -52,55 +53,60 @@ import {
   RibbonOutline,
 } from '@vicons/ionicons5'
 
+/**
+ * 图标选择器。**刻意不带 label 字段** —— tooltip 文案走 `t('app.icons.<组件名>')`
+ * 在模板里查语言包。理由：把 48 条中文写在这里，等于同一份文案在语言包之外
+ * 又存了一份，翻译时必然漏掉这一处；键直接取组件名，也不会有对不上的风险。
+ */
 const iconOptions = [
-  { name: 'FolderOutline', label: '文件夹', component: FolderOutline },
-  { name: 'CartOutline', label: '购物车', component: CartOutline },
-  { name: 'ShirtOutline', label: '衣物', component: ShirtOutline },
-  { name: 'HardwareChipOutline', label: '芯片', component: HardwareChipOutline },
-  { name: 'NutritionOutline', label: '营养', component: NutritionOutline },
-  { name: 'CameraOutline', label: '相机', component: CameraOutline },
-  { name: 'GameControllerOutline', label: '游戏', component: GameControllerOutline },
-  { name: 'BookOutline', label: '书本', component: BookOutline },
-  { name: 'MusicalNotesOutline', label: '音乐', component: MusicalNotesOutline },
-  { name: 'FitnessOutline', label: '健身', component: FitnessOutline },
-  { name: 'HeartOutline', label: '心形', component: HeartOutline },
-  { name: 'StarOutline', label: '星形', component: StarOutline },
-  { name: 'FlashlightOutline', label: '手电', component: FlashlightOutline },
-  { name: 'ColorPaletteOutline', label: '调色板', component: ColorPaletteOutline },
-  { name: 'CubeOutline', label: '立方体', component: CubeOutline },
-  { name: 'DiamondOutline', label: '钻石', component: DiamondOutline },
-  { name: 'HomeOutline', label: '家居', component: HomeOutline },
-  { name: 'CarOutline', label: '汽车', component: CarOutline },
-  { name: 'WalkOutline', label: '步行', component: WalkOutline },
-  { name: 'AirplaneOutline', label: '飞机', component: AirplaneOutline },
-  { name: 'BoatOutline', label: '船', component: BoatOutline },
-  { name: 'PawOutline', label: '宠物', component: PawOutline },
-  { name: 'LeafOutline', label: '植物', component: LeafOutline },
-  { name: 'FlameOutline', label: '火焰', component: FlameOutline },
-  { name: 'WaterOutline', label: '水滴', component: WaterOutline },
-  { name: 'SunnyOutline', label: '太阳', component: SunnyOutline },
-  { name: 'MoonOutline', label: '月亮', component: MoonOutline },
-  { name: 'CloudyOutline', label: '云朵', component: CloudyOutline },
-  { name: 'UmbrellaOutline', label: '雨伞', component: UmbrellaOutline },
-  { name: 'GiftOutline', label: '礼物', component: GiftOutline },
-  { name: 'SparklesOutline', label: '闪光', component: SparklesOutline },
-  { name: 'TrophyOutline', label: '奖杯', component: TrophyOutline },
-  { name: 'WineOutline', label: '酒杯', component: WineOutline },
-  { name: 'CafeOutline', label: '咖啡', component: CafeOutline },
-  { name: 'PizzaOutline', label: '披萨', component: PizzaOutline },
-  { name: 'MedicalOutline', label: '医疗', component: MedicalOutline },
-  { name: 'WalletOutline', label: '钱包', component: WalletOutline },
-  { name: 'KeyOutline', label: '钥匙', component: KeyOutline },
-  { name: 'LockClosedOutline', label: '锁', component: LockClosedOutline },
-  { name: 'GlobeOutline', label: '地球', component: GlobeOutline },
-  { name: 'MapOutline', label: '地图', component: MapOutline },
-  { name: 'TimeOutline', label: '时间', component: TimeOutline },
-  { name: 'BeerOutline', label: '啤酒', component: BeerOutline },
-  { name: 'BugOutline', label: '昆虫', component: BugOutline },
-  { name: 'FishOutline', label: '鱼', component: FishOutline },
-  { name: 'BulbOutline', label: '灯泡', component: BulbOutline },
-  { name: 'ExtensionPuzzleOutline', label: '拼图', component: ExtensionPuzzleOutline },
-  { name: 'RibbonOutline', label: '丝带', component: RibbonOutline },
+  { name: 'FolderOutline', component: FolderOutline },
+  { name: 'CartOutline', component: CartOutline },
+  { name: 'ShirtOutline', component: ShirtOutline },
+  { name: 'HardwareChipOutline', component: HardwareChipOutline },
+  { name: 'NutritionOutline', component: NutritionOutline },
+  { name: 'CameraOutline', component: CameraOutline },
+  { name: 'GameControllerOutline', component: GameControllerOutline },
+  { name: 'BookOutline', component: BookOutline },
+  { name: 'MusicalNotesOutline', component: MusicalNotesOutline },
+  { name: 'FitnessOutline', component: FitnessOutline },
+  { name: 'HeartOutline', component: HeartOutline },
+  { name: 'StarOutline', component: StarOutline },
+  { name: 'FlashlightOutline', component: FlashlightOutline },
+  { name: 'ColorPaletteOutline', component: ColorPaletteOutline },
+  { name: 'CubeOutline', component: CubeOutline },
+  { name: 'DiamondOutline', component: DiamondOutline },
+  { name: 'HomeOutline', component: HomeOutline },
+  { name: 'CarOutline', component: CarOutline },
+  { name: 'WalkOutline', component: WalkOutline },
+  { name: 'AirplaneOutline', component: AirplaneOutline },
+  { name: 'BoatOutline', component: BoatOutline },
+  { name: 'PawOutline', component: PawOutline },
+  { name: 'LeafOutline', component: LeafOutline },
+  { name: 'FlameOutline', component: FlameOutline },
+  { name: 'WaterOutline', component: WaterOutline },
+  { name: 'SunnyOutline', component: SunnyOutline },
+  { name: 'MoonOutline', component: MoonOutline },
+  { name: 'CloudyOutline', component: CloudyOutline },
+  { name: 'UmbrellaOutline', component: UmbrellaOutline },
+  { name: 'GiftOutline', component: GiftOutline },
+  { name: 'SparklesOutline', component: SparklesOutline },
+  { name: 'TrophyOutline', component: TrophyOutline },
+  { name: 'WineOutline', component: WineOutline },
+  { name: 'CafeOutline', component: CafeOutline },
+  { name: 'PizzaOutline', component: PizzaOutline },
+  { name: 'MedicalOutline', component: MedicalOutline },
+  { name: 'WalletOutline', component: WalletOutline },
+  { name: 'KeyOutline', component: KeyOutline },
+  { name: 'LockClosedOutline', component: LockClosedOutline },
+  { name: 'GlobeOutline', component: GlobeOutline },
+  { name: 'MapOutline', component: MapOutline },
+  { name: 'TimeOutline', component: TimeOutline },
+  { name: 'BeerOutline', component: BeerOutline },
+  { name: 'BugOutline', component: BugOutline },
+  { name: 'FishOutline', component: FishOutline },
+  { name: 'BulbOutline', component: BulbOutline },
+  { name: 'ExtensionPuzzleOutline', component: ExtensionPuzzleOutline },
+  { name: 'RibbonOutline', component: RibbonOutline },
 ]
 
 interface EditData {
@@ -123,6 +129,8 @@ const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
   (e: 'submit', data: Record<string, string>): void
 }>()
+
+const { t } = useI18n()
 
 const form = ref({
   name: '',
@@ -181,18 +189,18 @@ function handleSubmit() {
     <div class="bg-white rounded-lg p-6 w-96">
       <h2 class="text-lg font-bold mb-4">{{ title }}</h2>
       <NForm>
-        <NFormItem label="名称">
-          <NInput v-model:value="form.name" placeholder="请输入名称" />
+        <NFormItem :label="t('app.common.name')">
+          <NInput v-model:value="form.name" :placeholder="t('app.common.inputName')" />
         </NFormItem>
-        <NFormItem label="描述">
+        <NFormItem :label="t('app.common.description')">
           <NInput
             v-model:value="form.description"
             type="textarea"
-            placeholder="请输入描述"
+            :placeholder="t('app.common.inputDescription')"
           />
         </NFormItem>
         <template v-if="type === 'category'">
-          <NFormItem label="图标">
+          <NFormItem :label="t('app.common.icon')">
             <div class="flex flex-wrap gap-2">
               <div
                 v-for="icon in iconOptions"
@@ -201,33 +209,33 @@ function handleSubmit() {
                 :class="form.icon === icon.name
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-400'"
-                :title="icon.label"
+                :title="t('app.icons.' + icon.name)"
                 @click="form.icon = icon.name"
               >
                 <NIcon :size="20" :component="icon.component" :color="form.icon_color" />
               </div>
             </div>
           </NFormItem>
-          <NFormItem label="图标颜色">
+          <NFormItem :label="t('app.common.iconColor')">
             <NColorPicker v-model:value="form.icon_color" :show-alpha="false" />
           </NFormItem>
         </template>
         <template v-if="type === 'subCategory'">
-          <NFormItem label="单位">
+          <NFormItem :label="t('app.common.unit')">
             <NInput v-model:value="form.unit" placeholder="个" />
           </NFormItem>
-          <NFormItem label="备注">
+          <NFormItem :label="t('app.common.notes')">
             <NInput
               v-model:value="form.notes"
               type="textarea"
-              placeholder="请输入备注"
+              :placeholder="t('app.common.inputNotes')"
             />
           </NFormItem>
         </template>
       </NForm>
       <div class="flex justify-end gap-2 mt-4">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">保存</NButton>
+        <NButton @click="handleClose">{{ t('app.common.cancel') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ t('app.common.save') }}</NButton>
       </div>
     </div>
   </NModal>

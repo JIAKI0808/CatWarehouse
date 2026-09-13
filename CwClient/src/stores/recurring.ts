@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { RecurringBill, RecurringBillCreate, RecurringBillUpdate } from '@/types'
 import { recurringApi } from '@/services/api'
+import { translate } from '@/i18n'
 import { fetchInto, writeActions } from '@/stores/actions'
 
 export const useRecurringStore = defineStore('recurring', () => {
@@ -12,7 +13,7 @@ export const useRecurringStore = defineStore('recurring', () => {
   const fetchAll = fetchInto({
     list: items,
     loading,
-    message: '获取周期账单失败',
+    messageKey: 'app.stores.fetchRecurringFailed',
     run: () => recurringApi.getAll(),
   })
 
@@ -23,10 +24,10 @@ export const useRecurringStore = defineStore('recurring', () => {
   >({
     list: items,
     api: recurringApi,
-    messages: {
-      create: '创建周期账单失败',
-      update: '更新周期账单失败',
-      remove: '删除周期账单失败',
+    messageKeys: {
+      create: 'app.stores.createRecurringFailed',
+      update: 'app.stores.updateRecurringFailed',
+      remove: 'app.stores.removeRecurringFailed',
     },
   })
 
@@ -36,7 +37,7 @@ export const useRecurringStore = defineStore('recurring', () => {
       const result = await recurringApi.generate()
       return result.created
     } catch (e: any) {
-      useMessage().error(e.message || '生成账单失败')
+      useMessage().error(e.message || translate('app.stores.generateRecurringFailed'))
       return 0
     }
   }

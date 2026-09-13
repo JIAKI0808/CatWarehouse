@@ -15,7 +15,17 @@
 
 import { useMessage } from 'naive-ui'
 import type { Ref } from 'vue'
+import { translate } from '@/i18n'
 import type { WriteApi } from '@/services/api'
+
+/**
+ * 三个零件现在收的是**语言包的 key**，不是写死的中文。
+ *
+ * 为什么是 key 而不是「直接传 `translate(key)` 的结果」：
+ * store 是单例，配置对象在**首次创建 store 时**求值一次。若那时就把中文取成常量，
+ * 用户切语言后这些兜底文案会停留在旧语言、直到刷新页面。
+ * 传 key、在**出错那一刻**才查表，就没有这个问题。
+ */
 
 /**
  * 结构型：装饰器 —— 把「出错就提示」包在动作外面，不改动作本身。
@@ -25,14 +35,14 @@ import type { WriteApi } from '@/services/api'
  * `recurring.generate` 返回 `0`）—— 它们的兜底值不同，混进来就会改变行为。
  */
 export function withMessage<T, A extends unknown[]>(
-  message: string,
+  messageKey: string,
   action: (...args: A) => Promise<T>
 ): (...args: A) => Promise<T | undefined> {
   return async (...args: A) => {
     try {
       return await action(...args)
     } catch (e: any) {
-      useMessage().error(e.message || message)
+      useMessage().error(e.message || translate(messageKey))
       return undefined
     }
   }
@@ -51,7 +61,7 @@ export function withMessage<T, A extends unknown[]>(
 export function fetchInto<T, A extends unknown[]>(spec: {
   list: Ref<T[]>
   loading: Ref<boolean>
-  message: string
+  messageKey: string
   run: (...args: A) => Promise<T[]>
 }): (...args: A) => Promise<void> {
   return async (...args: A) => {
@@ -59,7 +69,7 @@ export function fetchInto<T, A extends unknown[]>(spec: {
     try {
       spec.list.value = await spec.run(...args)
     } catch (e: any) {
-      useMessage().error(e.message || spec.message)
+      useMessage().error(e.message || translate(spec.messageKey))
     } finally {
       spec.loading.value = false
     }
@@ -77,26 +87,26 @@ export function fetchInto<T, A extends unknown[]>(spec: {
 export function writeActions<T extends { id: number }, C, U>(spec: {
   list: Ref<T[]>
   api: WriteApi<T, C, U>
-  messages: { create: string; update: string; remove: string }
+  messageKeys: { create: string; update: string; remove: string }
   insert?: 'push' | 'unshift'
   onRemoved?: (id: number) => void
 }) {
   const insertAt = spec.insert === 'unshift' ? 'unshift' : 'push'
 
-  const create = withMessage(spec.messages.create, async (data: C) => {
+  const create = withMessage(spec.messageKeys.create, async (data: C) => {
     const item = await spec.api.create(data)
     spec.list.value[insertAt](item)
     return item
   })
 
-  const update = withMessage(spec.messages.update, async (id: number, data: U) => {
+  const update = withMessage(spec.messageKeys.update, async (id: number, data: U) => {
     const item = await spec.api.update(id, data)
     const index = spec.list.value.findIndex((x) => x.id === id)
     if (index !== -1) spec.list.value[index] = item
     return item
   })
 
-  const remove = withMessage(spec.messages.remove, async (id: number) => {
+  const remove = withMessage(spec.messageKeys.remove, async (id: number) => {
     await spec.api.delete(id)
     spec.list.value = spec.list.value.filter((x) => x.id !== id)
     spec.onRemoved?.(id)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NDatePicker, NSwitch } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import type { Item } from '@/types'
 
 const props = defineProps<{
@@ -12,6 +13,8 @@ const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
   (e: 'submit', data: Record<string, unknown>): void
 }>()
+
+const { t } = useI18n()
 
 const form = ref({
   name: '',
@@ -77,48 +80,48 @@ function handleSubmit() {
   <NModal :show="visible" @update:show="emit('update:visible', $event)">
     <div class="bg-white rounded-lg p-6 w-96">
       <h2 class="text-lg font-bold mb-4">
-        {{ item ? '编辑物品' : '新增物品' }}
+        {{ item ? t('app.inventory.editItem') : t('app.inventory.addItem') }}
       </h2>
       <NForm>
-        <NFormItem label="名称">
-          <NInput v-model:value="form.name" placeholder="请输入名称" />
+        <NFormItem :label="t('app.common.name')">
+          <NInput v-model:value="form.name" :placeholder="t('app.common.inputName')" />
         </NFormItem>
-        <NFormItem label="价格">
+        <NFormItem :label="t('app.common.price')">
           <NInputNumber v-model:value="form.price" :min="0" :precision="2">
             <template #prefix>¥</template>
           </NInputNumber>
         </NFormItem>
-        <NFormItem label="库存数量">
+        <NFormItem :label="t('app.common.quantity')">
           <NInputNumber v-model:value="form.quantity" :min="0" />
         </NFormItem>
-        <NFormItem label="单位">
-          <NInput v-model:value="form.unit" placeholder="请输入单位" />
+        <NFormItem :label="t('app.common.unit')">
+          <NInput v-model:value="form.unit" :placeholder="t('app.common.inputUnit')" />
         </NFormItem>
-        <NFormItem label="录入人">
-          <NInput v-model:value="form.recorder" placeholder="请输入录入人" />
+        <NFormItem :label="t('app.common.recorder')">
+          <NInput v-model:value="form.recorder" :placeholder="t('app.common.inputRecorder')" />
         </NFormItem>
-        <NFormItem label="过期时间">
+        <NFormItem :label="t('app.common.expiresAt')">
           <NDatePicker
             v-model:value="form.expire_date"
             type="date"
             clearable
-            placeholder="请选择过期时间"
+            :placeholder="t('app.common.selectExpiry')"
           />
         </NFormItem>
-        <NFormItem label="已过期">
+        <NFormItem :label="t('app.common.expired')">
           <NSwitch v-model:value="form.is_expired" />
         </NFormItem>
-        <NFormItem label="描述">
+        <NFormItem :label="t('app.common.description')">
           <NInput
             v-model:value="form.description"
             type="textarea"
-            placeholder="请输入描述"
+            :placeholder="t('app.common.inputDescription')"
           />
         </NFormItem>
       </NForm>
       <div class="flex justify-end gap-2 mt-4">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">保存</NButton>
+        <NButton @click="handleClose">{{ t('app.common.cancel') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ t('app.common.save') }}</NButton>
       </div>
     </div>
   </NModal>

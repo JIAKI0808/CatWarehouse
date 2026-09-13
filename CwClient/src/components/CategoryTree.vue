@@ -60,6 +60,7 @@ import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
 import { useServerConfigStore } from '@/stores/serverConfig'
+import { useI18n } from 'vue-i18n'
 import CategoryForm from './CategoryForm.vue'
 import ItemForm from './ItemForm.vue'
 
@@ -122,6 +123,7 @@ const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
 const itemStore = useItemStore()
 const serverConfigStore = useServerConfigStore()
+const { t } = useI18n()
 
 const expandedCategories = ref<Set<number>>(new Set())
 const showCategoryForm = ref(false)
@@ -271,7 +273,7 @@ async function handleDeleteSubCategoryConfirm() {
 <template>
   <div class="h-full flex flex-col">
     <div class="p-3 border-b flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-gray-600">分类</h3>
+      <h3 class="text-sm font-semibold text-gray-600">{{ t('app.common.category') }}</h3>
       <NButton
         size="tiny"
         type="primary"
@@ -334,7 +336,7 @@ async function handleDeleteSubCategoryConfirm() {
                   </div>
                 </div>
               </template>
-              {{ category.description || '暂无描述' }}
+              {{ category.description || t('app.common.noDescription') }}
             </NTooltip>
 
             <!-- 子分类列表 -->
@@ -400,14 +402,14 @@ async function handleDeleteSubCategoryConfirm() {
                     <div v-if="sub.description">{{ sub.description }}</div>
                     <div v-if="sub.notes" class="text-xs text-gray-400 mt-1">{{ sub.notes }}</div>
                   </div>
-                  <div v-else>暂无描述</div>
+                  <div v-else>{{ t('app.common.noDescription') }}</div>
                 </NTooltip>
               </div>
               <div
                 v-if="subCategoryStore.getSubCategories(category.id).length === 0"
                 class="px-2 py-1 text-xs text-gray-400 italic"
               >
-                暂无数据
+                {{ t('app.common.noData') }}
               </div>
             </div>
           </div>
@@ -418,7 +420,7 @@ async function handleDeleteSubCategoryConfirm() {
     <CategoryForm
       v-model:visible="showCategoryForm"
       type="category"
-      :title="editingCategory ? '编辑大类' : '新增大类'"
+      :title="editingCategory ? t('app.inventory.editCategory') : t('app.inventory.addCategory')"
       :edit-data="editingCategory ?? undefined"
       @submit="handleCategorySubmit"
     />
@@ -426,7 +428,8 @@ async function handleDeleteSubCategoryConfirm() {
     <CategoryForm
       v-model:visible="showSubCategoryForm"
       type="subCategory"
-      :title="editingSubCategory ? '编辑子分类' : '新增子分类'"
+      :title="editingSubCategory
+        ? t('app.inventory.editSubCategory') : t('app.inventory.addSubCategory')"
       :edit-data="editingSubCategory ?? undefined"
       @submit="handleSubCategorySubmit"
     />
@@ -439,10 +442,10 @@ async function handleDeleteSubCategoryConfirm() {
     <NModal
       v-model:show="showDeleteConfirm"
       preset="dialog"
-      title="确认删除"
-      :content="`确定要删除大类「${categoryToDelete?.name}」吗？`"
-      positive-text="删除"
-      negative-text="取消"
+      :title="t('app.common.confirmDeleteTitle')"
+      :content="t('app.inventory.confirmDeleteCategory', { name: categoryToDelete?.name })"
+      :positive-text="t('app.common.remove')"
+      :negative-text="t('app.common.cancel')"
       type="error"
       @positive-click="handleDeleteCategoryConfirm"
       @negative-click="showDeleteConfirm = false"
@@ -451,10 +454,10 @@ async function handleDeleteSubCategoryConfirm() {
     <NModal
       v-model:show="showSubDeleteConfirm"
       preset="dialog"
-      title="确认删除"
-      :content="`确定要删除子分类「${subCategoryToDelete?.name}」吗？`"
-      positive-text="删除"
-      negative-text="取消"
+      :title="t('app.common.confirmDeleteTitle')"
+      :content="t('app.inventory.confirmDeleteSubCategory', { name: subCategoryToDelete?.name })"
+      :positive-text="t('app.common.remove')"
+      :negative-text="t('app.common.cancel')"
       type="error"
       @positive-click="handleDeleteSubCategoryConfirm"
       @negative-click="showSubDeleteConfirm = false"

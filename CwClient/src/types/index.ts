@@ -337,3 +337,28 @@ export interface PricingSubCategoryUpdate {
   name?: string
   description?: string
 }
+
+// ---------------------------------------------------------------------------
+// i18n（后端 `api/i18n` 分区，2026-09-14 新增）
+// ---------------------------------------------------------------------------
+
+/** `GET /api/i18n/locales` —— 支持哪些语言。刻意不写死在前端。 */
+export interface LocaleListResponse {
+  default: string
+  locales: string[]
+}
+
+/** `GET|PUT /api/i18n/preference` */
+export interface LocalePreference {
+  locale: string
+}
+
+/**
+ * `GET /api/i18n/messages/{locale}` —— 后端文案包。
+ * `backend_messages` 的键是后端 `detail` 的**原文**，值是本地化文本。
+ */
+export interface MessagePackResponse {
+  locale: string
+  meta: Record<string, unknown>
+  backend_messages: Record<string, string>
+}

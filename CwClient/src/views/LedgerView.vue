@@ -7,6 +7,7 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent, LegendComponent } from 'echarts/components'
+import { useI18n } from 'vue-i18n'
 import { useLedgerStore } from '@/stores/ledger'
 import { useBudgetStore } from '@/stores/budget'
 import LedgerForm from '@/components/LedgerForm.vue'
@@ -16,6 +17,8 @@ use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent, 
 
 const store = useLedgerStore()
 const budgetStore = useBudgetStore()
+// tm() 取「原始消息」而不是编译后的译文 —— 月份/星期这类**数组**只能这样拿。
+const { t, tm } = useI18n()
 
 const showForm = ref(false)
 const editingItem = ref<Ledger | null>(null)
@@ -27,35 +30,35 @@ const itemToDelete = ref<number | null>(null)
 const searchQuery = ref('')
 const filterType = ref('')
 
-const rangeOptions = [
-  { label: '按天', value: 'day' },
-  { label: '按周', value: 'week' },
-  { label: '按月', value: 'month' },
-  { label: '按年', value: 'year' },
-]
+const rangeOptions = computed(() => [
+  { label: t('app.ledger.scopeDay'), value: 'day' },
+  { label: t('app.ledger.scopeWeek'), value: 'week' },
+  { label: t('app.ledger.scopeMonth'), value: 'month' },
+  { label: t('app.ledger.scopeYear'), value: 'year' },
+])
 
-const typeOptions = [
-  { label: '全部', value: '' },
-  { label: '收入', value: 'income' },
-  { label: '支出', value: 'expense' },
-]
+const typeOptions = computed(() => [
+  { label: t('app.ledger.typeAll'), value: '' },
+  { label: t('app.ledger.typeIncome'), value: 'income' },
+  { label: t('app.ledger.typeExpense'), value: 'expense' },
+])
 
 const calYear = computed(() => new Date(selectedDate.value).getFullYear())
 const calMonth = computed(() => new Date(selectedDate.value).getMonth())
 
 const yearOptions = computed(() => {
   const y = new Date().getFullYear()
-  return Array.from({ length: 11 }, (_, i) => ({ label: `${y - 5 + i}年`, value: y - 5 + i }))
+  return Array.from({ length: 11 }, (_, i) => ({
+    label: t('app.ledger.yearLabel', { year: y - 5 + i }),
+    value: y - 5 + i,
+  }))
 })
 
-const monthOptions = [
-  { label: '1月', value: 0 }, { label: '2月', value: 1 }, { label: '3月', value: 2 },
-  { label: '4月', value: 3 }, { label: '5月', value: 4 }, { label: '6月', value: 5 },
-  { label: '7月', value: 6 }, { label: '8月', value: 7 }, { label: '9月', value: 8 },
-  { label: '10月', value: 9 }, { label: '11月', value: 10 }, { label: '12月', value: 11 },
-]
+const monthOptions = computed(() =>
+  (tm('app.ledger.months') as string[]).map((label, value) => ({ label, value }))
+)
 
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+const weekDays = computed(() => tm('app.ledger.weekdays') as string[])
 
 const calendarDays = computed(() => {
   const y = calYear.value
@@ -111,23 +114,29 @@ const filteredItems = computed(() => {
   })
 })
 
-const columns = [
-  { title: '日期', key: 'date', width: 100, render: (row: Ledger) => new Date(row.date).toLocaleDateString() },
-  { title: '类型', key: 'type', width: 70, render: (row: Ledger) => row.type === 'income' ? '收入' : '支出' },
-  { title: '金额', key: 'amount', width: 100, render: (row: Ledger) => `¥${row.amount.toFixed(2)}` },
-  { title: '平台', key: 'platform', width: 100 },
-  { title: '描述', key: 'description', width: 150 },
-  { title: '记账人', key: 'person', width: 80 },
+const columns = computed(() => [
+  { title: t('app.ledger.date'), key: 'date', width: 100, render: (row: Ledger) => new Date(row.date).toLocaleDateString() },
   {
-    title: '操作', key: 'actions', width: 120,
+    title: t('app.ledger.type'),
+    key: 'type',
+    width: 70,
+    render: (row: Ledger) =>
+      row.type === 'income' ? t('app.ledger.typeIncome') : t('app.ledger.typeExpense'),
+  },
+  { title: t('app.ledger.amount'), key: 'amount', width: 100, render: (row: Ledger) => `¥${row.amount.toFixed(2)}` },
+  { title: t('app.ledger.platform'), key: 'platform', width: 100 },
+  { title: t('app.common.description'), key: 'description', width: 150 },
+  { title: t('app.ledger.person'), key: 'person', width: 80 },
+  {
+    title: t('app.common.actions'), key: 'actions', width: 120,
     render: (row: Ledger) => {
       return h('div', { class: 'flex gap-1' }, [
-        h(NButton, { size: 'tiny', onClick: () => handleEdit(row) }, () => '编辑'),
-        h(NButton, { size: 'tiny', type: 'error', onClick: () => handleDelete(row.id) }, () => '删除'),
+        h(NButton, { size: 'tiny', onClick: () => handleEdit(row) }, () => t('app.common.edit')),
+        h(NButton, { size: 'tiny', type: 'error', onClick: () => handleDelete(row.id) }, () => t('app.common.remove')),
       ])
     },
   },
-]
+])
 
 onMounted(() => {
   store.fetchAll()
@@ -204,7 +213,7 @@ async function handleSubmit(data: LedgerCreate) {
 
 function getChartOption() {
   return {
-    title: { text: '收支统计', left: 'center', top: 10 },
+    title: { text: t('app.ledger.chartTitle'), left: 'center', top: 10 },
     tooltip: { trigger: 'axis' },
     legend: { top: 45 },
     grid: { left: '12%', right: '12%', bottom: '18%', top: '80px' },
@@ -213,10 +222,10 @@ function getChartOption() {
       data: store.stats.map(s => s.period),
       axisLabel: { margin: 15 },
     },
-    yAxis: { type: 'value', name: '金额 (¥)', nameGap: 20 },
+    yAxis: { type: 'value', name: t('app.ledger.chartAmountAxis'), nameGap: 20 },
     series: [
-      { name: '收入', type: 'bar', data: store.stats.map(s => s.income), itemStyle: { color: '#10b981' }, barGap: '20%' },
-      { name: '支出', type: 'bar', data: store.stats.map(s => s.expense), itemStyle: { color: '#ef4444' } },
+      { name: t('app.ledger.typeIncome'), type: 'bar', data: store.stats.map(s => s.income), itemStyle: { color: '#10b981' }, barGap: '20%' },
+      { name: t('app.ledger.typeExpense'), type: 'bar', data: store.stats.map(s => s.expense), itemStyle: { color: '#ef4444' } },
     ],
   }
 }
@@ -225,7 +234,7 @@ function getChartOption() {
 <template>
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">账本</h1>
+      <h1 class="text-2xl font-bold">{{ t('app.ledger.title') }}</h1>
       <NSpace>
         <NPopover v-model:show="showCalendar" trigger="click" placement="bottom">
           <template #trigger>
@@ -266,7 +275,7 @@ function getChartOption() {
         <NSelect v-model:value="range" :options="rangeOptions" style="width: 120px" />
         <NButton type="primary" @click="handleAdd">
           <template #icon><NIcon><AddOutline /></NIcon></template>
-          新增
+          {{ t('app.ledger.create') }}
         </NButton>
       </NSpace>
     </div>
@@ -274,7 +283,7 @@ function getChartOption() {
     <VChart :option="getChartOption()" style="height: 300px" />
 
     <div v-if="budgetStore.items.length > 0" class="space-y-3">
-      <h3 class="text-sm font-semibold text-gray-600">预算概览</h3>
+      <h3 class="text-sm font-semibold text-gray-600">{{ t('app.ledger.budgetOverview') }}</h3>
       <div v-for="b in budgetStore.items" :key="b.id" class="flex items-center gap-4">
         <span class="w-24 text-sm truncate">{{ b.category_name }}</span>
         <NProgress
@@ -289,7 +298,12 @@ function getChartOption() {
     </div>
 
     <div class="flex gap-4 items-center">
-      <NInput v-model:value="searchQuery" placeholder="搜索描述/平台/记账人" clearable style="width: 250px" />
+      <NInput
+        v-model:value="searchQuery"
+        :placeholder="t('app.ledger.searchPlaceholder')"
+        clearable
+        style="width: 250px"
+      />
       <NSelect v-model:value="filterType" :options="typeOptions" style="width: 120px" />
     </div>
 
@@ -304,10 +318,10 @@ function getChartOption() {
     <NModal
       v-model:show="showDeleteConfirm"
       preset="dialog"
-      title="确认删除"
-      content="确定要删除这条账单吗？"
-      positive-text="删除"
-      negative-text="取消"
+      :title="t('app.common.confirmDeleteTitle')"
+      :content="t('app.ledger.deleteConfirm')"
+      :positive-text="t('app.common.remove')"
+      :negative-text="t('app.common.cancel')"
       type="error"
       @positive-click="handleDeleteConfirm"
       @negative-click="showDeleteConfirm = false"

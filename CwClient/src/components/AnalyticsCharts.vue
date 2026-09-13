@@ -11,6 +11,7 @@ import {
   GridComponent,
   LegendComponent,
 } from 'echarts/components'
+import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { analyticsApi } from '@/services/api'
@@ -20,6 +21,7 @@ use([CanvasRenderer, LineChart, PieChart, BarChart, TitleComponent, TooltipCompo
 
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
+const { t } = useI18n()
 
 const selectedCategoryId = ref<number | null>(null)
 const selectedSubCategoryId = ref<number | null>(null)
@@ -83,13 +85,16 @@ function baseGrid() {
 function quantityLineOption() {
   if (!trendData.value) return {}
   return {
-    title: { text: '数量趋势', left: 'center' },
+    title: { text: t('app.analytics.chart.quantityTrend'), left: 'center' },
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: `数量 (${trendData.value.unit})` },
+    yAxis: {
+      type: 'value',
+      name: t('app.analytics.axis.quantity', { unit: trendData.value.unit }),
+    },
     series: [{
-      name: '数量', type: 'line', data: trendData.value.data.map(d => d.quantity),
+      name: t('app.analytics.metric.quantity'), type: 'line', data: trendData.value.data.map(d => d.quantity),
       smooth: true, areaStyle: { opacity: 0.3 },
     }],
   }
@@ -98,13 +103,13 @@ function quantityLineOption() {
 function priceLineOption() {
   if (!trendData.value) return {}
   return {
-    title: { text: '价格趋势', left: 'center' },
+    title: { text: t('app.analytics.chart.priceTrend'), left: 'center' },
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: '价格 (¥)' },
+    yAxis: { type: 'value', name: t('app.analytics.axis.price') },
     series: [{
-      name: '价格', type: 'line', data: trendData.value.data.map(d => d.price),
+      name: t('app.analytics.metric.price'), type: 'line', data: trendData.value.data.map(d => d.price),
       smooth: true, areaStyle: { opacity: 0.3 }, itemStyle: { color: '#f59e0b' },
     }],
   }
@@ -113,13 +118,13 @@ function priceLineOption() {
 function totalPriceLineOption() {
   if (!trendData.value) return {}
   return {
-    title: { text: '总价趋势', left: 'center' },
+    title: { text: t('app.analytics.chart.totalPriceTrend'), left: 'center' },
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: '总价 (¥)' },
+    yAxis: { type: 'value', name: t('app.analytics.axis.totalPrice') },
     series: [{
-      name: '总价', type: 'line', data: trendData.value.data.map(d => d.total_price),
+      name: t('app.analytics.metric.totalPrice'), type: 'line', data: trendData.value.data.map(d => d.total_price),
       smooth: true, areaStyle: { opacity: 0.3 }, itemStyle: { color: '#10b981' },
     }],
   }
@@ -128,13 +133,13 @@ function totalPriceLineOption() {
 function unitPriceLineOption() {
   if (!trendData.value) return {}
   return {
-    title: { text: '单价趋势', left: 'center' },
+    title: { text: t('app.analytics.chart.unitPriceTrend'), left: 'center' },
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: '单价 (¥)' },
+    yAxis: { type: 'value', name: t('app.analytics.axis.unitPrice') },
     series: [{
-      name: '单价', type: 'line', data: trendData.value.data.map(d => d.unit_price),
+      name: t('app.analytics.metric.unitPrice'), type: 'line', data: trendData.value.data.map(d => d.unit_price),
       smooth: true, areaStyle: { opacity: 0.3 }, itemStyle: { color: '#8b5cf6' },
     }],
   }
@@ -143,10 +148,10 @@ function unitPriceLineOption() {
 function quantityPieOption() {
   if (!trendData.value) return {}
   return {
-    title: { text: '数量分布', left: 'center' },
+    title: { text: t('app.analytics.chart.quantityDistribution'), left: 'center' },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     series: [{
-      name: '数量', type: 'pie', radius: ['40%', '70%'],
+      name: t('app.analytics.metric.quantity'), type: 'pie', radius: ['40%', '70%'],
       data: trendData.value.data.map(d => ({ name: d.date, value: d.quantity })),
     }],
   }
@@ -155,13 +160,13 @@ function quantityPieOption() {
 function priceBarOption() {
   if (!trendData.value) return {}
   return {
-    title: { text: '价格对比', left: 'center' },
+    title: { text: t('app.analytics.chart.priceComparison'), left: 'center' },
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: '价格 (¥)' },
+    yAxis: { type: 'value', name: t('app.analytics.axis.price') },
     series: [{
-      name: '价格', type: 'bar', data: trendData.value.data.map(d => d.price),
+      name: t('app.analytics.metric.price'), type: 'bar', data: trendData.value.data.map(d => d.price),
       itemStyle: { color: '#f59e0b' },
     }],
   }
@@ -169,10 +174,10 @@ function priceBarOption() {
 
 function categoryPieOption() {
   return {
-    title: { text: '分类库存占比', left: 'center' },
+    title: { text: t('app.analytics.chart.categoryStockShare'), left: 'center' },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     series: [{
-      name: '库存', type: 'pie', radius: ['40%', '70%'],
+      name: t('app.analytics.metric.stock'), type: 'pie', radius: ['40%', '70%'],
       data: categoryStats.value.map(s => ({ name: s.name, value: s.value })),
     }],
   }
@@ -180,15 +185,23 @@ function categoryPieOption() {
 
 function monthlyCompareOption() {
   return {
-    title: { text: '月度收支对比', left: 'center' },
+    title: { text: t('app.analytics.chart.monthlyCompare'), left: 'center' },
     tooltip: { trigger: 'axis' },
     legend: { top: 30 },
     grid: { left: '12%', right: '12%', bottom: '15%', top: '60px' },
     xAxis: { type: 'category', data: monthlyCompare.value.map(m => m.month) },
-    yAxis: { type: 'value', name: '金额 (¥)' },
+    yAxis: { type: 'value', name: t('app.analytics.axis.amount') },
     series: [
-      { name: '收入', type: 'bar', data: monthlyCompare.value.map(m => m.income), itemStyle: { color: '#10b981' } },
-      { name: '支出', type: 'bar', data: monthlyCompare.value.map(m => m.expense), itemStyle: { color: '#ef4444' } },
+      {
+        name: t('app.ledger.typeIncome'),
+        type: 'bar', data: monthlyCompare.value.map(m => m.income),
+        itemStyle: { color: '#10b981' },
+      },
+      {
+        name: t('app.ledger.typeExpense'),
+        type: 'bar', data: monthlyCompare.value.map(m => m.expense),
+        itemStyle: { color: '#ef4444' },
+      },
     ],
   }
 }
@@ -200,22 +213,22 @@ const hasData = () => trendData.value && trendData.value.data.length > 0
   <div class="space-y-6">
     <NGrid v-if="overview" :cols="4" :x-gap="16">
       <NGridItem>
-        <NCard size="small" title="总库存数">
+        <NCard size="small" :title="t('app.analytics.totalItems')">
           <div class="text-2xl font-bold text-blue-500">{{ overview.total_items }}</div>
         </NCard>
       </NGridItem>
       <NGridItem>
-        <NCard size="small" title="总库存价值">
+        <NCard size="small" :title="t('app.analytics.totalValue')">
           <div class="text-2xl font-bold text-amber-500">¥{{ overview.total_value.toFixed(0) }}</div>
         </NCard>
       </NGridItem>
       <NGridItem>
-        <NCard size="small" title="总收入">
+        <NCard size="small" :title="t('app.analytics.totalIncome')">
           <div class="text-2xl font-bold text-green-500">¥{{ overview.total_income.toFixed(0) }}</div>
         </NCard>
       </NGridItem>
       <NGridItem>
-        <NCard size="small" title="总支出">
+        <NCard size="small" :title="t('app.analytics.totalExpense')">
           <div class="text-2xl font-bold text-red-500">¥{{ overview.total_expense.toFixed(0) }}</div>
         </NCard>
       </NGridItem>
@@ -230,13 +243,13 @@ const hasData = () => trendData.value && trendData.value.data.length > 0
       <NSelect
         v-model:value="selectedCategoryId"
         :options="categoryOptions"
-        placeholder="选择大类"
+        :placeholder="t('app.analytics.selectCategory')"
         style="width: 200px"
       />
       <NSelect
         v-model:value="selectedSubCategoryId"
         :options="subCategoryOptions"
-        placeholder="选择子类"
+        :placeholder="t('app.analytics.selectSubCategory')"
         :disabled="!selectedCategoryId"
         style="width: 200px"
       />
@@ -251,8 +264,11 @@ const hasData = () => trendData.value && trendData.value.data.length > 0
         <VChart :option="quantityPieOption()" class="chart-cell" />
         <VChart :option="priceBarOption()" class="chart-cell" />
       </div>
-      <NEmpty v-else-if="!loading && selectedSubCategoryId" description="暂无数据" />
-      <NEmpty v-else-if="!loading" description="请选择大类和子类查看趋势" />
+      <NEmpty
+        v-else-if="!loading && selectedSubCategoryId"
+        :description="t('app.common.noData')"
+      />
+      <NEmpty v-else-if="!loading" :description="t('app.analytics.emptyTrend')" />
     </NSpin>
   </div>
 </template>

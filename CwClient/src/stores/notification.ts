@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { Notification } from '@/types'
 import { notificationApi } from '@/services/api'
+import { translate } from '@/i18n'
 import { fetchInto } from '@/stores/actions'
 
 export const useNotificationStore = defineStore('notification', () => {
@@ -14,7 +15,7 @@ export const useNotificationStore = defineStore('notification', () => {
   const fetchAll = fetchInto({
     list: items,
     loading,
-    message: '获取通知失败',
+    messageKey: 'app.stores.fetchNotificationFailed',
     run: () => notificationApi.getAll(),
   })
 
@@ -24,7 +25,7 @@ export const useNotificationStore = defineStore('notification', () => {
       const item = items.value.find(n => n.id === id)
       if (item) item.is_read = true
     } catch (e: any) {
-      useMessage().error(e.message || '标记已读失败')
+      useMessage().error(e.message || translate('app.stores.markNotificationReadFailed'))
     }
   }
 
@@ -33,7 +34,7 @@ export const useNotificationStore = defineStore('notification', () => {
       await notificationApi.check()
       await fetchAll()
     } catch (e: any) {
-      useMessage().error(e.message || '检查通知失败')
+      useMessage().error(e.message || translate('app.stores.checkNotificationFailed'))
     }
   }
 

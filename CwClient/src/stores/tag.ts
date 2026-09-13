@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { Tag, TagCreate, TagUpdate } from '@/types'
 import { tagApi } from '@/services/api'
+import { translate } from '@/i18n'
 import { fetchInto, withMessage, writeActions } from '@/stores/actions'
 
 export const useTagStore = defineStore('tag', () => {
@@ -12,21 +13,25 @@ export const useTagStore = defineStore('tag', () => {
   const fetchAll = fetchInto({
     list: tags,
     loading,
-    message: '获取标签失败',
+    messageKey: 'app.stores.fetchTagFailed',
     run: () => tagApi.getAll(),
   })
 
   const { create, update, remove } = writeActions<Tag, TagCreate, TagUpdate>({
     list: tags,
     api: tagApi,
-    messages: { create: '创建标签失败', update: '更新标签失败', remove: '删除标签失败' },
+    messageKeys: {
+      create: 'app.stores.createTagFailed',
+      update: 'app.stores.updateTagFailed',
+      remove: 'app.stores.removeTagFailed',
+    },
   })
 
-  const addToItem = withMessage('添加标签失败', (itemId: number, tagId: number) =>
+  const addToItem = withMessage('app.stores.addItemTagFailed', (itemId: number, tagId: number) =>
     tagApi.addToItem(itemId, tagId)
   )
 
-  const removeFromItem = withMessage('移除标签失败', (itemId: number, tagId: number) =>
+  const removeFromItem = withMessage('app.stores.removeItemTagFailed', (itemId: number, tagId: number) =>
     tagApi.removeFromItem(itemId, tagId)
   )
 
@@ -38,7 +43,7 @@ export const useTagStore = defineStore('tag', () => {
     try {
       return await tagApi.getItemTags(itemId)
     } catch (e: any) {
-      useMessage().error(e.message || '获取物品标签失败')
+      useMessage().error(e.message || translate('app.stores.fetchItemTagsFailed'))
       return []
     }
   }

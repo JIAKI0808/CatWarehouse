@@ -3,6 +3,7 @@ import { ref, reactive } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { SubCategory, SubCategoryUpdate } from '@/types'
 import { subCategoryApi } from '@/services/api'
+import { translate } from '@/i18n'
 
 export const useSubCategoryStore = defineStore('subCategory', () => {
   const subCategoriesByCategory = reactive<Record<number, SubCategory[]>>({})
@@ -27,7 +28,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
 
       subCategoriesByCategory[categoryId] = categoriesWithQuantity
     } catch (e: any) {
-      useMessage().error(e.message || '获取子分类失败')
+      useMessage().error(e.message || translate('app.stores.fetchSubCategoryFailed'))
     } finally {
       loading.value = false
     }
@@ -53,7 +54,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
       subCategoriesByCategory[categoryId] = list
       return newSubCategory
     } catch (e: any) {
-      useMessage().error(e.message || '创建子分类失败')
+      useMessage().error(e.message || translate('app.stores.createSubCategoryFailed'))
     }
   }
 
@@ -70,7 +71,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
       }
       return updated
     } catch (e: any) {
-      useMessage().error(e.message || '更新子分类失败')
+      useMessage().error(e.message || translate('app.stores.updateSubCategoryFailed'))
     }
   }
 
@@ -85,7 +86,7 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
         selectedId.value = null
       }
     } catch (e: any) {
-      useMessage().error(e.message || '删除子分类失败')
+      useMessage().error(e.message || translate('app.stores.removeSubCategoryFailed'))
     }
   }
 

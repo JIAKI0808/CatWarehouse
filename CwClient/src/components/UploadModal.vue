@@ -2,7 +2,10 @@
 import { ref } from 'vue'
 import { NModal, NCard, NButton, NSpace, NUpload, NUploadDragger, NText, NIcon } from 'naive-ui'
 import { ImageOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import type { UploadFileInfo } from 'naive-ui'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   visible: boolean
@@ -38,7 +41,7 @@ function handleUpload() {
 <template>
   <NModal :show="visible" @update:show="handleClose">
     <NCard
-      title="上传单据"
+      :title="t('app.inventory.uploadReceipt')"
       style="width: 500px"
       :bordered="false"
       size="huge"
@@ -58,16 +61,16 @@ function handleUpload() {
             </NIcon>
           </div>
           <NText depth="3" style="font-size: 16px">
-            点击或者拖动图片到此区域上传
+            {{ t('app.intake.uploadDropHint') }}
           </NText>
         </NUploadDragger>
       </NUpload>
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="handleClose">取消</NButton>
+          <NButton @click="handleClose">{{ t('app.common.cancel') }}</NButton>
           <NButton type="primary" :disabled="fileList.length === 0" @click="handleUpload">
-            上传
+            {{ t('app.intake.upload') }}
           </NButton>
         </NSpace>
       </template>

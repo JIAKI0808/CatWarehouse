@@ -2,6 +2,7 @@
 import { ref, watch, nextTick } from 'vue'
 import { NCard, NGrid, NGridItem, NButton, NSpace, NSpin } from 'naive-ui'
 import { gsap } from 'gsap'
+import { useI18n } from 'vue-i18n'
 import { useItemStore } from '@/stores/item'
 import { useCategoryStore } from '@/stores/category'
 import type { Item } from '@/types'
@@ -11,6 +12,7 @@ import ViewToggle from './ViewToggle.vue'
 
 const itemStore = useItemStore()
 const categoryStore = useCategoryStore()
+const { t } = useI18n()
 
 const showItemForm = ref(false)
 const showCategoryForm = ref(false)
@@ -58,39 +60,41 @@ function formatDate(dateStr: string | null): string {
 <template>
   <div class="h-full flex flex-col relative">
     <div class="flex items-center justify-between p-4 border-b border-pink-200">
-      <div class="text-lg font-bold text-gray-800">库存列表</div>
+      <div class="text-lg font-bold text-gray-800">{{ t('app.inventory.title') }}</div>
       <ViewToggle />
     </div>
     <div class="flex-1 overflow-auto p-4">
       <NSpin :show="itemStore.loading">
         <div v-if="itemStore.items.length === 0 && !itemStore.loading" class="flex flex-col items-center justify-center h-64 text-gray-400">
           <div class="text-6xl mb-4">📦</div>
-          <div class="text-lg">暂无数据</div>
-          <div class="text-sm mt-1">等待录入好东西</div>
+          <div class="text-lg">{{ t('app.common.noData') }}</div>
+          <div class="text-sm mt-1">{{ t('app.inventory.emptyHint') }}</div>
         </div>
         <NGrid v-else :cols="3" :x-gap="12" :y-gap="12">
           <NGridItem v-for="item in itemStore.items" :key="item.id">
             <NCard :title="item.name" size="small" style="background-color: #fce7f3; color: black;" :header-style="{ color: 'black', fontSize: '18px', fontWeight: 'bold' }">
               <div class="space-y-2" style="color: black;">
-                <div>价格: ¥{{ item.price.toFixed(2) }}</div>
-                <div>库存: {{ item.quantity }} {{ item.unit }}</div>
-                <div>更新日期: {{ formatDate(item.update_date) }}</div>
-                <div>描述: {{ item.description || '-' }}</div>
-                <div>过期时间: {{ item.expire_date ? formatDate(item.expire_date) : '-' }}</div>
-                <div>已过期: {{ item.is_expired ? '是' : '否' }}</div>
-                <div>录入人: {{ item.recorder }}</div>
+                <div>{{ t('app.common.price') }}: ¥{{ item.price.toFixed(2) }}</div>
+                <div>{{ t('app.common.stock') }}: {{ item.quantity }} {{ item.unit }}</div>
+                <div>{{ t('app.common.updatedAt') }}: {{ formatDate(item.update_date) }}</div>
+                <div>{{ t('app.common.description') }}: {{ item.description || '-' }}</div>
+                <div>{{ t('app.common.expiresAt') }}:
+                  {{ item.expire_date ? formatDate(item.expire_date) : '-' }}</div>
+                <div>{{ t('app.common.expired') }}:
+                  {{ item.is_expired ? t('app.common.yes') : t('app.common.no') }}</div>
+                <div>{{ t('app.common.recorder') }}: {{ item.recorder }}</div>
               </div>
               <template #footer>
                 <NSpace>
                   <NButton size="small" @click="handleEdit(item)">
-                    编辑
+                    {{ t('app.common.edit') }}
                   </NButton>
                   <NButton
                     size="small"
                     type="error"
                     @click="handleDelete(item.id)"
                   >
-                    删除
+                    {{ t('app.common.remove') }}
                   </NButton>
                 </NSpace>
               </template>
@@ -109,7 +113,7 @@ function formatDate(dateStr: string | null): string {
     <CategoryForm
       v-model:visible="showCategoryForm"
       type="category"
-      title="新增大类"
+      :title="t('app.inventory.addCategory')"
       @submit="handleCategorySubmit"
     />
   </div>

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { NLayoutSider, NIcon, NTooltip, NMessageProvider, NConfigProvider, darkTheme, useDialog } from 'naive-ui'
+import {
+  NLayoutSider, NIcon, NTooltip, NMessageProvider, NConfigProvider, darkTheme, useDialog,
+  zhCN as naiveZhCN, dateZhCN as naiveDateZhCN, enUS as naiveEnUS, dateEnUS as naiveDateEnUS,
+} from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import {
   WalletOutline,
   AnalyticsOutline,
@@ -13,10 +17,16 @@ import MenuBar from './components/MenuBar.vue'
 import IntroAnimation from './animations/IntroAnimation.vue'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const isDark = ref(false)
 const showIntro = ref(true)
 
 const theme = computed(() => isDark.value ? darkTheme : null)
+
+// naive-ui 自带组件（日期选择器、分页、空状态…）的文案要单独喂语言包，
+// 它**不**走 vue-i18n。不接这两个 prop 的话，切到英文后这些组件仍是中文。
+const naiveLocale = computed(() => locale.value === 'en-US' ? naiveEnUS : naiveZhCN)
+const naiveDateLocale = computed(() => locale.value === 'en-US' ? naiveDateEnUS : naiveDateZhCN)
 
 onMounted(() => {
   const saved = localStorage.getItem('theme')
@@ -59,16 +69,17 @@ function handleIntroComplete() {
   showIntro.value = false
 }
 
-const navItems = [
-  { path: '/', label: '库存', icon: WalletOutline },
-  { path: '/analytics', label: '数据分析', icon: AnalyticsOutline },
-  { path: '/ledger', label: '账本', icon: CashOutline },
-  { path: '/pricing', label: '售价管理', icon: PricetagOutline },
-]
+// computed 而非 const：文案必须随语言切换而重算。模板里 v-for 会自动解包，用法不变。
+const navItems = computed(() => [
+  { path: '/', label: t('app.nav.inventory'), icon: WalletOutline },
+  { path: '/analytics', label: t('app.nav.analytics'), icon: AnalyticsOutline },
+  { path: '/ledger', label: t('app.nav.ledger'), icon: CashOutline },
+  { path: '/pricing', label: t('app.nav.pricing'), icon: PricetagOutline },
+])
 </script>
 
 <template>
-  <NConfigProvider :theme="theme">
+  <NConfigProvider :theme="theme" :locale="naiveLocale" :date-locale="naiveDateLocale">
   <NMessageProvider>
   <div class="h-screen flex flex-col">
     <IntroAnimation v-if="showIntro" @complete="handleIntroComplete" />
@@ -114,7 +125,7 @@ const navItems = [
                 </NIcon>
               </router-link>
             </template>
-            设置
+            {{ t('app.nav.settings') }}
           </NTooltip>
         </div>
       </NLayoutSider>

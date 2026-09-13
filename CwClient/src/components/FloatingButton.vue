@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { NButton, NDropdown, NIcon, useMessage } from 'naive-ui'
 import { ArrowUpOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { exportApi } from '@/services/api'
 import { useCategoryStore } from '@/stores/category'
 import UploadModal from './UploadModal.vue'
@@ -9,14 +10,16 @@ import ImportModal from './ImportModal.vue'
 
 const message = useMessage()
 const categoryStore = useCategoryStore()
+const { t } = useI18n()
 const showUploadModal = ref(false)
 const showImportModal = ref(false)
 
-const addOptions = [
-  { label: '上传单据', key: 'upload' },
-  { label: '导出数据', key: 'export' },
-  { label: '导入数据', key: 'import' },
-]
+// computed：菜单项文案要随语言切换重算（模板里 :options 会自动解包）。
+const addOptions = computed(() => [
+  { label: t('app.inventory.uploadReceipt'), key: 'upload' },
+  { label: t('app.inventory.exportData'), key: 'export' },
+  { label: t('app.inventory.importData'), key: 'import' },
+])
 
 function handleAdd(key: string) {
   if (key === 'upload') {
@@ -39,9 +42,9 @@ async function handleExport() {
     a.download = `catwarehouse-export-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
-    message.success('导出成功')
+    message.success(t('app.inventory.exportSuccess'))
   } catch (e: any) {
-    message.error(e.message || '导出失败')
+    message.error(e.message || t('app.inventory.exportFailed'))
   }
 }
 

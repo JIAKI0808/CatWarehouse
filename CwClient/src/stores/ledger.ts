@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { Ledger, LedgerCreate, LedgerUpdate, LedgerStats } from '@/types'
 import { ledgerApi } from '@/services/api'
+import { translate } from '@/i18n'
 import { fetchInto, writeActions } from '@/stores/actions'
 
 export const useLedgerStore = defineStore('ledger', () => {
@@ -13,7 +14,7 @@ export const useLedgerStore = defineStore('ledger', () => {
   const fetchAll = fetchInto({
     list: items,
     loading,
-    message: '获取账单失败',
+    messageKey: 'app.stores.fetchLedgerFailed',
     run: (params?: { q?: string; type?: string; start_date?: string; end_date?: string }) =>
       ledgerApi.getAll(params),
   })
@@ -21,7 +22,11 @@ export const useLedgerStore = defineStore('ledger', () => {
   const { create, update, remove } = writeActions<Ledger, LedgerCreate, LedgerUpdate>({
     list: items,
     api: ledgerApi,
-    messages: { create: '创建账单失败', update: '更新账单失败', remove: '删除账单失败' },
+    messageKeys: {
+      create: 'app.stores.createLedgerFailed',
+      update: 'app.stores.updateLedgerFailed',
+      remove: 'app.stores.removeLedgerFailed',
+    },
     // 全仓库唯一一处 `unshift`：账单按时间倒序，新记录要出现在最前面。
     // 其余 6 个 store 一律 `push` —— 这个差异是**故意保留**的，不是遗漏。
     insert: 'unshift',
@@ -32,7 +37,7 @@ export const useLedgerStore = defineStore('ledger', () => {
     try {
       stats.value = await ledgerApi.getStats(range)
     } catch (e: any) {
-      useMessage().error(e.message || '获取统计失败')
+      useMessage().error(e.message || translate('app.stores.fetchLedgerStatsFailed'))
     }
   }
 
