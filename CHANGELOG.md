@@ -635,3 +635,48 @@ zh-CN 下每条译文与原中文**逐字节相同**，探针捕获的 **204 条
 
 **一个观察（非本次引入，未深究）**：客户端窗口跟随系统深色主题，主内容区呈深色，
 但表格头与部分区域仍是浅色，**明暗混用**。只记录现象、**没有查成因**，归属「交互优化」环。
+
+### `dfe2792` — P4a 国际化 D-1：CwMobile 接入 vue-i18n 基础设施
+
+**移动端不是镜像**：镜像只覆盖 `Cw_WebUi → CwClient`。`CwMobile` 有自己的构建与发布节奏，
+所以这一步是**独立接入**，不是「同步」。
+
+**新增**
+- `src/locales/zh-CN.ts` — 简体中文语言包（默认），导出 `MessageSchema`
+- `src/locales/en-US.ts` — 英文语言包，用 `MessageSchema` 约束 ⇒ 漏翻键 = 编译错误
+- `src/i18n.ts` — i18n 实例 + 偏好读写 + `translate()` + `translateBackendMessage()`
+  （与网页端**同构但不共享模块**）
+
+**修改**
+- `src/main.ts` — +2 行（`app.use(i18n)`）
+- `src/App.vue` — 5 个 Tab 文案改用 `t('app.nav.*')`；`van-config-provider` 接上 `:locale`
+- `package.json` — + `vue-i18n ^11.4.10`
+
+**为什么移动端各存一份语言包，不与网页端共享**
+两端文案**大部分相同但并不完全一致** —— 列表 Tab 移动端叫「数据」「售价」，
+网页端叫「数据分析」「售价管理」。硬共享要开一堆「移动端特例」开关。
+代价是公共文案要改两处；与 `ocr/` 和 `voice/` 各自留一份 `UpstreamRejectedError`
+是同一个取舍：**用少量重复换两端互不牵制**。
+
+**实测的文案规模**（决定了 P4 要继续分批）
+`src/` 共 **324 行用户可见中文，分布在 28 个文件** —— 与网页端的 360 行同量级。
+最大单文件：`utils/categoryIcons.ts` 48 行、`views/PricingView.vue` 36 行、
+`views/AnalyticsView.vue` 35 行。
+
+**一个直接复用到的经验**
+`createI18n` 泛型顺序是 `<Schema, Locales, Legacy>`，第三个**必须显式传 `false`**
+（不传则 legacy 模式，`global.locale` 不是 `ref`，切语言不触发重渲染）。
+网页端在 P2a 踩过这个坑，移动端这次直接写对，**没有再踩一遍**。
+
+Vant 的语言包同样是单独一份：`van-config-provider` 的 `:locale` 要显式绑，
+它**不**走 vue-i18n。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error**（移动端本来就干净，改后仍是 0） |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 5 文件 / 0 违规 |
+| 真实浏览器（390×844 移动视口） | `zh-CN`：库存/数据/账本/售价/设置；`en-US`：Stock/Charts/Ledger/Pricing/Settings；布局正常、无重叠 |
+
+> 页面主体文案仍是中文 —— 属 P4b 范围，本阶段刻意不动，把界面回归风险压到零。
