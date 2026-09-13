@@ -10,6 +10,10 @@ DEFAULT_ENGINE = ENGINE_LOCAL
 DEFAULT_LANG = "ch"
 DEFAULT_API_PATH = "/ocr"
 DEFAULT_TIMEOUT = 30.0
+#: 低于此置信度的文本行会被列进 `Receipt.low_confidence`（**不影响解析结果**）。
+#: 取值与既有 `ocr/config.py::OcrConfig.confidence_threshold` 的默认一致（0.6）——
+#: 那个旋钮配了却不生效，这里是它的「活」对照物。
+DEFAULT_MIN_CONFIDENCE = 0.6
 
 
 @dataclass(frozen=True)
@@ -25,6 +29,7 @@ class OcrSettings:
         OCR_API_PATH    serving 路径，默认 /ocr
         OCR_API_KEY     可选，会以 Authorization: Bearer 发送
         OCR_API_TIMEOUT 请求超时秒数，默认 30
+        OCR_MIN_CONFIDENCE 低置信度上报阈值（0~1），默认 0.6
     """
 
     engine: str = DEFAULT_ENGINE
@@ -33,6 +38,7 @@ class OcrSettings:
     api_path: str = DEFAULT_API_PATH
     api_key: str = ""
     api_timeout: float = DEFAULT_TIMEOUT
+    min_confidence: float = DEFAULT_MIN_CONFIDENCE
 
     @property
     def api_url(self) -> str:
@@ -58,6 +64,11 @@ def _to_float(value: str | None, fallback: float) -> float:
         return fallback
 
 
+def _clamp01(value: float) -> float:
+    """把置信度阈值夹在 0.0 ~ 1.0。"""
+    return max(0.0, min(1.0, value))
+
+
 def load_settings(env: Mapping[str, str] | None = None) -> OcrSettings:
     """从环境变量读取配置（可传 env 便于测试）。"""
     source = os.environ if env is None else env
@@ -68,4 +79,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> OcrSettings:
         api_path=(source.get("OCR_API_PATH") or DEFAULT_API_PATH).strip() or DEFAULT_API_PATH,
         api_key=(source.get("OCR_API_KEY") or "").strip(),
         api_timeout=_to_float(source.get("OCR_API_TIMEOUT"), DEFAULT_TIMEOUT),
+        # 阈值被夹在 0~1：写 -1 会让**所有**行都被当成低置信度（噪声），
+        # 写 2 会让这个功能彻底失效 —— 两者都是「配置写错但看起来在工作」。
+        min_confidence=_clamp01(
+            _to_float(source.get("OCR_MIN_CONFIDENCE"), DEFAULT_MIN_CONFIDENCE)
+        ),
     )

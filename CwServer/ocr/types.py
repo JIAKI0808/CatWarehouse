@@ -36,10 +36,24 @@ class ReceiptItem:
 
 
 @dataclass
+class LowConfidenceLine:
+    """置信度低于阈值的识别文本行。
+
+    只**上报**，不影响解析结果 —— 见 `Receipt.low_confidence` 的说明。
+    """
+
+    text: str
+    confidence: float
+
+
+@dataclass
 class Receipt:
     """通用票据识别结果。
 
     doc_type 取值：invoice / receipt / delivery / unknown。
+
+    Attributes:
+        low_confidence: 置信度低于阈值的文本行。**只上报，不影响解析**。
     """
 
     doc_type: str = "unknown"
@@ -50,6 +64,14 @@ class Receipt:
     total: float | None = None
     raw_text: str = ""
     extra: dict = field(default_factory=dict)
+    #: 2026-09-14「OCR 优化」环新增。此前 `TextLine.confidence` 一直被采集却**无人读取**，
+    #: `OcrConfig.confidence_threshold` 也是**配了不生效**的旋钮。
+    #:
+    #: **为什么是「上报」而不是「丢弃」**：把低置信度的行直接扔掉，会**静默少一条明细**，
+    #: 合计随之变错 —— 那比留着一条可能不准的行更糟。所以解析照旧跑全部行，
+    #: 这里如实列出哪些行不可靠，由调用方决定怎么提示。
+    #: （与 receipts 那边「出库扣不足要归零并汇报」同一个取向：不静默。）
+    low_confidence: list[LowConfidenceLine] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         """转换为可直接 JSON 序列化的 dict。"""
@@ -70,6 +92,10 @@ class Receipt:
             "total": self.total,
             "raw_text": self.raw_text,
             "extra": self.extra,
+            "low_confidence": [
+                {"text": line.text, "confidence": line.confidence}
+                for line in self.low_confidence
+            ],
         }
 
 

@@ -12,8 +12,8 @@ from ocr.events import OcrEvent
 from ocr.layout import detect_text_lines
 from ocr.parser import parse_receipt
 from ocr.preprocess import PreprocessResult, preprocess
-from ocr.settings import OcrSettings, load_settings
-from ocr.types import BBox, LineOcrEngine, Receipt, TextLine
+from ocr.settings import DEFAULT_MIN_CONFIDENCE, OcrSettings, load_settings
+from ocr.types import BBox, LineOcrEngine, LowConfidenceLine, Receipt, TextLine
 
 CROP_PAD = 4  # 回退路径逐行裁剪时四周留的边距，避免切掉笔画
 _EVENT_METHODS = ("on_recognition_start", "on_recognition_progress",
@@ -61,9 +61,27 @@ class ReceiptRecognizer:
         payload = receipt.to_dict()
     """
 
-    def __init__(self, engine: OcrEngine, observers: Sequence[OcrObserver] | None = None) -> None:
+    def __init__(self, engine: OcrEngine, observers: Sequence[OcrObserver] | None = None,
+                 min_confidence: float = DEFAULT_MIN_CONFIDENCE) -> None:
         self._engine = engine
         self._observers: list[OcrObserver] = list(observers or ())
+        self._min_confidence = min_confidence
+
+    def _low_confidence(self, lines: Sequence[TextLine]) -> list[LowConfidenceLine]:
+        """挑出置信度低于阈值的行。
+
+        **只上报，不参与解析** —— 见 `Receipt.low_confidence` 的取舍说明。
+
+        注意回退路径（`_recognize_by_boxes`）造出来的 `TextLine` 置信度是默认的 `1.0`：
+        那条路径本来就没有置信度信息（`OcrEngine.recognize()` 只回纯文本），
+        于是永远不会被列进这里。这是**刻意的** —— 把「不知道」当成「可疑」
+        会让所有无置信度引擎的票据都挂满警告，反而没人看了。
+        """
+        return [
+            LowConfidenceLine(line.text, line.confidence)
+            for line in lines
+            if line.confidence < self._min_confidence
+        ]
 
     def register_observer(self, observer: OcrObserver) -> None:
         """注册识别生命周期观察者。"""
@@ -113,7 +131,11 @@ class ReceiptRecognizer:
             self._emit("progress", "text lines recognized", {"line_count": len(lines)})
             receipt = parse_receipt(lines)
             receipt.extra.update(result.meta)
-            self._emit("complete", "receipt recognition completed", {"doc_type": receipt.doc_type})
+            receipt.low_confidence = self._low_confidence(lines)
+            self._emit("complete", "receipt recognition completed", {
+                "doc_type": receipt.doc_type,
+                "low_confidence_count": len(receipt.low_confidence),
+            })
             return receipt
         except Exception as exc:
             self._emit("error", f"receipt recognition failed: {exc}", {"error": str(exc)})
@@ -131,7 +153,7 @@ def create_recognizer(engine: OcrEngine | None = None,
     两个引擎都是**惰性初始化**：未装 paddleocr / 远程服务未起时本函数仍正常返回，
     只有真正调用 `recognize()` 才报错。配置见 `ocr/settings.py`。
     """
+    conf = settings or load_settings()
     if engine is None:
-        conf = settings or load_settings()
         engine = HttpOcrEngine(conf) if conf.use_http() else PaddleOcrEngine(conf.lang)
-    return ReceiptRecognizer(engine, observers)
+    return ReceiptRecognizer(engine, observers, min_confidence=conf.min_confidence)
