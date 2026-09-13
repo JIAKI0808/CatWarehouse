@@ -909,3 +909,44 @@ function typeTag(t: string): string { return t === 'income' ? '收入' : '支出
 | `en-US` 分类名称表单 | Cancel / New pricing category / Save / Name |
 | **三处界面零 CJK** | 脚本断言通过 |
 | 控制台 | 零 warn / 零 error |
+
+### `d48be29` — P4g 国际化 D-7：移动端分析区文案迁移
+
+只动 `views/AnalyticsView.vue`：页面标题、4 张概览卡、加载中、2 个空态、
+2 个页签（趋势/分布）、选择器标题、`contextLabel` 兜底，
+以及 **8 个图表的标题 / 坐标轴名 / 系列名**。新增 `app.analytics` 段（27 条）。
+
+**沿用的两条做法（与网页端一致）**
+1. **`metric.*` 与 `axis.*` 分开**：前者不带单位（饼图扇区/图例用），后者带单位（坐标轴用）。
+   合成一个 key 会让饼图扇区叫成「数量 (斤)」。
+2. **月度收支对比的收入/支出复用 `app.ledger.typeIncome/typeExpense`** —— 同一份文案不写两遍。
+
+**📝 一次重复踩到的坑（如实记）**
+
+本轮 8 个图表 Edit 里，**前 4 个又失配了** —— 我按印象写了 `old_string`，
+读原文后一次通过。这正是 **P2c-2b 已记录过**的那条教训：**改之前先读原文**。
+
+同一个坑在不同 Phase 踩第二次，说明它**没有被真正内化成习惯**。
+记在这里不是为了自罚，而是因为「已记录」不等于「已改正」。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 3 文件 / 0 违规 |
+| 中文残留 | `AnalyticsView.vue` **零残留** |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 数据分析 / 总库存数 / 总库存价值 / 总收入 / 总支出 / 选择分类 / 选择大类和子类查看趋势 —— **与改动前一致** |
+| `en-US` | Analytics / Total items / Total stock value / Total income / Total expense / Choose category / Pick a category and sub-category to see trends |
+| **图表实测** | 选「日用品 → 纸巾」渲染 **5 个 canvas**：`Stock share by category` / `Quantity trend`（轴 `Quantity (包)`）/ `Price trend` / `Total price trend` / `Unit price trend`；页签 `Trends` / `Distribution` |
+| 剩余中文 | 只有**用户数据**（分类名、单位「包」） |
+| **Vant 语言包** | picker 显示 `Cancel / Choose category / Confirm` —— P4c 修的接线在这里复现有效 |
+
+**⚠️ 一条既有的控制台警告（只记录，未深究）**
+ECharts `Can't get DOM width or height`（4 次），与 §C3.2 第 12 项同类。
+**判定非本次引入**（文案替换不可能影响 DOM 尺寸），
+**但移动端的具体成因未验证，不臆测**。归属「交互优化」环。
