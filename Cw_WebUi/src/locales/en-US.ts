@@ -40,6 +40,7 @@ const enUS: MessageSchema = {
       remove: 'Delete',
       save: 'Save',
       cancel: 'Cancel',
+      close: 'Close',
       create: 'Add',
       confirm: 'Confirm',
       yes: 'Yes',
@@ -171,6 +172,32 @@ const enUS: MessageSchema = {
       editSubCategory: 'Edit sub-category',
       subCategoryNamePlaceholder: 'Sub-category name',
       inputName: 'Enter a product name',
+    },
+
+    intake: {
+      importTitle: 'Import data',
+      importDropHint: 'Click or drag a JSON file here',
+      importConflicts: 'The following conflicts were found. Checked items will be skipped:',
+      importSkipColumn: 'Skip',
+      importTypeColumn: 'Type',
+      importNameColumn: 'Name',
+      importKindCategory: 'Category',
+      importKindSubCategory: 'Sub-category',
+      importDoneTitle: 'Import complete',
+      importDoneDesc: 'Added {categories} categories, {subCategories} sub-categories, {items} items',
+      importConfirm: 'Confirm import',
+      parseFailed: 'Could not parse the file',
+      importFailed: 'Import failed',
+      uploadDropHint: 'Click or drag an image here to upload',
+      upload: 'Upload',
+    },
+
+    notify: {
+      stockAlerts: 'Stock alerts',
+      lowStock: 'Low stock',
+      systemNotifications: 'Notifications',
+      markRead: 'Read',
+      empty: 'No notifications',
     },
 
     icons: {

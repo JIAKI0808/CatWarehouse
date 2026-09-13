@@ -2,8 +2,11 @@
 import { onMounted, computed } from 'vue'
 import { NIcon, NBadge, NPopover, NList, NListItem, NButton, NTag } from 'naive-ui'
 import { WalletOutline, NotificationsOutline, SunnyOutline, MoonOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { useNotificationStore } from '@/stores/notification'
 import { useAlertStore } from '@/stores/alert'
+
+const { t } = useI18n()
 
 const props = defineProps<{ isDark: boolean }>()
 const emit = defineEmits<{ (e: 'toggle-theme'): void }>()
@@ -47,18 +50,22 @@ onMounted(() => {
         </template>
         <div style="width: 300px; max-height: 400px; overflow-y: auto">
           <div v-if="alertStore.alerts.length" class="mb-2">
-            <div class="text-xs font-semibold text-gray-500 mb-1">库存预警</div>
+            <div class="text-xs font-semibold text-gray-500 mb-1">
+              {{ t('app.notify.stockAlerts') }}
+            </div>
             <NList bordered>
               <NListItem v-for="a in alertStore.alerts" :key="a.id">
                 <div class="flex items-center gap-2">
-                  <NTag type="warning" size="small">低库存</NTag>
+                  <NTag type="warning" size="small">{{ t('app.notify.lowStock') }}</NTag>
                   <span class="text-sm flex-1">{{ a.message }}</span>
                 </div>
               </NListItem>
             </NList>
           </div>
           <div v-if="notificationStore.items.length">
-            <div class="text-xs font-semibold text-gray-500 mb-1">系统通知</div>
+            <div class="text-xs font-semibold text-gray-500 mb-1">
+              {{ t('app.notify.systemNotifications') }}
+            </div>
             <NList bordered>
               <NListItem v-for="n in notificationStore.items" :key="n.id">
                 <div class="flex items-start gap-2">
@@ -67,13 +74,18 @@ onMounted(() => {
                     <div class="text-xs text-gray-400 mt-1">{{ new Date(n.created_at).toLocaleString() }}</div>
                   </div>
                   <NButton v-if="!n.is_read" size="tiny" quaternary @click="notificationStore.markRead(n.id)">
-                    已读
+                    {{ t('app.notify.markRead') }}
                   </NButton>
                 </div>
               </NListItem>
             </NList>
           </div>
-          <div v-if="!alertStore.alerts.length && !notificationStore.items.length" class="text-center text-gray-400 py-4">暂无通知</div>
+          <div
+            v-if="!alertStore.alerts.length && !notificationStore.items.length"
+            class="text-center text-gray-400 py-4"
+          >
+            {{ t('app.notify.empty') }}
+          </div>
         </div>
       </NPopover>
     </div>

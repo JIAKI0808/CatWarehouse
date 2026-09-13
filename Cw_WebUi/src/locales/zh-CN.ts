@@ -48,6 +48,7 @@ const zhCN = {
       remove: '删除',
       save: '保存',
       cancel: '取消',
+      close: '关闭',
       create: '新增',
       confirm: '确定',
       yes: '是',
@@ -188,6 +189,34 @@ const zhCN = {
       editSubCategory: '编辑子分类',
       subCategoryNamePlaceholder: '子分类名称',
       inputName: '请输入商品名',
+    },
+
+    // 录入区（导入 / 上传）。上传弹窗的标题直接复用 `inventory.uploadReceipt` ——
+    // 菜单项「上传单据」打开的就是这个弹窗，是**同一个东西**。
+    intake: {
+      importTitle: '导入数据',
+      importDropHint: '点击或者拖动 JSON 文件到此区域',
+      importConflicts: '发现以下冲突项，勾选的项目将被跳过：',
+      importSkipColumn: '跳过',
+      importTypeColumn: '类型',
+      importNameColumn: '名称',
+      importKindCategory: '大类',
+      importKindSubCategory: '子分类',
+      importDoneTitle: '导入完成',
+      importDoneDesc: '新增大类 {categories} 个，子分类 {subCategories} 个，物品 {items} 个',
+      importConfirm: '确认导入',
+      parseFailed: '文件解析失败',
+      importFailed: '导入失败',
+      uploadDropHint: '点击或者拖动图片到此区域上传',
+      upload: '上传',
+    },
+
+    notify: {
+      stockAlerts: '库存预警',
+      lowStock: '低库存',
+      systemNotifications: '系统通知',
+      markRead: '已读',
+      empty: '暂无通知',
     },
 
     // 图标选择器的 48 个 tooltip。键就是 @vicons/ionicons5 的组件名 ——

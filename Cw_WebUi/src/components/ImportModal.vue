@@ -6,8 +6,11 @@ import {
 } from 'naive-ui'
 import { DocumentTextOutline } from '@vicons/ionicons5'
 import type { UploadFileInfo } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { exportApi, importApi } from '@/services/api'
 import type { ExportData, ConflictItem, ImportResult } from '@/services/api'
+
+const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{
@@ -54,7 +57,7 @@ async function handleFileReady({ fileList: list }: { fileList: UploadFileInfo[] 
     }
   } catch (e: any) {
     importData.value = null
-    alert(e.message || '文件解析失败')
+    alert(e.message || t('app.intake.parseFailed'))
   } finally {
     loading.value = false
   }
@@ -82,7 +85,7 @@ async function executeImport() {
     step.value = 'result'
     emit('imported')
   } catch (e: any) {
-    alert(e.message || '导入失败')
+    alert(e.message || t('app.intake.importFailed'))
   } finally {
     loading.value = false
   }
@@ -92,7 +95,7 @@ async function executeImport() {
 <template>
   <NModal :show="visible" @update:show="handleClose">
     <NCard
-      title="导入数据"
+      :title="t('app.intake.importTitle')"
       style="width: 600px"
       :bordered="false"
       size="huge"
@@ -113,7 +116,7 @@ async function executeImport() {
                 </NIcon>
               </div>
               <NText depth="3" style="font-size: 16px">
-                点击或者拖动 JSON 文件到此区域
+                {{ t('app.intake.importDropHint') }}
               </NText>
             </NUploadDragger>
           </NUpload>
@@ -122,14 +125,14 @@ async function executeImport() {
         <!-- Step 2: Conflicts -->
         <div v-else-if="step === 'conflicts'">
           <NText depth="2" style="margin-bottom: 12px; display: block">
-            发现以下冲突项，勾选的项目将被跳过：
+            {{ t('app.intake.importConflicts') }}
           </NText>
           <NTable :bordered="false" :single-line="false" size="small">
             <thead>
               <tr>
-                <th style="width: 50px">跳过</th>
-                <th>类型</th>
-                <th>名称</th>
+                <th style="width: 50px">{{ t('app.intake.importSkipColumn') }}</th>
+                <th>{{ t('app.intake.importTypeColumn') }}</th>
+                <th>{{ t('app.intake.importNameColumn') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -140,7 +143,11 @@ async function executeImport() {
                     @update:checked="toggleSkip(conflictKey(c))"
                   />
                 </td>
-                <td>{{ c.type === 'category' ? '大类' : '子分类' }}</td>
+                <td>
+                  {{ c.type === 'category'
+                    ? t('app.intake.importKindCategory')
+                    : t('app.intake.importKindSubCategory') }}
+                </td>
                 <td>{{ c.name }}</td>
               </tr>
             </tbody>
@@ -151,22 +158,26 @@ async function executeImport() {
         <div v-else-if="step === 'result' && result">
           <NResult
             status="success"
-            title="导入完成"
-            :description="`新增大类 ${result.categories_created} 个，子分类 ${result.sub_categories_created} 个，物品 ${result.items_created} 个`"
+            :title="t('app.intake.importDoneTitle')"
+            :description="t('app.intake.importDoneDesc', {
+              categories: result.categories_created,
+              subCategories: result.sub_categories_created,
+              items: result.items_created,
+            })"
           />
         </div>
       </NSpin>
 
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="handleClose">关闭</NButton>
+          <NButton @click="handleClose">{{ t('app.common.close') }}</NButton>
           <NButton
             v-if="step === 'conflicts'"
             type="primary"
             :loading="loading"
             @click="executeImport"
           >
-            确认导入
+            {{ t('app.intake.importConfirm') }}
           </NButton>
         </NSpace>
       </template>
