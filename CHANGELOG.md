@@ -1298,3 +1298,55 @@ signature：**造了零件却没接线**。
 
 **链条第 2 环「通用化」至此收尾**：P5 后端货币接口 → P6 WebUi 货币适配 →
 P7 Mobile 货币适配 + 镜像 → P8 两端货币切换 UI → P9 单位字典。
+
+### `47860d7` — P10 OCR优化-1：让置信度真正生效（低置信度行如实上报）
+
+链条第 3 环「OCR 优化」第一刀。
+
+**动手前核对到的现状：两个「造了零件没接线」**
+1. `TextLine.confidence` 一直被引擎采集（`response.py` 两处都填），
+   **但 parser / pipeline 从不读取**；
+2. `OcrConfig.confidence_threshold` 由 builder 写入（`builder.py:69`），**没有任何地方读**。
+
+与前两环修掉的 currency / unit 是**同一个 signature**。
+
+**核心取舍：上报而不是丢弃**
+把低置信度的行直接扔掉看起来更"干净"，但那会**静默少一条明细**、合计随之变错 ——
+比留着一条可能不准的行更糟。所以解析**照旧跑全部行**（本轮不改变任何解析结果），
+`Receipt.low_confidence` 如实列出哪些行不可靠，由调用方决定怎么提示。
+与 receipts「出库扣不足要归零并**汇报**」同一个取向：**不静默**。
+
+**改动（3 个文件，均为追加）**
+| 文件 | 内容 |
+| --- | --- |
+| `ocr/types.py` | `LowConfidenceLine`；`Receipt.low_confidence`；`to_dict()` 多一个键 |
+| `ocr/settings.py` | `OCR_MIN_CONFIDENCE`（默认 0.6）+ `_clamp01` |
+| `ocr/pipeline.py` | `ReceiptRecognizer(min_confidence=…)` + `_low_confidence()`；`create_recognizer()` 传入 |
+
+**阈值夹到 0~1**：写 `-1` 会让所有行都成噪声，写 `2` 会让功能彻底失效 ——
+两者都是「配置写错但看起来在工作」。
+
+**回退路径刻意不误报**：引擎不实现 `LineOcrEngine` 时本来就没有置信度信息，
+造出的 `TextLine` 置信度是默认 `1.0`，永不进 `low_confidence`。
+**警告一旦永远亮着就没人看了。**
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| additive contract | **CONTRACT HELD** |
+| `http_probe`（81 条） | **逐字段一致** |
+| `pyright` | 66 → 66（逐文件一致） |
+| `py_spec_check`（ocr 15 文件） | **0 违规** |
+| 单元冒烟 | **14/14** |
+| 端到端冒烟（**真实 HTTP 两跳**） | **17/17** |
+
+端到端断言含：8 个既有键一个不少、新增 `low_confidence`、恰好两条低置信度行带置信度值、
+高置信度行不上报、**低置信度行仍被解析进明细（没被丢）**、
+**合计仍取自那条低置信度的「合计」行**。
+
+**诚实说明**：桩服务是**替身**（本机 3.13 装不上 paddleocr），本轮验证的是
+**「逐行置信度能穿过整条链路并出现在响应里」**，**不是识别准确率** ——
+后者仍是 `CwServer/plan.md` §10 记录的未验证项。
+
+**未做的事**：未删既有的死配置 `OcrConfig.confidence_threshold`（Karpathy 准则 3）；
+未改前端（前端目前完全不调用 `/api/ocr/*`）。
