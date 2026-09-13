@@ -93,6 +93,26 @@ npm run type-check      # 必须**恰好** 18 个错（见下节：这是比对�
 `--prune` 会把目标端多出来的镜像文件删掉，所以它同时也是「把镜像目录重置成源端的样子」。
 **它只动 `src/` 下的文件**（`scanRoots`），不会碰 `electron/`、`scripts/` 或任何构建配置。
 
+### 行尾（CRLF）——「昨天全绿今天冒 DRIFTED」时先看这里
+
+本机 `git config core.autocrlf` 是 `true`（仓库里存 LF，检出时写 CRLF），而镜像比的是
+**磁盘字节**。三条实测事实：
+
+1. **新 clone 是安全的**：git 会把 `Cw_WebUi/src` 与 `CwClient/src` **两边都**物化成 CRLF ——
+   转换是对称的。实测在一个全新 clone 里跑 `mirror:check`：`49 SAME / exit 0`，
+   两侧各 48/48 个文件含 CRLF。
+2. **只有一侧被重新物化时会报 DRIFTED**：实测删掉 `CwClient/src/env.d.ts` 再
+   `git checkout --` 它 —— git 给它写了 CRLF，而源端仍是 LF → `1 drifted / exit 1`。
+   注意这是**被报出来的**，不是静默损坏。（反过来，`git checkout -- src` 对「stat 看起来干净」
+   的文件会被 git 跳过、行尾不变 —— 所以这个坑不会在日常操作里随便触发。）
+3. **恢复就是上面手册里那一条**：`npm run mirror:apply` → 实测 `UPDATED 1` → 回到 `49 SAME`。
+
+所以看到漂移先怀疑行尾、先跑 `mirror:apply`，别先去改代码。
+
+**为什么不加 `.gitattributes` 把客户端钉成 LF**：那会让第 1 种情况**变糟** ——
+源端被物化成 CRLF、客户端被钉在 LF，49 条立刻全红。
+真正对称的修法是根目录 `.gitattributes` 同时管住两侧，**不在本轮授权范围内**（只动 `CwClient/`）。
+
 ## `type-check` 为什么有 18 个错（而且是设计的一部分）
 
 ```
