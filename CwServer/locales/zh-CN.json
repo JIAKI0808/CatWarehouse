@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "locale": "zh-CN",
+    "label": "简体中文",
+    "version": "1.0.0",
+    "scope": "backend_messages 只覆盖后端自己产生的文案；界面文案由各前端语言包负责。"
+  },
+  "backend_messages": {
+    "Category not found": "分类不存在",
+    "SubCategory not found": "子分类不存在",
+    "Item not found": "物品不存在",
+    "Tag not found": "标签不存在",
+    "Notification not found": "通知不存在",
+    "Budget not found": "预算不存在",
+    "Ledger item not found": "账目不存在",
+    "Recurring bill not found": "定时账单不存在",
+    "Pricing not found": "售价记录不存在",
+    "Pricing category not found": "售价分类不存在",
+    "Pricing sub-category not found": "售价子分类不存在",
+    "empty file": "上传的文件为空",
+    "科学的管理每一颗螺丝钉": "科学的管理每一颗螺丝钉"
+  }
+}

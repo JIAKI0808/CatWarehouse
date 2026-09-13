@@ -65,6 +65,14 @@ def _migrate_tables(conn):
         conn.execute(text("ALTER TABLE categories ADD COLUMN icon_color VARCHAR DEFAULT '#f59e0b'"))
         logger.info("Migrated: added icon_color to categories")
 
+    inspector_columns = conn.execute(
+        text("PRAGMA table_info(settings)")
+    ).fetchall()
+    col_names = {row[1] for row in inspector_columns}
+    if col_names and "locale" not in col_names:
+        conn.execute(text("ALTER TABLE settings ADD COLUMN locale VARCHAR DEFAULT 'zh-CN'"))
+        logger.info("Migrated: added locale to settings")
+
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 

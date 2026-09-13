@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "locale": "en-US",
+    "label": "English",
+    "version": "1.0.0",
+    "scope": "backend_messages covers backend-produced text only; UI copy lives in each frontend's own catalog."
+  },
+  "backend_messages": {
+    "Category not found": "Category not found",
+    "SubCategory not found": "Sub-category not found",
+    "Item not found": "Item not found",
+    "Tag not found": "Tag not found",
+    "Notification not found": "Notification not found",
+    "Budget not found": "Budget not found",
+    "Ledger item not found": "Ledger entry not found",
+    "Recurring bill not found": "Recurring bill not found",
+    "Pricing not found": "Pricing record not found",
+    "Pricing category not found": "Pricing category not found",
+    "Pricing sub-category not found": "Pricing sub-category not found",
+    "empty file": "The uploaded file is empty",
+    "科学的管理每一颗螺丝钉": "Keep every last screw in order"
+  }
+}
