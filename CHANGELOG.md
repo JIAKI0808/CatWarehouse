@@ -1115,3 +1115,48 @@ signature：**造了零件却没接线**。
   `.gitignore` 带冲突标记未授权改、客户端镜像以 `../Cw_WebUi` 为源。
   **代价是一整套构建架构迁移，收益只是 500 行重复** ⇒ 记为「评估后拒绝」，不是遗漏。
 - **后端手工逐字段构造响应**：任务 D 已判「把原代码搬进钩子并没有减少任何东西」。
+
+### `1750bed` — P6 通用化-2：WebUi 货币适配（写死的 `¥` 换成后端符号）
+
+接 P5 新增的 `/api/currencies/preference`，让界面不再写死 `¥`。
+
+**交付**
+| 范围 | 内容 |
+| --- | --- |
+| `stores/currency.ts`（新增） | `code` / `symbol` / `fetchPreference()` |
+| `types/index.ts` | `CurrencyPreference` / `CurrencyInfo` |
+| `services/api.ts` | `currencyApi` + `getPreference` / `updatePreference`（写只传 code） |
+| 组件（10 处 `¥`） | ItemTable / ItemCard / ItemForm / PricingTable ×2 / AnalyticsCharts ×3 / LedgerView ×2 |
+| 语言包（10 处 `(¥)`） | `analytics.axis.{price,totalPrice,unitPrice,amount}`、`ledger.chartAmountAxis`（中英各 5） |
+
+`App.vue` 启动时拉一次偏好，符号全局共用。
+
+**语言包里的 `(¥)` 怎么处理**
+改成 `价格 ({symbol})`，由调用点传 `{ symbol: currencyStore.symbol }`。
+**没有**把符号写进语言包 —— 货币是**数据**不是**文案**，
+写进语言包会让「切语言」与「切货币」两个正交的维度缠在一起。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| **前端行为探针** | **PROBE IDENTICAL**（204 条文案 / 78 次 api 调用一字未变） |
+| `vue-tsc` | 18 → 18，逐文件计数**逐个不变** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 5 文件 / 0 违规 |
+| 硬编码扫描 | 组件里已无 `¥`（仅剩注释与 `DEFAULT_SYMBOL` 常量本身） |
+
+**真实浏览器端到端**（真实后端 + 真实库副本）
+| # | 检查 | 结果 |
+| --- | --- | --- |
+| 1 | **默认 CNY**：库存表价格列 | `¥5.00` —— 与改动前**逐字一致** |
+| 2 | `PUT {"code":"USD"}` | 返回 `{"code":"USD","symbol":"$"}` |
+| 3 | 重载后库存表 | `$5.00`；分析页概览卡 `$10 / $0 / $0` |
+| 4 | **图表轴名** | `价格 ($)`（截图确认，canvas 读不到）；数量轴仍是 `数量 (包)` |
+| 5 | 控制台 | 零 warn / 零 error |
+
+> **本节最要紧的一条**：整个过程**一行代码都没改**，只改了后端的偏好值，
+> 界面符号就跟着变了 —— 这正是「通用化」要的效果。
+
+**未做的事（刻意）**：未做货币切换的 UI 入口（与 P7 Mobile 一起考虑，
+避免两端做出两套交互）；未改 `SpecificItem.currency` 列的语义 ——
+它是**逐条目**的货币，本次做的是**全局计价货币**，两者不是一回事。
