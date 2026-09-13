@@ -49,6 +49,7 @@
     "src/stores/settings.ts",
     "src/stores/subCategory.ts",
     "src/stores/tag.ts",
+    "src/stores/units.ts",
     "src/types/index.ts",
     "src/views/AboutView.vue",
     "src/views/AnalyticsView.vue",

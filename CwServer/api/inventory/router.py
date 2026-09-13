@@ -10,6 +10,7 @@ from api.inventory.category_router import router as category_router
 from api.inventory.sub_category_router import router as sub_category_router
 from api.inventory.item_router import router as item_router
 from api.inventory.tag_router import router as tag_router
+from api.inventory.unit_router import router as unit_router
 
 router = APIRouter()
 
@@ -17,3 +18,4 @@ router.include_router(category_router)
 router.include_router(sub_category_router)
 router.include_router(item_router)
 router.include_router(tag_router)
+router.include_router(unit_router)

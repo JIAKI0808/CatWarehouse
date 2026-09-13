@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { NModal, NForm, NFormItem, NInput, NButton, NIcon, NColorPicker } from 'naive-ui'
+import {
+  NModal, NForm, NFormItem, NInput, NButton, NIcon, NColorPicker, NSelect,
+} from 'naive-ui'
 import { useI18n } from 'vue-i18n'
+import { useUnitStore } from '@/stores/units'
 import {
   FolderOutline,
   CartOutline,
@@ -130,14 +133,17 @@ const emit = defineEmits<{
   (e: 'submit', data: Record<string, string>): void
 }>()
 
+const unitStore = useUnitStore()
 const { t } = useI18n()
+
+const unitOptions = computed(() => unitStore.units.map((u) => ({ label: u, value: u })))
 
 const form = ref({
   name: '',
   description: '',
   icon: 'FolderOutline',
   icon_color: '#f59e0b',
-  unit: '个',
+  unit: unitStore.defaultUnit,
   notes: '',
 })
 
@@ -154,7 +160,7 @@ watch(
         description: props.editData.description ?? '',
         icon: props.editData.icon ?? 'FolderOutline',
         icon_color: props.editData.icon_color ?? '#f59e0b',
-        unit: props.editData.unit ?? '个',
+        unit: props.editData.unit ?? unitStore.defaultUnit,
         notes: props.editData.notes ?? '',
       }
     } else if (!val) {
@@ -169,7 +175,9 @@ function resetForm() {
     description: '',
     icon: 'FolderOutline',
     icon_color: '#f59e0b',
-    unit: '个',
+    // 在**重置时**取值而不是在模块顶层取常量：字典是异步拉的，
+    // 顶层取会永远拿到兜底值（与 i18n 那边「存 key 而不是存译文」同一个道理）。
+    unit: unitStore.defaultUnit,
     notes: '',
   }
 }
@@ -222,7 +230,14 @@ function handleSubmit() {
         </template>
         <template v-if="type === 'subCategory'">
           <NFormItem :label="t('app.common.unit')">
-            <NInput v-model:value="form.unit" placeholder="个" />
+            <!-- 选或自由输入：字典来自后端，同时允许输入清单外的单位 -->
+            <NSelect
+              v-model:value="form.unit"
+              :options="unitOptions"
+              filterable
+              tag
+              :placeholder="t('app.common.inputUnit')"
+            />
           </NFormItem>
           <NFormItem :label="t('app.common.notes')">
             <NInput

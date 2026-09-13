@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NDatePicker, NSwitch } from 'naive-ui'
+import { ref, watch, computed } from 'vue'
+import {
+  NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NDatePicker, NSwitch, NSelect,
+} from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useCurrencyStore } from '@/stores/currency'
+import { useUnitStore } from '@/stores/units'
 import type { Item } from '@/types'
 
 const currencyStore = useCurrencyStore()
+const unitStore = useUnitStore()
+const unitOptions = computed(() => unitStore.units.map((u) => ({ label: u, value: u })))
 
 const props = defineProps<{
   visible: boolean
@@ -25,7 +30,7 @@ const form = ref({
   recorder: '',
   description: '',
   quantity: 0,
-  unit: '个',
+  unit: unitStore.defaultUnit,
   expire_date: null as number | null,
   is_expired: false,
 })
@@ -59,7 +64,8 @@ function resetForm() {
     recorder: '',
     description: '',
     quantity: 0,
-    unit: '个',
+    // 重置时取当前默认单位（字典是异步拉的，不能在建模块时取常量）
+    unit: unitStore.defaultUnit,
     expire_date: null,
     is_expired: false,
   }
@@ -98,7 +104,14 @@ function handleSubmit() {
           <NInputNumber v-model:value="form.quantity" :min="0" />
         </NFormItem>
         <NFormItem :label="t('app.common.unit')">
-          <NInput v-model:value="form.unit" :placeholder="t('app.common.inputUnit')" />
+          <!-- 选或自由输入：字典来自后端，同时允许输入清单外的单位 -->
+          <NSelect
+            v-model:value="form.unit"
+            :options="unitOptions"
+            filterable
+            tag
+            :placeholder="t('app.common.inputUnit')"
+          />
         </NFormItem>
         <NFormItem :label="t('app.common.recorder')">
           <NInput v-model:value="form.recorder" :placeholder="t('app.common.inputRecorder')" />

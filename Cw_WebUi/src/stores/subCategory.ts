@@ -3,6 +3,7 @@ import { ref, reactive } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { SubCategory, SubCategoryUpdate } from '@/types'
 import { subCategoryApi } from '@/services/api'
+import { useUnitStore } from '@/stores/units'
 import { translate } from '@/i18n'
 
 export const useSubCategoryStore = defineStore('subCategory', () => {
@@ -37,7 +38,9 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
   async function create(
     categoryId: number,
     name: string,
-    unit: string = '个',
+    // 默认单位来自字典（`stores/units.ts`），不再写死 `'个'`；
+    // 字典拿不到时 store 内部退回的仍是 `'个'`，行为与接入前一致。
+    unit: string = useUnitStore().defaultUnit,
     description: string = '',
     notes: string = ''
   ) {

@@ -3,9 +3,11 @@ import { ref, watch } from 'vue'
 import { showToast } from 'vant'
 import { useI18n } from 'vue-i18n'
 import { useCurrencyStore } from '@/stores/currency'
+import { useUnitStore } from '@/stores/units'
 import type { Item } from '@/types'
 
 const currencyStore = useCurrencyStore()
+const unitStore = useUnitStore()
 const { t } = useI18n()
 
 interface FormModel {
@@ -30,7 +32,8 @@ function blankForm(): FormModel {
     name: '',
     price: 0,
     quantity: 0,
-    unit: '个',
+    // 在**建表单时**取默认单位（字典是异步拉的；store 内部在拿不到时退回 `个`）
+    unit: unitStore.defaultUnit,
     recorder: '',
     description: '',
     is_expired: false,
@@ -49,7 +52,7 @@ watch(
         name: props.item.name,
         price: props.item.price,
         quantity: props.item.quantity,
-        unit: props.item.unit || '个',
+        unit: props.item.unit || unitStore.defaultUnit,
         recorder: props.item.recorder,
         description: props.item.description,
         is_expired: props.item.is_expired,
@@ -152,6 +155,19 @@ function submit() {
             :label="t('app.common.unit')"
             :placeholder="t('app.common.inputUnit')"
           />
+          <!-- 单位字典：字段正下方一行 chips，点一下填入；
+               不替换输入框 —— 字典外的单位仍可手打（「选或自由输入」）。 -->
+          <div v-if="unitStore.units.length" class="unit-chips">
+            <span
+              v-for="u in unitStore.units"
+              :key="u"
+              class="unit-chip"
+              :class="{ active: form.unit === u }"
+              @click="form.unit = u"
+            >
+              {{ u }}
+            </span>
+          </div>
           <van-field
             v-model="form.recorder"
             :label="t('app.common.recorder')"
@@ -227,5 +243,29 @@ function submit() {
 .expire-right .clear-icon {
   margin-right: 8px;
   color: var(--van-text-color-2);
+}
+
+/* 单位字典 chips：横向滚动一行，不挤占表单高度 */
+.unit-chips {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.unit-chip {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  border: 1px solid var(--van-border-color);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--van-text-color-2);
+}
+
+.unit-chip.active {
+  border-color: #1989fa;
+  color: #1989fa;
+  background: rgba(25, 137, 250, 0.08);
 }
 </style>

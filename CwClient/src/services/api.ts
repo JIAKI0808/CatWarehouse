@@ -298,6 +298,15 @@ export const backupApi = {
  *
  * 写 `updatePreference` 只传 `code` —— 符号由服务端查表，客户端自报会被忽略。
  */
+/**
+ * 计量单位字典（`/api/units`，「通用化」环新增）。
+ * 返回**字符串数组**（`["个","包",...]`）—— 单位是要写进数据库的**数据**，
+ * 不是界面文案，所以不做 i18n 包装。
+ */
+export const unitApi = {
+  getAll: () => request<string[]>('/api/units'),
+}
+
 export const currencyApi = {
   getAll: () => request<CurrencyInfo[]>('/api/currencies'),
   getPreference: () => request<CurrencyPreference>('/api/currencies/preference'),

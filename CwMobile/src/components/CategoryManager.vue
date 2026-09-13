@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { getCategoryIcon } from '@/utils/categoryIcons'
+import { useUnitStore } from '@/stores/units'
 import CategoryForm from './CategoryForm.vue'
 import type { Category, SubCategory } from '@/types'
 
@@ -37,6 +38,7 @@ const subCategoryStore = useSubCategoryStore()
 const activeCats = ref<number[]>([])
 const loadedCats = ref<Set<number>>(new Set())
 const showCatForm = ref(false)
+const unitStore = useUnitStore()
 const { t } = useI18n()
 
 const catFormType = ref<'category' | 'subCategory'>('category')
@@ -142,7 +144,7 @@ async function submitCategory(data: Record<string, string>) {
 
 async function submitSub(data: Record<string, string>) {
   const name = data.name ?? ''
-  const unit = data.unit ?? '个'
+  const unit = data.unit ?? unitStore.defaultUnit
   const description = data.description ?? ''
   const notes = data.notes ?? ''
   if (editingSubCategory.value) {

@@ -6,9 +6,11 @@ import vantZhCN from 'vant/es/locale/lang/zh-CN'
 import vantEnUS from 'vant/es/locale/lang/en-US'
 import { useThemeStore } from '@/stores/theme'
 import { useCurrencyStore } from '@/stores/currency'
+import { useUnitStore } from '@/stores/units'
 
 const theme = useThemeStore()
 const currencyStore = useCurrencyStore()
+const unitStore = useUnitStore()
 const { t, locale } = useI18n()
 
 // Vant 自带组件的文案要单独喂语言包，它**不**走 vue-i18n。
@@ -32,6 +34,8 @@ onMounted(() => {
   theme.apply()
   // 计价货币只管一次：符号全局共用，失败静默保持默认 `¥`（见 stores/currency.ts）。
   currencyStore.fetchPreference()
+  // 单位字典同理：拿不到就退回接入前的写死默认值 `个`（见 stores/units.ts）。
+  unitStore.fetchUnits()
 })
 </script>
 
