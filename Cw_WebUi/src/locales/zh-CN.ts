@@ -240,6 +240,65 @@ const zhCN = {
       empty: '暂无通知',
     },
 
+    // store / api 层的兜底错误文案。
+    // 这些不是界面里写死的词条，而是 `e.message` 为空时**兜底**的那一句，
+    // 按 store 分组命名（`fetch*Failed` / `create*Failed` / …），便于对照排查。
+    // ⚠️ 「获取配置失败」在 alert 与 settings 里各出现一次 —— 语境不同，**各开各的 key**。
+    stores: {
+      fetchAlertFailed: '获取预警失败',
+      fetchAlertConfigFailed: '获取配置失败',
+      updateAlertConfigFailed: '更新配置失败',
+      fetchBudgetFailed: '获取预算失败',
+      createBudgetFailed: '创建预算失败',
+      updateBudgetFailed: '更新预算失败',
+      removeBudgetFailed: '删除预算失败',
+      fetchBudgetSummaryFailed: '获取预算摘要失败',
+      fetchCategoryFailed: '获取分类失败',
+      createCategoryFailed: '创建分类失败',
+      updateCategoryFailed: '更新分类失败',
+      removeCategoryFailed: '删除分类失败',
+      fetchItemFailed: '获取物品失败',
+      createItemFailed: '创建物品失败',
+      updateItemFailed: '更新物品失败',
+      removeItemFailed: '删除物品失败',
+      fetchLedgerFailed: '获取账单失败',
+      createLedgerFailed: '创建账单失败',
+      updateLedgerFailed: '更新账单失败',
+      removeLedgerFailed: '删除账单失败',
+      fetchLedgerStatsFailed: '获取统计失败',
+      fetchNotificationFailed: '获取通知失败',
+      markNotificationReadFailed: '标记已读失败',
+      checkNotificationFailed: '检查通知失败',
+      fetchPricingFailed: '获取售价列表失败',
+      createPricingFailed: '创建售价记录失败',
+      updatePricingFailed: '更新售价记录失败',
+      removePricingFailed: '删除售价记录失败',
+      fetchRecurringFailed: '获取周期账单失败',
+      createRecurringFailed: '创建周期账单失败',
+      updateRecurringFailed: '更新周期账单失败',
+      removeRecurringFailed: '删除周期账单失败',
+      generateRecurringFailed: '生成账单失败',
+      fetchSettingsFailed: '获取配置失败',
+      saveSettingsFailed: '保存配置失败',
+      fetchVersionFailed: '获取版本失败',
+      fetchSubCategoryFailed: '获取子分类失败',
+      createSubCategoryFailed: '创建子分类失败',
+      updateSubCategoryFailed: '更新子分类失败',
+      removeSubCategoryFailed: '删除子分类失败',
+      fetchTagFailed: '获取标签失败',
+      createTagFailed: '创建标签失败',
+      updateTagFailed: '更新标签失败',
+      removeTagFailed: '删除标签失败',
+      addItemTagFailed: '添加标签失败',
+      removeItemTagFailed: '移除标签失败',
+      fetchItemTagsFailed: '获取物品标签失败',
+    },
+
+    api: {
+      requestFailed: '请求失败 ({status})',
+      uploadFailed: '上传失败',
+    },
+
     // 图标选择器的 48 个 tooltip。键就是 @vicons/ionicons5 的组件名 ——
     // 换图标库时键跟着变，比「按序号 icon1..icon48」可维护得多。
     icons: {

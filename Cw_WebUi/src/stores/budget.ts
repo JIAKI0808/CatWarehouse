@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { Budget, BudgetCreate, BudgetUpdate } from '@/types'
 import { budgetApi } from '@/services/api'
+import { translate } from '@/i18n'
 import { fetchInto, writeActions } from '@/stores/actions'
 
 export const useBudgetStore = defineStore('budget', () => {
@@ -13,14 +14,18 @@ export const useBudgetStore = defineStore('budget', () => {
   const fetchAll = fetchInto({
     list: items,
     loading,
-    message: '获取预算失败',
+    messageKey: 'app.stores.fetchBudgetFailed',
     run: (month?: string) => budgetApi.getAll(month),
   })
 
   const { create, update, remove } = writeActions<Budget, BudgetCreate, BudgetUpdate>({
     list: items,
     api: budgetApi,
-    messages: { create: '创建预算失败', update: '更新预算失败', remove: '删除预算失败' },
+    messageKeys: {
+      create: 'app.stores.createBudgetFailed',
+      update: 'app.stores.updateBudgetFailed',
+      remove: 'app.stores.removeBudgetFailed',
+    },
   })
 
   /** 写进的是**另一个** ref（`summary`），所以不走 `fetchInto`，也不动 `loading`。 */
@@ -28,7 +33,7 @@ export const useBudgetStore = defineStore('budget', () => {
     try {
       summary.value = await budgetApi.getSummary(month)
     } catch (e: any) {
-      useMessage().error(e.message || '获取预算摘要失败')
+      useMessage().error(e.message || translate('app.stores.fetchBudgetSummaryFailed'))
     }
   }
 

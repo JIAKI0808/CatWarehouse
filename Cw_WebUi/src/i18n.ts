@@ -109,6 +109,23 @@ export function setLocale(locale: string): AppLocale {
 }
 
 /**
+ * 在**组件之外**（Pinia store、`services/api`）取译文。
+ *
+ * `useI18n()` 必须在 setup 里调用，store 与 api 层没有组件实例，所以走全局 composer。
+ *
+ * ⚠️ **不要在模板或 computed 里用它**：这里返回的是调用**当下**的字符串，**不是响应式的**。
+ * 界面文案请用 `useI18n()` 的 `t`。本函数的用途只有一类 ——
+ * 「出事时取一条兜底消息」这种**一次性**读取，读完就交给 `message.error()`，
+ * 不存在「语言变了要重渲染」的问题。
+ *
+ * 反过来说，也正因为它是**每次调用时**才查表，
+ * store 里的兜底文案才能跟着语言走 —— 若在 store 创建时就把中文取成常量，切语言就失效了。
+ */
+export function translate(key: string, named?: Record<string, unknown>): string {
+  return named ? i18n.global.t(key, named) : i18n.global.t(key)
+}
+
+/**
  * 把后端返回的 `detail` 原文翻成当前语言。
  *
  * **查不到就原样返回原文，绝不返回空串** —— 后端新增端点时很容易漏进语言包，

@@ -11,7 +11,7 @@ export const usePricingStore = defineStore('pricing', () => {
   const fetchAll = fetchInto({
     list: items,
     loading,
-    message: '获取售价列表失败',
+    messageKey: 'app.stores.fetchPricingFailed',
     run: (params?: { sub_category_id?: number; q?: string }) =>
       pricingApi.getAll(params),
   })
@@ -19,10 +19,10 @@ export const usePricingStore = defineStore('pricing', () => {
   const { create, update, remove } = writeActions<Pricing, PricingCreate, PricingUpdate>({
     list: items,
     api: pricingApi,
-    messages: {
-      create: '创建售价记录失败',
-      update: '更新售价记录失败',
-      remove: '删除售价记录失败',
+    messageKeys: {
+      create: 'app.stores.createPricingFailed',
+      update: 'app.stores.updatePricingFailed',
+      remove: 'app.stores.removePricingFailed',
     },
   })
 

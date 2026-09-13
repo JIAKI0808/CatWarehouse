@@ -12,14 +12,18 @@ export const useCategoryStore = defineStore('category', () => {
   const fetchAll = fetchInto({
     list: categories,
     loading,
-    message: '获取分类失败',
+    messageKey: 'app.stores.fetchCategoryFailed',
     run: () => categoryApi.getAll(),
   })
 
   const write = writeActions<Category, CategoryCreate, CategoryUpdate>({
     list: categories,
     api: categoryApi,
-    messages: { create: '创建分类失败', update: '更新分类失败', remove: '删除分类失败' },
+    messageKeys: {
+      create: 'app.stores.createCategoryFailed',
+      update: 'app.stores.updateCategoryFailed',
+      remove: 'app.stores.removeCategoryFailed',
+    },
     // 删除后顺手清掉选中项 —— 只有 category 有 selectedId，所以只有它需要这一钩子。
     onRemoved: (id) => {
       if (selectedId.value === id) selectedId.value = null

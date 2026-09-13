@@ -12,14 +12,18 @@ export const useItemStore = defineStore('item', () => {
   const fetchBySubCategory = fetchInto({
     list: items,
     loading,
-    message: '获取物品失败',
+    messageKey: 'app.stores.fetchItemFailed',
     run: (subCategoryId: number) => itemApi.getBySubCategory(subCategoryId),
   })
 
   const { create, update, remove } = writeActions<Item, ItemCreate, ItemUpdate>({
     list: items,
     api: itemApi,
-    messages: { create: '创建物品失败', update: '更新物品失败', remove: '删除物品失败' },
+    messageKeys: {
+      create: 'app.stores.createItemFailed',
+      update: 'app.stores.updateItemFailed',
+      remove: 'app.stores.removeItemFailed',
+    },
   })
 
   function setViewMode(mode: ViewMode) {
