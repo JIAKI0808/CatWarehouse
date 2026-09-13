@@ -870,3 +870,42 @@ function typeTag(t: string): string { return t === 'income' ? '收入' : '支出
 | `en-US` 新增账单弹层 | Cancel / New entry / Save / Amount / Type / Expense·Income / Date / Platform / Description / Recorded by / Notes |
 | **整页零 CJK** | 脚本断言在两处界面均为 `false` |
 | 控制台 | 零 warn / 零 error |
+
+### `e591b30` — P4f 国际化 D-6：移动端售价区文案迁移
+
+**迁移内容**
+- `PricingView.vue` — 页面标题、分类管理器（标题/「全部售价」/2 个空态/名称表单）、
+  选择器标题、搜索占位符、加载中、**3 个删除确认框**、4 个 `nameFormTitle`、
+  3 条 toast、售价卡片两行、滑出删除
+- `PricingForm.vue` — 标题、取消/保存、6 个字段与占位符、商品名校验 toast
+
+新增 `app.pricing`（31 条）与 `app.stores`（**先建 2 条，P4h 复用**）。
+
+**两处刻意的决定**
+1. **先建 `app.stores`，而不是把「获取分类失败」塞进 `pricing`** ——
+   同一个文案即将在 P4h 的 store 兜底里**再出现一次**。放 `stores` 段两处共用，
+   语言包里就不会出现两份「获取分类失败」。
+   （这是「提取时机」的另一面：**能预见到第二个使用者时，不必等到它真的出现**。）
+2. **售价的分类/子分类各开各的 key**，不复用 `categoryManager.*` ——
+   `PricingCategory` 与 `Category` 是**不同的领域对象**，中文逐字相同是巧合。
+
+售价卡片那行原本由模板三行拼成（成本 / 建议售价 / 折扣），
+合并为一条带插值的 `costSuggestedPrice` —— 英文语序才不会被中文写死。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+| 中文残留 | 两个文件**均为 0 行** |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 售价管理 / 全部售价 / 暂无售价记录 / 占位符「搜索商品名/描述」—— **与改动前一致** |
+| `en-US` | Pricing / All pricing / No pricing records yet / 占位符 `Search product name / description` |
+| `en-US` 分类管理器 | Pricing categories / All pricing / No pricing categories yet |
+| `en-US` 分类名称表单 | Cancel / New pricing category / Save / Name |
+| **三处界面零 CJK** | 脚本断言通过 |
+| 控制台 | 零 warn / 零 error |
