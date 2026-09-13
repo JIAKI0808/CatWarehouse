@@ -15,7 +15,8 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
 import { useServerConfigStore } from '@/stores/serverConfig'
-import { connectionApi, i18nApi } from '@/services/api'
+import { connectionApi, currencyApi, i18nApi } from '@/services/api'
+import { useCurrencyStore } from '@/stores/currency'
 import { translateBackendMessage } from '@/i18n'
 import {
   LOCALE_LABELS,
@@ -41,6 +42,33 @@ const localeOptions = SUPPORTED_LOCALES.map((value) => ({
   value,
 }))
 
+// 货币：选项来自**后端** `GET /api/currencies`（不在前端写死清单 ——
+// 那正是本次「通用化」要消除的东西）。
+const currencyStore = useCurrencyStore()
+const currencyValue = ref<string>(currencyStore.code)
+const currencyOptions = ref<{ label: string; value: string }[]>([])
+
+async function loadCurrencyOptions() {
+  try {
+    const list = await currencyApi.getAll()
+    currencyOptions.value = list.map((c) => ({ label: `${c.symbol} ${c.code}`, value: c.code }))
+  } catch {
+    // 离线：下拉里只有当前值可选；切换会走 handleCurrencyChange 的失败分支
+  }
+}
+
+/** 切货币：本机立即生效（不等待网络），再尽力同步给后端。 */
+async function handleCurrencyChange(next: string) {
+  currencyValue.value = next
+  try {
+    const applied = await currencyApi.updatePreference(next)
+    currencyStore.code = applied.code
+    currencyStore.symbol = applied.symbol
+  } catch {
+    message.warning(t('app.settingsPage.currencySyncFailed'))
+  }
+}
+
 // 版本描述是**后端**返回的（`/api/settings/version` 的 description），前端不该去改它，
 // 而是用 `translateBackendMessage()` 查 `backend.*` 对照表把它显示成当前语言 ——
 // 这正是 P1 建那份语言包的用途，也是它的**第一个真实使用者**。
@@ -53,6 +81,8 @@ const versionDescription = computed(() =>
 onMounted(async () => {
   await Promise.all([store.fetchSettings(), store.fetchVersion()])
   await syncLocaleFromServer()
+  await Promise.all([loadCurrencyOptions(), currencyStore.fetchPreference()])
+  currencyValue.value = currencyStore.code
 })
 
 /**
@@ -262,6 +292,20 @@ async function handleTestConnection() {
               />
               <span class="text-xs text-gray-500">
                 {{ t('app.settingsPage.languageNote') }}
+              </span>
+            </div>
+          </NCollapseItem>
+          <!-- 货币：与「语言」同一个折叠区里的**第二项** —— 不新增区块，仍是一块收纳区 -->
+          <NCollapseItem :title="t('app.settingsPage.currency')" name="currency">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <NSelect
+                :value="currencyValue"
+                :options="currencyOptions"
+                class="w-40"
+                @update:value="handleCurrencyChange"
+              />
+              <span class="text-xs text-gray-500">
+                {{ t('app.settingsPage.currencyNote') }}
               </span>
             </div>
           </NCollapseItem>

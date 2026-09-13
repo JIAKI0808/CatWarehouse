@@ -15,7 +15,8 @@ import {
 import { useSettingsStore } from '@/stores/settings'
 import { useServerConfigStore } from '@/stores/serverConfig'
 import { useThemeStore } from '@/stores/theme'
-import { connectionApi, i18nApi } from '@/services/api'
+import { connectionApi, currencyApi, i18nApi } from '@/services/api'
+import { useCurrencyStore } from '@/stores/currency'
 
 const { t } = useI18n()
 const store = useSettingsStore()
@@ -58,10 +59,42 @@ const langLabel = computed(() =>
     : LOCALE_LABELS[DEFAULT_LOCALE]
 )
 
+// 货币：同样是**收纳型** —— 一行 cell + 一个动作面板，不新增区块。
+// 选项来自后端 `GET /api/currencies`（不在前端写死清单）。
+const currencyStore = useCurrencyStore()
+const showCurrencySheet = ref(false)
+const currencyActions = ref<{ name: string; value: string }[]>([])
+
+async function loadCurrencyActions() {
+  try {
+    const list = await currencyApi.getAll()
+    currencyActions.value = list.map((c) => ({
+      name: `${c.symbol} ${c.code}`,
+      value: c.code,
+    }))
+  } catch {
+    // 离线：面板为空，切换会走 handleCurrencySelect 的失败分支
+  }
+}
+
+/** 切货币：本机立即生效（不等待网络），再尽力同步给后端。 */
+async function handleCurrencySelect(action: { value?: string }) {
+  showCurrencySheet.value = false
+  if (!action.value) return
+  try {
+    const applied = await currencyApi.updatePreference(action.value)
+    currencyStore.code = applied.code
+    currencyStore.symbol = applied.symbol
+  } catch {
+    showFailToast(t('app.settingsPage.currencySyncFailed'))
+  }
+}
+
 onMounted(() => {
   store.fetchSettings()
   store.fetchVersion()
   syncLocaleFromServer()
+  loadCurrencyActions()
 })
 
 /**
@@ -131,6 +164,13 @@ async function handleTestConnection() {
           :value="langLabel"
           is-link
           @click="showLangSheet = true"
+        />
+        <!-- 货币：与「语言」并排的第二行，同一个卡片内的收纳型入口 -->
+        <van-cell
+          :title="t('app.settingsPage.currency')"
+          :value="currencyStore.code"
+          is-link
+          @click="showCurrencySheet = true"
         />
         <van-cell :title="t('app.settingsPage.darkMode')" center>
           <template #right-icon>
@@ -264,6 +304,13 @@ async function handleTestConnection() {
       :actions="langActions"
       :cancel-text="t('app.common.cancel')"
       @select="handleLocaleSelect"
+    />
+
+    <van-action-sheet
+      v-model:show="showCurrencySheet"
+      :actions="currencyActions"
+      :cancel-text="t('app.common.cancel')"
+      @select="handleCurrencySelect"
     />
   </div>
 </template>
