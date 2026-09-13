@@ -1,100 +1,63 @@
-import logging
+"""定价分类与定价子分类 —— 一个文件里的两套纯 CRUD，共用同一个 `router`。
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+两套都走通用层；用 `add_crud_routes` 而不是各建一个 router 再 `include_router`，
+是为了避免包装层在路径或 operationId 上引入差异。
+"""
 
-from core.database import get_db
+from fastapi import APIRouter
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import add_crud_routes
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.pricing_category import PricingCategory
 from models.pricing_sub_category import PricingSubCategory
 from schemas.pricing_category import (
-    PricingCategoryCreate, PricingCategoryUpdate, PricingCategoryResponse,
-    PricingSubCategoryCreate, PricingSubCategoryUpdate, PricingSubCategoryResponse,
+    PricingCategoryCreate,
+    PricingCategoryResponse,
+    PricingCategoryUpdate,
+    PricingSubCategoryCreate,
+    PricingSubCategoryResponse,
+    PricingSubCategoryUpdate,
 )
 
-logger = logging.getLogger(__name__)
+PRICING_CATEGORY = register_crud(
+    CrudSpec(
+        name="pricing_category",
+        model=PricingCategory,
+        response=PricingCategoryResponse,
+        path="/pricing-categories",
+        id_param="cat_id",
+        not_found="Pricing category not found",
+        create=PricingCategoryCreate,
+        update=PricingCategoryUpdate,
+        names=CrudNames(
+            list="list_pricing_categories",
+            create="create_pricing_category",
+            update="update_pricing_category",
+            delete="delete_pricing_category",
+        ),
+    )
+)
+
+PRICING_SUB_CATEGORY = register_crud(
+    CrudSpec(
+        name="pricing_sub_category",
+        model=PricingSubCategory,
+        response=PricingSubCategoryResponse,
+        path="/pricing-sub-categories",
+        id_param="sub_id",
+        not_found="Pricing sub-category not found",
+        create=PricingSubCategoryCreate,
+        update=PricingSubCategoryUpdate,
+        list_filter="category_id",
+        names=CrudNames(
+            list="list_pricing_sub_categories",
+            create="create_pricing_sub_category",
+            update="update_pricing_sub_category",
+            delete="delete_pricing_sub_category",
+        ),
+    )
+)
+
 router = APIRouter()
-
-
-@router.get("/pricing-categories", response_model=list[PricingCategoryResponse])
-async def list_pricing_categories(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(PricingCategory))
-    return result.scalars().all()
-
-
-@router.post("/pricing-categories", response_model=PricingCategoryResponse)
-async def create_pricing_category(data: PricingCategoryCreate, db: AsyncSession = Depends(get_db)):
-    item = PricingCategory(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.put("/pricing-categories/{cat_id}", response_model=PricingCategoryResponse)
-async def update_pricing_category(
-    cat_id: int, data: PricingCategoryUpdate, db: AsyncSession = Depends(get_db)
-):
-    item = await db.get(PricingCategory, cat_id)
-    if not item:
-        raise HTTPException(404, "Pricing category not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.delete("/pricing-categories/{cat_id}")
-async def delete_pricing_category(cat_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(PricingCategory, cat_id)
-    if not item:
-        raise HTTPException(404, "Pricing category not found")
-    await db.delete(item)
-    await db.commit()
-    return {"ok": True}
-
-
-@router.get("/pricing-sub-categories", response_model=list[PricingSubCategoryResponse])
-async def list_pricing_sub_categories(
-    category_id: int | None = None,
-    db: AsyncSession = Depends(get_db),
-):
-    stmt = select(PricingSubCategory)
-    if category_id is not None:
-        stmt = stmt.where(PricingSubCategory.category_id == category_id)
-    result = await db.execute(stmt)
-    return result.scalars().all()
-
-
-@router.post("/pricing-sub-categories", response_model=PricingSubCategoryResponse)
-async def create_pricing_sub_category(data: PricingSubCategoryCreate, db: AsyncSession = Depends(get_db)):
-    item = PricingSubCategory(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.put("/pricing-sub-categories/{sub_id}", response_model=PricingSubCategoryResponse)
-async def update_pricing_sub_category(
-    sub_id: int, data: PricingSubCategoryUpdate, db: AsyncSession = Depends(get_db)
-):
-    item = await db.get(PricingSubCategory, sub_id)
-    if not item:
-        raise HTTPException(404, "Pricing sub-category not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.delete("/pricing-sub-categories/{sub_id}")
-async def delete_pricing_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(PricingSubCategory, sub_id)
-    if not item:
-        raise HTTPException(404, "Pricing sub-category not found")
-    await db.delete(item)
-    await db.commit()
-    return {"ok": True}
+add_crud_routes(router, PRICING_CATEGORY)
+add_crud_routes(router, PRICING_SUB_CATEGORY)

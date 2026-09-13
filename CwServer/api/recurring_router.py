@@ -1,56 +1,43 @@
-import logging
+"""周期性账单（RecurringBill）—— 四个标准端点走通用层，`generate` 保持手写。
+
+`generate_recurring_bills` 是状态机（选出到期的账单 → 记流水 → 按频率推进 `next_date`），
+不属于标准 CRUD，原样保留。
+"""
+
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from models.recurring import RecurringBill
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.ledger import Ledger
-from schemas.recurring import RecurringBillCreate, RecurringBillUpdate, RecurringBillResponse
+from models.recurring import RecurringBill
+from schemas.recurring import RecurringBillCreate, RecurringBillResponse, RecurringBillUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+RECURRING = register_crud(
+    CrudSpec(
+        name="recurring",
+        model=RecurringBill,
+        response=RecurringBillResponse,
+        path="/recurring",
+        id_param="bill_id",
+        not_found="Recurring bill not found",
+        create=RecurringBillCreate,
+        update=RecurringBillUpdate,
+        names=CrudNames(
+            list="list_recurring",
+            create="create_recurring",
+            update="update_recurring",
+            delete="delete_recurring",
+        ),
+    )
+)
 
-
-@router.get("/recurring", response_model=list[RecurringBillResponse])
-async def list_recurring(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(RecurringBill))
-    return result.scalars().all()
-
-
-@router.post("/recurring", response_model=RecurringBillResponse)
-async def create_recurring(data: RecurringBillCreate, db: AsyncSession = Depends(get_db)):
-    item = RecurringBill(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.put("/recurring/{bill_id}", response_model=RecurringBillResponse)
-async def update_recurring(
-    bill_id: int, data: RecurringBillUpdate, db: AsyncSession = Depends(get_db)
-):
-    item = await db.get(RecurringBill, bill_id)
-    if not item:
-        raise HTTPException(404, "Recurring bill not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.delete("/recurring/{bill_id}")
-async def delete_recurring(bill_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(RecurringBill, bill_id)
-    if not item:
-        raise HTTPException(404, "Recurring bill not found")
-    await db.delete(item)
-    await db.commit()
-    return {"ok": True}
+router: APIRouter = build_crud_router(RECURRING)
 
 
 @router.post("/recurring/generate")

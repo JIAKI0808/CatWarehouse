@@ -1,59 +1,33 @@
-import logging
+"""分类（Category）的 CRUD —— 端点由 `dataManager.crud` 的通用层生成。
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+原先是 59 行的五段样板（list/create/get/update/delete 各写一遍），现在只剩一份声明：
+这个资源与其他纯 CRUD 资源的差异，全都在 `CrudSpec` 里。
+"""
 
-from core.database import get_db
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.category import Category
-from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+CATEGORY = register_crud(
+    CrudSpec(
+        name="category",
+        model=Category,
+        response=CategoryResponse,
+        path="/categories",
+        id_param="cat_id",
+        not_found="Category not found",
+        create=CategoryCreate,
+        update=CategoryUpdate,
+        names=CrudNames(
+            list="list_categories",
+            get="get_category",
+            create="create_category",
+            update="update_category",
+            delete="delete_category",
+        ),
+    )
+)
 
-
-@router.get("/categories", response_model=list[CategoryResponse])
-async def list_categories(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Category))
-    return result.scalars().all()
-
-
-@router.post("/categories", response_model=CategoryResponse)
-async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_db)):
-    cat = Category(**data.model_dump())
-    db.add(cat)
-    await db.commit()
-    await db.refresh(cat)
-    return cat
-
-
-@router.get("/categories/{cat_id}", response_model=CategoryResponse)
-async def get_category(cat_id: int, db: AsyncSession = Depends(get_db)):
-    cat = await db.get(Category, cat_id)
-    if not cat:
-        raise HTTPException(404, "Category not found")
-    return cat
-
-
-@router.put("/categories/{cat_id}", response_model=CategoryResponse)
-async def update_category(
-    cat_id: int, data: CategoryUpdate, db: AsyncSession = Depends(get_db)
-):
-    cat = await db.get(Category, cat_id)
-    if not cat:
-        raise HTTPException(404, "Category not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(cat, key, value)
-    await db.commit()
-    await db.refresh(cat)
-    return cat
-
-
-@router.delete("/categories/{cat_id}")
-async def delete_category(cat_id: int, db: AsyncSession = Depends(get_db)):
-    cat = await db.get(Category, cat_id)
-    if not cat:
-        raise HTTPException(404, "Category not found")
-    await db.delete(cat)
-    await db.commit()
-    return {"ok": True}
+router = build_crud_router(CATEGORY)

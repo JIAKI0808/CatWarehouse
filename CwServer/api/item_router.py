@@ -1,20 +1,33 @@
-import logging
+"""商品明细（SpecificItem）—— 端点保持手写，但取数与落库走 `dataManager` 的抽象工厂。
+
+这个资源的列表要 join 子分类、更新要跨表写子分类库存、还带导入导出，不属于标准 CRUD，
+所以端点不交给 `build_crud_router`。但「取对象 + 404」「新建」「删除」这些通用动作
+改由 `get_factory("inventory", db)` 产出的仓储承担 ——
+这是 `dataManager/` 那套抽象工厂第一次被真实调用（此前它对全仓库零引用）。
+
+列表的响应构造交给了 `dataManager.inventory.item.Item`（组合视图产品），
+不再在端点里手工堆 `SpecificItemResponse` 的字段。
+"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from dataManager.factory import get_factory
+from dataManager.inventory.item import Item
 from models.category import Category
 from models.sub_category import SubCategory
 from models.specific_item import SpecificItem
-from schemas.specific_item import SpecificItemCreate, SpecificItemResponse, SpecificItemUpdate
 from schemas.import_export import (
-    ImportRequest, ConflictCheckResponse, ConflictItem,
-    ImportExecuteRequest, ImportResult,
+    ConflictCheckResponse,
+    ConflictItem,
+    ImportExecuteRequest,
+    ImportRequest,
+    ImportResult,
 )
+from schemas.specific_item import SpecificItemCreate, SpecificItemResponse, SpecificItemUpdate
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -35,30 +48,22 @@ async def list_items(
             SpecificItem.name.contains(q) | SpecificItem.description.contains(q)
         )
     result = await db.execute(stmt)
-    rows = result.all()
-    return [
-        SpecificItemResponse(
-            id=item.id, sub_category_id=item.sub_category_id,
-            sub_category_name=sub.name, quantity=sub.quantity, unit=sub.unit,
-            name=item.name, entry_date=item.entry_date, update_date=item.update_date,
-            recorder=item.recorder, price=item.price, description=item.description,
-        )
-        for item, sub in rows
-    ]
+    return [Item(item, sub).to_dict() for item, sub in result.all()]
 
 
 @router.post("/items", response_model=SpecificItemResponse)
 async def create_item(data: SpecificItemCreate, db: AsyncSession = Depends(get_db)):
-    item = SpecificItem(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return item
+    factory = get_factory("inventory", db)
+    validator = factory.create_validator()
+    payload = data.model_dump()
+    if not validator.validate(payload):
+        raise HTTPException(422, "; ".join(validator.errors()))
+    return await factory.create_repository().create(payload)
 
 
 @router.get("/items/{item_id}", response_model=SpecificItemResponse)
 async def get_item(item_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(SpecificItem, item_id)
+    item = await get_factory("inventory", db).create_repository().get(item_id)
     if not item:
         raise HTTPException(404, "Item not found")
     return item
@@ -68,7 +73,7 @@ async def get_item(item_id: int, db: AsyncSession = Depends(get_db)):
 async def update_item(
     item_id: int, data: SpecificItemUpdate, db: AsyncSession = Depends(get_db)
 ):
-    item = await db.get(SpecificItem, item_id)
+    item = await get_factory("inventory", db).create_repository().get(item_id)
     if not item:
         raise HTTPException(404, "Item not found")
     item_data = data.model_dump(exclude_unset=True, exclude={"quantity", "unit"})
@@ -88,11 +93,8 @@ async def update_item(
 
 @router.delete("/items/{item_id}")
 async def delete_item(item_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(SpecificItem, item_id)
-    if not item:
+    if not await get_factory("inventory", db).create_repository().delete(item_id):
         raise HTTPException(404, "Item not found")
-    await db.delete(item)
-    await db.commit()
     return {"ok": True}
 
 

@@ -1,43 +1,37 @@
-import logging
+"""标签（Tag）—— list/create/update 走通用层，其余端点保持手写。
+
+`delete_tag` **刻意不交给通用层**：它在删除前要先清掉 `ItemTag` 里的关联行，
+比标准 CRUD 多一步，硬塞进模板反而要把「例外」写成模板的一部分。
+标签与条目的关联三个端点同理，都是这一处业务特有的。
+"""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from models.tag import Tag
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.item_tag import ItemTag
-from schemas.tag import TagCreate, TagUpdate, TagResponse
+from models.tag import Tag
+from schemas.tag import TagCreate, TagResponse, TagUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+TAG = register_crud(
+    CrudSpec(
+        name="tag",
+        model=Tag,
+        response=TagResponse,
+        path="/tags",
+        id_param="tag_id",
+        not_found="Tag not found",
+        create=TagCreate,
+        update=TagUpdate,
+        names=CrudNames(list="list_tags", create="create_tag", update="update_tag"),
+    )
+)
 
-
-@router.get("/tags", response_model=list[TagResponse])
-async def list_tags(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Tag))
-    return result.scalars().all()
-
-
-@router.post("/tags", response_model=TagResponse)
-async def create_tag(data: TagCreate, db: AsyncSession = Depends(get_db)):
-    item = Tag(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.put("/tags/{tag_id}", response_model=TagResponse)
-async def update_tag(tag_id: int, data: TagUpdate, db: AsyncSession = Depends(get_db)):
-    item = await db.get(Tag, tag_id)
-    if not item:
-        raise HTTPException(404, "Tag not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return item
+router: APIRouter = build_crud_router(TAG)
 
 
 @router.delete("/tags/{tag_id}")

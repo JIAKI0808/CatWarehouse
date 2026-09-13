@@ -146,8 +146,58 @@ CwServer/
 └── dataManager/                    # 抽象工厂层
     ├── base.py                     #   抽象基类
     ├── factory.py                  #   工厂注册与获取
+    ├── crud/                       #   通用 CRUD 层（2026-09-13 新增）
+    │   ├── spec.py                 #     CrudSpec / CrudNames 资源规格
+    │   ├── repository.py           #     SqlAlchemyRepository 通用仓储
+    │   ├── registry.py             #     资源名 → 规格 注册表
+    │   └── router.py               #     build_crud_router 端点生成
     └── inventory/                  #   具体工厂：商品/库存
         ├── factory.py              #     InventoryManagerFactory
-        ├── item.py                 #     Item 数据产品
+        ├── item.py                 #     Item 数据产品（明细+子分类的组合视图）
         ├── validator.py            #     ItemValidator 验证器
         └── repository.py           #     ItemRepository 存储仓库
+
+
+================================================================================
+  设计模式分层（2026-09-13 后端整改后）
+================================================================================
+
+  三大类各自落在哪：
+
+  创建型 ─┬─ CrudSpec / CrudNames        声明式资源规格（产品规格）
+          ├─ register_crud / get_crud    资源注册表（按名取用，不 import 具体类）
+          └─ DataManagerFactory          抽象工厂 + get_factory(name, db)
+                 └─ InventoryManagerFactory → Item / ItemValidator / ItemRepository
+
+  结构型 ─┬─ SqlAlchemyRepository        适配器：AsyncSession → 统一仓储接口
+          │                              （实现 base.py 的 Repository ABC）
+          └─ build_crud_router(spec)     门面：一次调用产出 5 个端点
+
+  行为型 ─── 模板方法                     list/get/create/update/delete 五步骨架固定，
+                                          差异走 CrudSpec 的字段与钩子
+                                          （list_filter / to_response）
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │  api/*_router.py            端点声明；自定义端点仍手写                     │
+  │        ↓ 用                                                              │
+  │  dataManager/crud/router.py     build_crud_router(spec) → APIRouter      │
+  │        ↓ 用                                                              │
+  │  dataManager/crud/repository.py SqlAlchemyRepository                     │
+  │        ↓ 实现                                                            │
+  │  dataManager/base.py::Repository   抽象契约                              │
+  └──────────────────────────────────────────────────────────────────────────┘
+
+  哪些资源走了通用层（2026-09-13）：
+    category / tag(部分) / recurring(部分) / pricing_category ×2 /
+    sub_category / pricing(部分) / budget(部分) / ledger(部分)
+
+  哪些仍是手写，以及为什么：
+    - 自定义动作：/sub-categories/{id}/quantity、/recurring/generate、
+      /ledger/stats、/budget/summary、/items 的导出导入、tag 的条目标签关联
+    - 联表列表：/items、/pricing、/budget、/ledger（过滤条件多或要 join）
+    - 一个朴素的原则：**不把手写端点强行塞进模板**。
+      把原始代码原样搬进一个「钩子」，并没有减少任何东西，只是换了个地方放。
+
+  设计时刻意**没有**做的一件事：`CrudSpec` 一度有 `list_query` 钩子想承接联表列表，
+  实际做下来没人用，已删除 —— 没有使用者的旋钮不留。
+

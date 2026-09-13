@@ -1,16 +1,44 @@
-import logging
+"""售价（Pricing）—— create/update/delete 走通用层，列表保持手写。
 
-from fastapi import APIRouter, Depends, HTTPException
+列表要 `join SubCategory` 拿分类名，是联表查询，留在本文件里。
+
+`create` / `update` **不需要响应钩子**：`PricingResponse` 带 `from_attributes=True`，
+而 `sub_category_name` 在模型上不存在、schema 里又有默认值 `""`，
+所以直接返回 ORM 对象得到的 JSON 与原实现手工构造的**完全一致**
+（原实现那两处也是写死 `sub_category_name=""`）。
+"""
+
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.pricing import Pricing
 from models.sub_category import SubCategory
-from schemas.pricing import PricingCreate, PricingUpdate, PricingResponse
+from schemas.pricing import PricingCreate, PricingResponse, PricingUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+PRICING = register_crud(
+    CrudSpec(
+        name="pricing",
+        model=Pricing,
+        response=PricingResponse,
+        path="/pricing",
+        id_param="pricing_id",
+        not_found="Pricing not found",
+        create=PricingCreate,
+        update=PricingUpdate,
+        names=CrudNames(
+            create="create_pricing",
+            update="update_pricing",
+            delete="delete_pricing",
+        ),
+    )
+)
+
+router: APIRouter = build_crud_router(PRICING)
 
 
 @router.get("/pricing", response_model=list[PricingResponse])
@@ -38,46 +66,3 @@ async def list_pricing(
         )
         for p, sc in rows
     ]
-
-
-@router.post("/pricing", response_model=PricingResponse)
-async def create_pricing(data: PricingCreate, db: AsyncSession = Depends(get_db)):
-    item = Pricing(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return PricingResponse(
-        id=item.id, sub_category_id=item.sub_category_id, sub_category_name="",
-        name=item.name, cost=item.cost, suggested_price=item.suggested_price,
-        discount=item.discount, description=item.description, notes=item.notes,
-        record_date=item.record_date,
-    )
-
-
-@router.put("/pricing/{pricing_id}", response_model=PricingResponse)
-async def update_pricing(
-    pricing_id: int, data: PricingUpdate, db: AsyncSession = Depends(get_db)
-):
-    item = await db.get(Pricing, pricing_id)
-    if not item:
-        raise HTTPException(404, "Pricing not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return PricingResponse(
-        id=item.id, sub_category_id=item.sub_category_id, sub_category_name="",
-        name=item.name, cost=item.cost, suggested_price=item.suggested_price,
-        discount=item.discount, description=item.description, notes=item.notes,
-        record_date=item.record_date,
-    )
-
-
-@router.delete("/pricing/{pricing_id}")
-async def delete_pricing(pricing_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(Pricing, pricing_id)
-    if not item:
-        raise HTTPException(404, "Pricing not found")
-    await db.delete(item)
-    await db.commit()
-    return {"ok": True}

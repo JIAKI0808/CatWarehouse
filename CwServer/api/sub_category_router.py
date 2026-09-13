@@ -1,59 +1,43 @@
-import logging
+"""细分类（SubCategory）—— 五个标准端点走通用层，`quantity` 保持手写。
+
+列表端点的 `category_id` 过滤正好是「按单字段等值过滤」，交给 `list_filter` 即可，
+不必手写。`/sub-categories/{sub_id}/quantity` 是跨表计数，不属于标准 CRUD。
+"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from models.sub_category import SubCategory
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.specific_item import SpecificItem
-from schemas.sub_category import SubCategoryCreate, SubCategoryUpdate, SubCategoryResponse
+from models.sub_category import SubCategory
+from schemas.sub_category import SubCategoryCreate, SubCategoryResponse, SubCategoryUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+SUB_CATEGORY = register_crud(
+    CrudSpec(
+        name="sub_category",
+        model=SubCategory,
+        response=SubCategoryResponse,
+        path="/sub-categories",
+        id_param="sub_id",
+        not_found="SubCategory not found",
+        create=SubCategoryCreate,
+        update=SubCategoryUpdate,
+        list_filter="category_id",
+        names=CrudNames(
+            list="list_sub_categories",
+            get="get_sub_category",
+            create="create_sub_category",
+            update="update_sub_category",
+            delete="delete_sub_category",
+        ),
+    )
+)
 
-
-@router.get("/sub-categories", response_model=list[SubCategoryResponse])
-async def list_sub_categories(
-    category_id: int | None = None,
-    db: AsyncSession = Depends(get_db),
-):
-    stmt = select(SubCategory)
-    if category_id is not None:
-        stmt = stmt.where(SubCategory.category_id == category_id)
-    result = await db.execute(stmt)
-    return result.scalars().all()
-
-
-@router.post("/sub-categories", response_model=SubCategoryResponse)
-async def create_sub_category(data: SubCategoryCreate, db: AsyncSession = Depends(get_db)):
-    sub = SubCategory(**data.model_dump())
-    db.add(sub)
-    await db.commit()
-    await db.refresh(sub)
-    return sub
-
-
-@router.get("/sub-categories/{sub_id}", response_model=SubCategoryResponse)
-async def get_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
-    sub = await db.get(SubCategory, sub_id)
-    if not sub:
-        raise HTTPException(404, "SubCategory not found")
-    return sub
-
-
-@router.put("/sub-categories/{sub_id}", response_model=SubCategoryResponse)
-async def update_sub_category(
-    sub_id: int, data: SubCategoryUpdate, db: AsyncSession = Depends(get_db)
-):
-    sub = await db.get(SubCategory, sub_id)
-    if not sub:
-        raise HTTPException(404, "SubCategory not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(sub, key, value)
-    await db.commit()
-    await db.refresh(sub)
-    return sub
+router: APIRouter = build_crud_router(SUB_CATEGORY)
 
 
 @router.get("/sub-categories/{sub_id}/quantity")
@@ -66,13 +50,3 @@ async def get_sub_category_quantity(sub_id: int, db: AsyncSession = Depends(get_
     )
     count = len(result.scalars().all())
     return {"sub_category_id": sub_id, "quantity": count}
-
-
-@router.delete("/sub-categories/{sub_id}")
-async def delete_sub_category(sub_id: int, db: AsyncSession = Depends(get_db)):
-    sub = await db.get(SubCategory, sub_id)
-    if not sub:
-        raise HTTPException(404, "SubCategory not found")
-    await db.delete(sub)
-    await db.commit()
-    return {"ok": True}

@@ -1,80 +1,23 @@
-from sqlalchemy import select
+"""库存明细（SpecificItem）的仓储。
+
+标准五法全部继承自通用层 `dataManager.crud.repository.SqlAlchemyRepository`，
+本类只负责把模型绑定到 `SpecificItem`。
+
+改造前这个文件是 80 行、把五个方法各写一遍、且**从没有任何调用方**；
+现在它是通用层的第一个领域实现，由 `InventoryManagerFactory` 产出、
+`api/item_router.py` 真实调用。
+"""
+
+from __future__ import annotations
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dataManager.base import Repository
-from dataManager.inventory.item import Item
+from dataManager.crud.repository import SqlAlchemyRepository
 from models.specific_item import SpecificItem
 
 
-class ItemRepository(Repository):
-    def __init__(self, db: AsyncSession):
-        self.db = db
+class ItemRepository(SqlAlchemyRepository):
+    """商品明细仓储。"""
 
-    async def get(self, id: int) -> Item | None:
-        result = await self.db.execute(
-            select(SpecificItem).where(SpecificItem.id == id)
-        )
-        model = result.scalar_one_or_none()
-        if model is None:
-            return None
-        return Item(
-            id=model.id,
-            name=model.name,
-            sub_category_id=model.sub_category_id,
-            price=model.price,
-            recorder=model.recorder,
-            description=model.description,
-        )
-
-    async def get_all(self) -> list[Item]:
-        result = await self.db.execute(select(SpecificItem))
-        return [
-            Item(
-                id=m.id,
-                name=m.name,
-                sub_category_id=m.sub_category_id,
-                price=m.price,
-                recorder=m.recorder,
-                description=m.description,
-            )
-            for m in result.scalars().all()
-        ]
-
-    async def create(self, data: dict) -> Item:
-        model = SpecificItem(**data)
-        self.db.add(model)
-        await self.db.commit()
-        await self.db.refresh(model)
-        return Item(
-            id=model.id,
-            name=model.name,
-            sub_category_id=model.sub_category_id,
-            price=model.price,
-            recorder=model.recorder,
-            description=model.description,
-        )
-
-    async def update(self, id: int, data: dict) -> Item | None:
-        model = await self.db.get(SpecificItem, id)
-        if model is None:
-            return None
-        for key, value in data.items():
-            setattr(model, key, value)
-        await self.db.commit()
-        await self.db.refresh(model)
-        return Item(
-            id=model.id,
-            name=model.name,
-            sub_category_id=model.sub_category_id,
-            price=model.price,
-            recorder=model.recorder,
-            description=model.description,
-        )
-
-    async def delete(self, id: int) -> bool:
-        model = await self.db.get(SpecificItem, id)
-        if model is None:
-            return False
-        await self.db.delete(model)
-        await self.db.commit()
-        return True
+    def __init__(self, db: AsyncSession) -> None:
+        super().__init__(db, SpecificItem)

@@ -1,18 +1,56 @@
-import logging
+"""预算（Budget）—— create/update/delete 走通用层，列表与汇总保持手写。
 
-from fastapi import APIRouter, Depends, HTTPException
+这两个端点**必须**用响应钩子：`BudgetResponse.category_name` 与 `spent` 在模型上
+不存在，schema 里又**没有默认值**，直接返回 ORM 对象会因缺字段序列化失败。
+原实现在这两处写死 `category_name=""` / `spent=0.0`，钩子里照旧
+（`spent` 是尚未实现的占位，本次重构不改行为）。
+"""
+
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.budget import Budget
 from models.category import Category
-from models.sub_category import SubCategory
-from models.ledger import Ledger
-from schemas.budget import BudgetCreate, BudgetUpdate, BudgetResponse
+from schemas.budget import BudgetCreate, BudgetResponse, BudgetUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+
+def budget_response(item: Budget) -> BudgetResponse:
+    """响应钩子：补上模型里没有的两个字段（取值与改造前一致）。"""
+    return BudgetResponse(
+        id=item.id,
+        category_id=item.category_id,
+        category_name="",
+        month=item.month,
+        amount=item.amount,
+        spent=0.0,
+    )
+
+
+BUDGET = register_crud(
+    CrudSpec(
+        name="budget",
+        model=Budget,
+        response=BudgetResponse,
+        path="/budget",
+        id_param="budget_id",
+        not_found="Budget not found",
+        create=BudgetCreate,
+        update=BudgetUpdate,
+        to_response=budget_response,
+        names=CrudNames(
+            create="create_budget",
+            update="update_budget",
+            delete="delete_budget",
+        ),
+    )
+)
+
+router: APIRouter = build_crud_router(BUDGET)
 
 
 @router.get("/budget", response_model=list[BudgetResponse])
@@ -34,45 +72,6 @@ async def list_budget(month: str | None = None, db: AsyncSession = Depends(get_d
         )
         for b in budgets
     ]
-
-
-@router.post("/budget", response_model=BudgetResponse)
-async def create_budget(data: BudgetCreate, db: AsyncSession = Depends(get_db)):
-    item = Budget(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return BudgetResponse(
-        id=item.id, category_id=item.category_id, category_name="",
-        month=item.month, amount=item.amount, spent=0.0,
-    )
-
-
-@router.put("/budget/{budget_id}", response_model=BudgetResponse)
-async def update_budget(
-    budget_id: int, data: BudgetUpdate, db: AsyncSession = Depends(get_db)
-):
-    item = await db.get(Budget, budget_id)
-    if not item:
-        raise HTTPException(404, "Budget not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return BudgetResponse(
-        id=item.id, category_id=item.category_id, category_name="",
-        month=item.month, amount=item.amount, spent=0.0,
-    )
-
-
-@router.delete("/budget/{budget_id}")
-async def delete_budget(budget_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(Budget, budget_id)
-    if not item:
-        raise HTTPException(404, "Budget not found")
-    await db.delete(item)
-    await db.commit()
-    return {"ok": True}
 
 
 @router.get("/budget/summary")

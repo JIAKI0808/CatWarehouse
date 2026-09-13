@@ -1,15 +1,40 @@
-import logging
+"""账本（Ledger）—— create/update/delete 走通用层，列表与统计保持手写。
 
-from fastapi import APIRouter, Depends, HTTPException
+列表带了 4 个过滤参数与 `date desc` 排序，统计是按周期归组的聚合，两者都不是
+标准 CRUD，原样保留。`LedgerResponse` 带 `from_attributes=True` 且字段与模型一一对应，
+所以增删改不需要响应钩子。
+"""
+
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from dataManager.crud.registry import register_crud
+from dataManager.crud.router import build_crud_router
+from dataManager.crud.spec import CrudNames, CrudSpec
 from models.ledger import Ledger
-from schemas.ledger import LedgerCreate, LedgerUpdate, LedgerResponse, LedgerStats
+from schemas.ledger import LedgerCreate, LedgerResponse, LedgerStats, LedgerUpdate
 
-logger = logging.getLogger(__name__)
-router = APIRouter()
+LEDGER = register_crud(
+    CrudSpec(
+        name="ledger",
+        model=Ledger,
+        response=LedgerResponse,
+        path="/ledger",
+        id_param="item_id",
+        not_found="Ledger item not found",
+        create=LedgerCreate,
+        update=LedgerUpdate,
+        names=CrudNames(
+            create="create_ledger",
+            update="update_ledger",
+            delete="delete_ledger",
+        ),
+    )
+)
+
+router: APIRouter = build_crud_router(LEDGER)
 
 
 @router.get("/ledger", response_model=list[LedgerResponse])
@@ -29,39 +54,6 @@ async def list_ledger(
         stmt = stmt.where(Ledger.date <= end_date)
     result = await db.execute(stmt)
     return result.scalars().all()
-
-
-@router.post("/ledger", response_model=LedgerResponse)
-async def create_ledger(data: LedgerCreate, db: AsyncSession = Depends(get_db)):
-    item = Ledger(**data.model_dump())
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.put("/ledger/{item_id}", response_model=LedgerResponse)
-async def update_ledger(
-    item_id: int, data: LedgerUpdate, db: AsyncSession = Depends(get_db)
-):
-    item = await db.get(Ledger, item_id)
-    if not item:
-        raise HTTPException(404, "Ledger item not found")
-    for key, value in data.model_dump(exclude_unset=True).items():
-        setattr(item, key, value)
-    await db.commit()
-    await db.refresh(item)
-    return item
-
-
-@router.delete("/ledger/{item_id}")
-async def delete_ledger(item_id: int, db: AsyncSession = Depends(get_db)):
-    item = await db.get(Ledger, item_id)
-    if not item:
-        raise HTTPException(404, "Ledger item not found")
-    await db.delete(item)
-    await db.commit()
-    return {"ok": True}
 
 
 @router.get("/ledger/stats", response_model=list[LedgerStats])
