@@ -191,3 +191,57 @@ categories 8 / sub_categories 6 / specific_items 2 / settings 1 行，无丢失�
 该迁移此前已在**库副本**上演练过（`smoke_i18n_migrate.py` 7/7），实际执行结果与演练一致。
 但这与本计划「不动 `catwarehouse.db`」的说法不符，**如实记录，不掩饰**。
 后续涉及真实库的验证会继续用临时库，只有确实需要端到端时才动真库并在此登记。
+
+### `03e324d` — P2b 国际化 B-2：设置页语言切换 + 后端偏好同步
+
+**界面改动刻意收紧在一处**：新增一个**默认折叠**的 `NCollapse` 小节，
+插在「插件功能」与「版本信息」之间，**既有区块一行未动**。
+
+**新增接口适配**（合同第 2 条「完整适配后端接口」）
+- `src/types/index.ts`：+ `LocaleListResponse` / `LocalePreference` / `MessagePackResponse`
+- `src/services/api.ts`：+ `i18nApi` —— **4 个方法全部实现**
+  （`getLocales` / `getMessages` / `getPreference` / `updatePreference`），
+  接上 P1 的 `api/i18n` 分区
+
+**界面**（`SettingsView.vue`）
+- 新增 `NCollapse`「语言」小节：`NSelect` + 一行说明，`flex-wrap` 布局不会被挤压
+- 选择器绑**独立 ref** 而非 `i18n.locale`：切换必须经 `handleLocaleChange` 才能同步后端
+
+**`i18n.ts` 补充**
+- `LOCALE_LABELS`：语言用**它自己那门语言里的名字**（简体中文 / English）。
+  语言选择器是给看不懂当前界面语言的人用的，用界面语言写选项名恰恰帮不到他 ——
+  所以这张表**不参与翻译**
+- `hasStoredLocale()`：区分「用户显式选过」与「只是取了默认值」
+
+**采纳规则（只有一条，免得「谁覆盖谁」说不清）**
+| 情形 | 行为 |
+| --- | --- |
+| 本机**没显式选过** | 采纳后端 `/api/i18n/preference` 的值（换设备能带过语言） |
+| 本机**选过** | 以本机为准，后端**不**覆盖 |
+| 服务器不可达 | 读取静默跳过；切换仍**本机立即生效**，只提示一次「未能同步到服务器」 |
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | 18 → 18，逐文件分布与基线**完全一致**（改动文件零错误） |
+| 前端行为探针 | **PROBE IDENTICAL** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 6 文件 / 0 违规 |
+
+**真实浏览器端到端**（`vite dev` + 真实后端 + chrome-devtools，**临时库**）
+1. 折叠小节渲染正常，与相邻区块**无重叠、布局未位移**
+2. 切换语言 → 界面立即更新：标题变 `Language`、说明变英文、
+   naive-ui 输入框占位符由「请输入」变 **`Please Input`**
+   （证明 naive-ui 语言包接线覆盖了**全部**组件，不只是空状态）
+3. 同步成功：`GET /api/i18n/preference` 与 `sqlite settings.locale` **都**变为 `en-US`
+4. 清空 localStorage 重载（模拟换设备）→ 采纳后端 `en-US` 并**写回本机**
+5. 本机显式设为 `zh-CN` 重载 → 保持 `zh-CN`，后端 `en-US` **未**覆盖本机
+6. 停掉后端再切换 → 本机立即生效，提示「**已在本机切换，但未能同步到服务器**」
+
+**排查记录（值得记）**：中途所有请求一度全部 `net::ERR_FAILED`，
+原因**不是本次代码** —— 后端 `CORS_ORIGINS` 只放行 `5173`/`5175`，
+而上一个 Phase 遗留的 vite 进程仍占着 `5173`，新 dev server 回落到 `5174` 被 CORS 拦下。
+清掉遗留进程后一切正常。**该隐患已记入计划的技术债清单**
+（vite 回落端口 ⇒ 应用失去全部 API 访问），留待后续环处理。
+
+**真实数据库本次未被触碰**：全程用临时库，`catwarehouse.db` 的 mtime 仍是 P2a 的 `01:23`。
