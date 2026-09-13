@@ -728,3 +728,56 @@ Vant 的语言包同样是单独一份：`van-config-provider` 的 `:locale` 要
 | `zh-CN` | 分类管理 / 取消·新增大类·保存 / 名称·描述·图标·图标颜色 / **48 个图标 tooltip**（文件夹…丝带） |
 | `en-US` | Categories / Cancel·New category·Save / Name·Description·Icon·Icon color / **48 个图标 tooltip**（Folder…Ribbon） |
 | 控制台 | 除一条既有的 `<meta apple-mobile-web-app-capable>` 弃用提示外**零警告** |
+
+### `a8120e9` — P4c 国际化 D-3：移动端库存页 + 物品表单 + 修 Vant 语言包接线
+
+**迁移内容**
+- `views/InventoryView.vue` — 顶栏提示、空态与按钮、加载中、物品行「已过期」标签、
+  价格·库存行、过期行、录入人兜底、滑出删除、新增按钮、分类选择器标题、2 个 toast、删除确认框
+- `components/ItemForm.vue` — 标题、取消/保存、7 个字段标签与占位符、过期值占位符
+
+新增 `app.inventory` 段（14 条）。**「价格 ¥… · 库存」原本由模板里两行拼成，
+合并为一条带插值的 `priceStock`** —— 英文语序才不会被中文写死
+（实测 en-US 渲染为 `Price ¥5.00 · Stock 0 包`）。
+
+另外把「请选择子分类」（toast）与「选择子分类」（顶栏提示）**拆成两个 key** ——
+字面不同、语气也不同，不是同一个东西。
+
+**🐞 修掉一个真问题：只绑 `van-config-provider :locale` 不足以切换 Vant 文案**
+
+实测：切到 en-US 后，Vant `picker` 工具栏的按钮**仍然是「取消 / 确认」**。
+
+**查源码定位根因**（不是猜）：
+1. `ConfigProvider` 只做了 `provide(CONFIG_PROVIDER_KEY, props)`，**从不调用 `Locale.use()`**；
+2. `PickerToolbar` 读的是 `t("cancel")`，而那个 `t` 绑在**模块级的全局 `Locale`** 上
+   （`es/locale/index.mjs`：`const lang = ref('zh-CN')` + `messages`）。
+
+**处置：两条线都接。** `watch(locale, …)` 里调 `Locale.use(name, messages)` 切全局，
+同时保留 `:locale` prop（给走 provide/inject 的组件用）。
+修后实测：en-US 下 picker 显示 `Cancel / Confirm`；zh-CN 下仍是「取消 / 确认」。
+
+> **为什么值得单独记**：P4a 时我把 `:locale` 接上就以为完事了 ——
+> **类型检查过、构建过、界面在静态下也看不出问题**，要真的点开 picker 才暴露。
+> 与 P4b 的 `t('')` 是同一种性质：只有「真的走一遍交互」或「逐条读控制台」才抓得到。
+
+**本轮往浏览器验证里新加的一步**
+以前只比对「页面文案」，本次**额外读了 Vant 自己渲染的 DOM**
+（`.van-picker__cancel` / `__confirm` / `__title`）——
+正是因为多看了这一眼，才发现 `:locale` 没生效。
+**第三方组件自带文案也算界面文案的一部分。**
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+| 中文残留 | 仅 2 处 `'个'` 表单默认值（属数据） |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 选择子分类 / 请选择子分类后查看物品 / 选择分类 / 新增物品 / picker 取消·确认·选择分类 / 物品行「价格 ¥5.00 · 库存 0 包」「删除」—— **与改动前一致** |
+| `en-US` | Pick a sub-category / Pick a sub-category to see its items / Choose category / New item / picker `Cancel`·`Confirm`·`Choose category` / 物品行 `Price ¥5.00 · Stock 0 包`、`Delete` |
+| 剩余中文 | 只有**用户数据**（分类名、子分类名、单位「包」、商品名） |
+| 控制台 | 除既有的 `<meta>` 弃用提示外**零警告** |
