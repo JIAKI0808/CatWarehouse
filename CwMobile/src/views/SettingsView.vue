@@ -50,8 +50,8 @@ async function handleTestConnection() {
 
 <template>
   <div class="st">
-    <div class="st-title">设置</div>
-
+    <van-nav-bar title="设置" />
+    <div class="page-body">
     <div class="card">
       <div class="card-title">外观</div>
       <van-cell-group inset>
@@ -168,18 +168,21 @@ async function handleTestConnection() {
         <van-cell title="描述" :value="store.version?.description ?? '-'" />
       </van-cell-group>
     </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .st {
-  padding: 12px 0 90px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.st-title {
-  font-size: 20px;
-  font-weight: 700;
-  padding: 4px 14px 10px;
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0 var(--tabbar-height);
 }
 
 .card {
@@ -188,7 +191,7 @@ async function handleTestConnection() {
 
 .card-title {
   font-size: 14px;
-  color: #969799;
+  color: var(--van-text-color-2);
   padding: 0 18px 8px;
 }
 

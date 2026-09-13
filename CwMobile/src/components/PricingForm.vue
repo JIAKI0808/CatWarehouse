@@ -178,6 +178,6 @@ function submit() {
 
 .sym {
   margin-right: 4px;
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 </style>

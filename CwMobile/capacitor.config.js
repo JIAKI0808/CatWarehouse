@@ -2,10 +2,11 @@ const config = {
     appId: 'com.catwarehouse.mobile',
     appName: 'CatWarehouse',
     webDir: 'dist',
-    // WebView 从 https://localhost 页面请求 http://局域网后端属于混合内容，
-    // 默认会被拦截(与 usesCleartextTraffic 无关)，必须显式放行。
-    // 注意：这是 CapacitorConfig 顶层字段，不能放在 server 下。
-    allowMixedContent: true,
+    android: {
+        // WebView 从 https://localhost 页面请求 http://局域网后端属于混合内容，
+        // 默认会被拦截(与 usesCleartextTraffic 无关)，必须显式放行。
+        allowMixedContent: true,
+    },
     server: {
         androidScheme: 'https',
     },

@@ -1,0 +1,13 @@
+# 语音录入模块（CwServer/voice）依赖
+#
+# 只有下面这一条路径需要装依赖：
+faster-whisper>=1.0
+#
+# 以下路径**不需要任何依赖**，只用 Python 标准库（urllib）：
+#   - VOICE_ASR_ENGINE=http   调远程语音接口（OpenAI 兼容 /audio/transcriptions）
+#   - 大模型调用（VOICE_LLM_PROVIDER=openai 或 claude）
+#
+# 说明：
+#   - faster-whisper 基于 CTranslate2，**不需要装 torch**，比 openai-whisper 轻得多。
+#   - 首次调用会下载模型权重（VOICE_WHISPER_MODEL，默认 small 约 500MB）。
+#   - 根目录 requirements.txt 未纳入本次改动范围，依赖独立记录于本文件。

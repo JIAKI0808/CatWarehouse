@@ -1,0 +1,17 @@
+# CwServer/ocr 模块依赖
+#
+# 安装：pip install -r CwServer/ocr/requirements-ocr.txt
+#
+# 说明：根目录 requirements.txt 未纳入本次授权改动范围，
+#       因此 OCR 专用依赖独立记录在本文件，便于后续合并。
+
+# 预处理与版面分析（Phase 1 / Phase 2）—— 本次已在 5.0.0.93 上验证
+opencv-python>=4.9
+numpy>=2.0
+
+# PaddleOCR 引擎（engine_paddle.py 惰性导入）
+# 未安装不影响 ocr 包其余模块的 import；仅调用 recognize_lines 时才需要。
+# 注意：paddlepaddle 对 Python 3.13 的 wheel 支持尚未确认，
+#       故用环境标记跳过 3.13（本机即为 3.13）——装依赖请先用 3.11/3.12 环境。
+paddleocr>=2.7 ; python_version < "3.13"
+paddlepaddle>=2.6 ; python_version < "3.13"

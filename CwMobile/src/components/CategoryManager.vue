@@ -288,23 +288,19 @@ function askDeleteSub(sub: SubCategory) {
   align-items: center;
   gap: 12px;
   font-size: 16px;
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 
 .sub-list {
   padding-left: 8px;
-  background: #fafafa;
-}
-
-html.dark .sub-list {
-  background: #1c1c1e;
+  background: var(--van-background);
 }
 
 .sub-row {
   display: flex;
   align-items: center;
   padding: 10px 8px;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid var(--van-border-color);
   cursor: pointer;
 }
 
@@ -326,7 +322,7 @@ html.dark .sub-row.active {
 }
 
 .sub-count {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 12px;
   margin-right: 10px;
 }
@@ -336,6 +332,6 @@ html.dark .sub-row.active {
   align-items: center;
   gap: 12px;
   font-size: 15px;
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 </style>

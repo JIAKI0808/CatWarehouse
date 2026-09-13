@@ -1,0 +1,153 @@
+================================================================================
+                        CatWarehouse Backend Architecture
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CatWarehouse Backend                                 │
+│                     catWarehouse_server.py                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────┐   ┌──────────────┐   ┌────────────┐   ┌───────────────┐     │
+│  │ Lifespan │──▶│setup_logging │   │   CORS     │   │   uvicorn     │     │
+│  │ 启动/关闭 │   │  日志初始化   │   │ 跨域中间件  │   │   :11222      │     │
+│  └────┬─────┘   └──────────────┘   └────────────┘   └───────────────┘     │
+│       │                                                                     │
+│       ▼                                                                     │
+│  ┌──────────────┐                                                           │
+│  │Base.metadata │  ◀── SQLAlchemy 自动建表                                   │
+│  │ .create_all  │                                                           │
+│  └──────────────┘                                                           │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌────────────────────── API Router (/api) ─────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  GET/POST  /categories                  ──▶ Category CRUD            │  │
+│  │  GET       /categories/{id}                                          │  │
+│  │                                                                       │  │
+│  │  GET/POST  /sub-categories              ──▶ SubCategory CRUD         │  │
+│  │  GET       /sub-categories/{id}                                     │  │
+│  │  GET       /sub-categories/{id}/quantity  ▶ 汇总数量                 │  │
+│  │                                                                       │  │
+│  │  GET/POST  /items                       ──▶ SpecificItem CRUD        │  │
+│  │  GET       /items/{id}                                              │  │
+│  │  PUT       /items/{id}                  ──▶ 更新条目                  │  │
+│  │  DELETE    /items/{id}                  ──▶ 删除条目                  │  │
+│  │                                                                       │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────── 三级数据库表 ──────────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  ┌──────────────┐   1:N   ┌──────────────┐   1:N   ┌──────────────┐  │  │
+│  │  │   Category   │◀────────│  SubCategory │◀────────│ SpecificItem │  │  │
+│  │  │   (大类)     │         │   (细分类)    │         │  (具体条目)   │  │  │
+│  │  ├──────────────┤         ├──────────────┤         ├──────────────┤  │  │
+│  │  │ id           │         │ id           │         │ id           │  │  │
+│  │  │ name         │         │ category_id◀──┤FK       │sub_category_ │  │  │
+│  │  │ description  │         │ name         │         │  id ◀───────┤FK│  │  │
+│  │  │ extra (JSON) │         │ quantity     │         │ name         │  │  │
+│  │  └──────────────┘         │ unit         │         │ entry_date   │  │  │
+│  │                           │ description  │         │ update_date  │  │  │
+│  │  例: 日用品               │ notes        │         │ recorder     │  │  │
+│  │      食物                 │ extra (JSON) │         │ price        │  │  │
+│  │      配料                 └──────────────┘         │ description  │  │  │
+│  │      衣物                                           │ extra (JSON) │  │  │
+│  │                           例: 花椒                  └──────────────┘  │  │
+│  │                               酱油                                   │  │
+│  │                                                 例: 四川红花椒        │  │
+│  │                                                     云南青花椒        │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────── 抽象工厂 (dataManager) ───────────────────────────┐  │
+│  │                                                                       │  │
+│  │  ┌─────────────────────┐                                             │  │
+│  │  │ DataManagerFactory  │  ◀── 抽象工厂                                │  │
+│  │  │  create_product()   │                                             │  │
+│  │  │  create_validator() │                                             │  │
+│  │  │  create_repository()│                                             │  │
+│  │  └─────────┬───────────┘                                             │  │
+│  │            │                                                          │  │
+│  │            ▼                                                          │  │
+│  │  ┌──────────────────────────┐                                        │  │
+│  │  │ InventoryManagerFactory  │  ◀── 具体工厂                           │  │
+│  │  │  create_product()  ──────┼──▶ Item (数据产品)                      │  │
+│  │  │  create_validator() ─────┼──▶ ItemValidator (验证器)               │  │
+│  │  │  create_repository() ────┼──▶ ItemRepository (存储仓库)            │  │
+│  │  └──────────────────────────┘                                        │  │
+│  │                                                                       │  │
+│  │  factory.py: get_factory("inventory", db) → InventoryManagerFactory   │  │
+│  │             register_factory(name, cls)   → 注册新工厂                │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────── Core 模块 ───────────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  config.py          │  database.py          │  logging.py             │  │
+│  │  ─────────          │  ───────────          │  ──────────             │  │
+│  │  Settings           │  engine (async)       │  setup_logging()        │  │
+│  │  (BaseSettings)     │  async_session        │  format:                │  │
+│  │  APP_NAME           │  get_db() → yield     │   time [level]          │  │
+│  │  DEBUG              │    AsyncSession       │   name: message         │  │
+│  │  DATABASE_URL       │                      │                         │  │
+│  │  CORS_ORIGINS       │                      │                         │  │
+│  │  .env 加载          │                      │                         │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────── 数据流 ───────────────────────────────────────┐  │
+│  │                                                                       │  │
+│  │  Client ──▶ FastAPI Router ──▶ Schema 验证 ──▶ DB Session             │  │
+│  │     │           │                   │               │                  │  │
+│  │     │           ▼                   ▼               ▼                  │  │
+│  │     │      Depends(get_db)    Pydantic 校验   SQLAlchemy ORM           │  │
+│  │     │                                │               │                  │  │
+│  │     │                                ▼               ▼                  │  │
+│  │     ◀─────────────── JSON Response ◀─────── commit / refresh          │  │
+│  │                                                                       │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+  目录结构
+================================================================================
+
+CwServer/
+├── catWarehouse_server.py          # FastAPI 入口，lifespan，CORS
+├── requirements.txt                # Python 依赖
+├── .env.example                    # 环境变量示例
+│
+├── core/                           # 基础设施层
+│   ├── config.py                   #   Settings 配置管理
+│   ├── database.py                 #   SQLAlchemy 异步引擎
+│   └── logging.py                  #   日志配置
+│
+├── models/                         # 数据库模型层
+│   ├── __init__.py                 #   Base + 导入所有模型
+│   ├── category.py                 #   Category 大类表
+│   ├── sub_category.py             #   SubCategory 细分类表
+│   └── specific_item.py            #   SpecificItem 具体条目表
+│
+├── schemas/                        # Pydantic 校验层
+│   ├── category.py                 #   CategoryCreate / Response
+│   ├── sub_category.py             #   SubCategoryCreate / Response
+│   └── specific_item.py            #   SpecificItemCreate / Update / Response
+│
+├── api/                            # 路由层
+│   └── router.py                   #   所有 API 端点
+│
+└── dataManager/                    # 抽象工厂层
+    ├── base.py                     #   抽象基类
+    ├── factory.py                  #   工厂注册与获取
+    └── inventory/                  #   具体工厂：商品/库存
+        ├── factory.py              #     InventoryManagerFactory
+        ├── item.py                 #     Item 数据产品
+        ├── validator.py            #     ItemValidator 验证器
+        └── repository.py           #     ItemRepository 存储仓库

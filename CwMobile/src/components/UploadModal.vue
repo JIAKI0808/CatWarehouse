@@ -51,7 +51,7 @@ function close() {
           :after-read="handleRead"
         >
           <div class="upload-tip">
-            <van-icon name="photograph" size="36" color="#c8c9cc" />
+            <van-icon name="photograph" size="36" color="var(--van-text-color-3)" />
             <div>点击选择图片上传</div>
           </div>
         </van-uploader>
@@ -88,14 +88,14 @@ function close() {
   width: 180px;
   height: 120px;
   gap: 8px;
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 13px;
-  border: 1px dashed #c8c9cc;
+  border: 1px dashed var(--van-text-color-3);
   border-radius: 8px;
 }
 
 .uploading {
-  color: #969799;
+  color: var(--van-text-color-2);
   text-align: center;
   font-size: 13px;
 }

@@ -16,10 +16,12 @@ import type {
   PricingSubCategory,
 } from '@/types'
 import PricingForm from '@/components/PricingForm.vue'
+import CascaderPicker from '@/components/CascaderPicker.vue'
 
 const store = usePricingStore()
 
 const showManager = ref(false)
+const showPicker = ref(false)
 const showForm = ref(false)
 const editingItem = ref<Pricing | null>(null)
 const searchQuery = ref('')
@@ -89,10 +91,7 @@ async function loadSubs(catId: number) {
 }
 
 function openManager() {
-  selectedCatId.value = null
   activeCatId.value = null
-  selectedSubId.value = null
-  store.fetchAll()
   refreshCategories()
   showManager.value = true
 }
@@ -114,6 +113,39 @@ function pickAll() {
   selectedSubId.value = null
   activeCatId.value = null
   showManager.value = false
+  store.fetchAll()
+}
+
+const pickerCategories = computed(() =>
+  categories.value.map((c) => ({ text: c.name, value: c.id }))
+)
+
+function pickerSubsOf(catId: number) {
+  return (subsByCat.value[catId] ?? []).map((s) => ({
+    text: s.name,
+    value: s.id,
+  }))
+}
+
+async function openPicker() {
+  if (!categories.value.length) await refreshCategories()
+  await Promise.all(categories.value.map((c) => loadSubs(c.id)))
+  showPicker.value = true
+}
+
+function onPickerConfirm(r: { categoryId: number; subId: number | null }) {
+  if (r.subId === null) {
+    showToast('请选择子分类')
+    return
+  }
+  selectedCatId.value = r.categoryId
+  selectedSubId.value = r.subId
+  store.fetchAll({ sub_category_id: r.subId })
+}
+
+function clearFilter() {
+  selectedCatId.value = null
+  selectedSubId.value = null
   store.fetchAll()
 }
 
@@ -274,14 +306,28 @@ function fmtDate(s: string | null): string {
 
 <template>
   <div class="pv">
-    <div class="pv-head">
-      <div class="pv-title">售价管理</div>
-      <van-icon name="plus" class="plus" @click="handleAdd" />
-    </div>
+    <van-nav-bar title="售价管理">
+      <template #left>
+        <van-icon name="apps-o" size="20" @click="openManager" />
+      </template>
+      <template #right>
+        <van-icon name="plus" class="plus" @click="handleAdd" />
+      </template>
+    </van-nav-bar>
 
-    <div class="ctx" @click="showManager = true">
-      <span class="ctx-text">{{ contextLabel }}</span>
-      <van-icon name="apps-o" size="16" color="#1989fa" />
+    <div class="page-body">
+    <div class="ctx">
+      <div class="ctx-main" @click="openPicker">
+        <span class="ctx-text">{{ contextLabel }}</span>
+        <van-icon name="arrow-down" size="14" color="var(--van-text-color-2)" />
+      </div>
+      <van-icon
+        v-if="selectedSubId || selectedCatId"
+        name="cross"
+        size="16"
+        color="var(--van-text-color-2)"
+        @click="clearFilter"
+      />
     </div>
 
     <div class="search">
@@ -298,41 +344,53 @@ function fmtDate(s: string | null): string {
         v-else-if="!store.items.length"
         description="暂无售价记录"
       />
-      <van-cell-group v-else inset>
-        <van-cell
-          v-for="item in store.items"
-          :key="item.id"
-          clickable
-          @click="handleEdit(item)"
-        >
-          <template #title>
-            <div class="item-title">{{ item.name }}</div>
-            <div class="item-sub">{{ item.sub_category_name || '-' }}</div>
-            <div class="item-meta">
-              成本 ¥{{ item.cost.toFixed(2) }} · 建议售价
-              ¥{{ item.suggested_price.toFixed(2) }} · 折扣
-              {{ item.discount }}
-            </div>
-            <div v-if="item.description" class="item-meta">
-              {{ item.description }}
-            </div>
-            <div class="item-meta">
-              记录日期 {{ fmtDate(item.record_date) }}
-            </div>
+      <div v-else class="pv-cards">
+        <van-swipe-cell v-for="item in store.items" :key="item.id" class="pv-swipe">
+          <van-cell clickable @click="handleEdit(item)">
+            <template #title>
+              <div class="item-title">{{ item.name }}</div>
+              <div class="item-sub">{{ item.sub_category_name || '-' }}</div>
+              <div class="item-meta">
+                成本 ¥{{ item.cost.toFixed(2) }} · 建议售价
+                ¥{{ item.suggested_price.toFixed(2) }} · 折扣
+                {{ item.discount }}
+              </div>
+              <div v-if="item.description" class="item-meta">
+                {{ item.description }}
+              </div>
+              <div class="item-meta">
+                记录日期 {{ fmtDate(item.record_date) }}
+              </div>
+            </template>
+          </van-cell>
+          <template #right>
+            <van-button
+              square
+              type="danger"
+              text="删除"
+              class="del-btn"
+              @click="askDelete(item)"
+            />
           </template>
-          <template #value>
-            <div class="ops">
-              <van-icon name="delete-o" @click.stop="askDelete(item)" />
-            </div>
-          </template>
-        </van-cell>
-      </van-cell-group>
+        </van-swipe-cell>
+      </div>
+    </div>
     </div>
 
     <PricingForm
       v-model:visible="showForm"
       :edit-data="editingItem"
       @submit="handleSubmit"
+    />
+
+    <CascaderPicker
+      v-model:show="showPicker"
+      title="选择售价分类"
+      :categories="pickerCategories"
+      :subs-of="pickerSubsOf"
+      :initial-category-id="selectedCatId ?? undefined"
+      :initial-sub-id="selectedSubId ?? undefined"
+      @confirm="onPickerConfirm"
     />
 
     <van-popup
@@ -420,25 +478,20 @@ function fmtDate(s: string | null): string {
 
 <style scoped>
 .pv {
-  padding: 12px 0 90px;
-}
-
-.pv-head {
+  height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
+  flex-direction: column;
 }
 
-.pv-title {
-  font-size: 20px;
-  font-weight: 700;
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0 var(--tabbar-height);
 }
 
 .plus {
   font-size: 22px;
-  color: #1989fa;
-  padding: 4px;
+  color: var(--van-primary-color);
 }
 
 .ctx {
@@ -447,12 +500,17 @@ function fmtDate(s: string | null): string {
   gap: 8px;
   margin: 10px 14px 8px;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--van-background-2);
   border-radius: 10px;
 }
 
-html.dark .ctx {
-  background: #1c1c1e;
+.ctx-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  cursor: pointer;
 }
 
 .ctx-text {
@@ -477,14 +535,23 @@ html.dark .ctx {
 
 .item-sub,
 .item-meta {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 12px;
   margin-top: 2px;
 }
 
-.ops {
-  color: #c8c9cc;
-  font-size: 18px;
+.pv-cards {
+  padding: 0 12px;
+}
+
+.pv-swipe {
+  margin-bottom: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.del-btn {
+  height: 100%;
 }
 
 .tip {
@@ -511,21 +578,17 @@ html.dark .ctx {
 .sub-ops {
   display: inline-flex;
   gap: 14px;
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 16px;
 }
 
 .subs {
   padding-left: 12px;
-  background: #fafafa;
-}
-
-html.dark .subs {
-  background: #1c1c1e;
+  background: var(--van-background-2);
 }
 
 .active :deep(.van-cell__title) {
-  color: #1989fa;
+  color: var(--van-primary-color);
 }
 
 .nameform {

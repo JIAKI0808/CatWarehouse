@@ -14,6 +14,7 @@ import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useThemeStore } from '@/stores/theme'
 import { analyticsApi } from '@/services/api'
+import CascaderPicker from '@/components/CascaderPicker.vue'
 import type {
   TrendData,
   AnalyticsOverview,
@@ -45,8 +46,7 @@ const monthlyCompare = ref<MonthlyCompare[]>([])
 const loading = ref(false)
 
 const showPicker = ref(false)
-const pickerMode = ref<'category' | 'sub'>('category')
-const pickerTitle = ref('')
+const trendTab = ref('trend')
 
 const dark = () => themeStore.isDark
 function chartPalette() {
@@ -57,25 +57,26 @@ function chartPalette() {
   }
 }
 
-const categoryOptions = computed(() =>
-  categoryStore.categories.map((c) => ({ label: c.name, value: c.id }))
+const pickerCategories = computed(() =>
+  categoryStore.categories.map((c) => ({ text: c.name, value: c.id }))
 )
 
-const subOptions = computed(() => {
-  const catId = selectedCategoryId.value
-  if (catId === null) return []
-  const list = subCategoryStore.subCategoriesByCategory[catId] ?? []
-  return list.map((s) => ({ label: s.name, value: s.id }))
-})
+function pickerSubsOf(catId: number) {
+  return (subCategoryStore.subCategoriesByCategory[catId] ?? []).map((s) => ({
+    text: s.name,
+    value: s.id,
+  }))
+}
 
-const currentCatName = computed(() => {
+const selectionLabel = computed(() => {
   const cat = categoryStore.categories.find((c) => c.id === selectedCategoryId.value)
-  return cat ? cat.name : '选择大类'
-})
-
-const currentSubName = computed(() => {
-  const opt = subOptions.value.find((o) => o.value === selectedSubCategoryId.value)
-  return opt ? opt.label : '选择子类'
+  const list = selectedCategoryId.value
+    ? (subCategoryStore.subCategoriesByCategory[selectedCategoryId.value] ?? [])
+    : []
+  const sub = list.find((s) => s.id === selectedSubCategoryId.value)
+  if (cat && sub) return `${cat.name} / ${sub.name}`
+  if (cat) return cat.name
+  return '选择分类'
 })
 
 const hasData = computed(
@@ -98,12 +99,6 @@ onMounted(async () => {
   }
 })
 
-watch(selectedCategoryId, (id) => {
-  selectedSubCategoryId.value = null
-  trendData.value = null
-  if (id) subCategoryStore.fetchByCategory(id)
-})
-
 watch(selectedSubCategoryId, async (id) => {
   if (!id) {
     trendData.value = null
@@ -119,25 +114,16 @@ watch(selectedSubCategoryId, async (id) => {
   }
 })
 
-function openCategoryPicker() {
-  pickerMode.value = 'category'
-  pickerTitle.value = '选择大类'
+async function openPicker() {
+  await Promise.all(
+    categoryStore.categories.map((c) => subCategoryStore.fetchByCategory(c.id))
+  )
   showPicker.value = true
 }
 
-function openSubPicker() {
-  pickerMode.value = 'sub'
-  pickerTitle.value = '选择子类'
-  showPicker.value = true
-}
-
-function onPick(opt: { label: string; value: number }) {
-  showPicker.value = false
-  if (pickerMode.value === 'category') {
-    selectedCategoryId.value = opt.value
-  } else {
-    selectedSubCategoryId.value = opt.value
-  }
+function onPickerConfirm(r: { categoryId: number; subId: number | null }) {
+  selectedCategoryId.value = r.categoryId
+  selectedSubCategoryId.value = r.subId
 }
 
 function baseGrid() {
@@ -295,7 +281,12 @@ function monthlyCompareOption() {
     yAxis: yAxis('金额 (¥)'),
     series: [
       { name: '收入', type: 'bar', data: monthlyCompare.value.map((m) => m.income), itemStyle: { color: '#10b981' } },
-      { name: '支出', type: 'bar', data: monthlyCompare.value.map((m) => m.expense), itemStyle: { color: '#ef4444' } },
+      {
+        name: '支出',
+        type: 'bar',
+        data: monthlyCompare.value.map((m) => m.expense),
+        itemStyle: { color: '#ef4444' },
+      },
     ],
   }
 }
@@ -307,6 +298,8 @@ function fmt(v: number): string {
 
 <template>
   <div class="page">
+    <van-nav-bar title="数据分析" />
+    <div class="page-body">
     <div class="ov-grid">
       <div class="ov-card">
         <div class="ov-label">总库存数</div>
@@ -340,23 +333,11 @@ function fmt(v: number): string {
       <VChart :option="monthlyCompareOption()" autoresize class="chart" />
     </div>
 
-    <van-cell-group inset class="sel">
-      <van-field
-        readonly
-        is-link
-        :model-value="currentCatName"
-        label="大类"
-        @click="openCategoryPicker"
-      />
-      <van-field
-        readonly
-        is-link
-        :model-value="currentSubName"
-        label="子类"
-        :disabled="selectedCategoryId === null"
-        @click="openSubPicker"
-      />
-    </van-cell-group>
+    <div class="sel-bar" @click="openPicker">
+      <van-icon name="apps-o" size="16" color="var(--van-primary-color)" />
+      <span class="sel-label">{{ selectionLabel }}</span>
+      <van-icon name="arrow-down" size="14" color="var(--van-text-color-2)" />
+    </div>
 
     <div class="trend">
       <van-loading v-if="loading" class="tip" vertical>加载中</van-loading>
@@ -369,50 +350,57 @@ function fmt(v: number): string {
         description="选择大类和子类查看趋势"
       />
       <template v-else>
-        <div class="chart-card">
-          <VChart :option="quantityLineOption()" autoresize class="chart" />
-        </div>
-        <div class="chart-card">
-          <VChart :option="priceLineOption()" autoresize class="chart" />
-        </div>
-        <div class="chart-card">
-          <VChart :option="totalPriceLineOption()" autoresize class="chart" />
-        </div>
-        <div class="chart-card">
-          <VChart :option="unitPriceLineOption()" autoresize class="chart" />
-        </div>
-        <div class="chart-card">
-          <VChart :option="quantityPieOption()" autoresize class="chart" />
-        </div>
-        <div class="chart-card">
-          <VChart :option="priceBarOption()" autoresize class="chart" />
-        </div>
+        <van-tabs v-model:active="trendTab" shrink>
+          <van-tab title="趋势" name="trend">
+            <div class="chart-card">
+              <VChart :option="quantityLineOption()" autoresize class="chart" />
+            </div>
+            <div class="chart-card">
+              <VChart :option="priceLineOption()" autoresize class="chart" />
+            </div>
+            <div class="chart-card">
+              <VChart :option="totalPriceLineOption()" autoresize class="chart" />
+            </div>
+            <div class="chart-card">
+              <VChart :option="unitPriceLineOption()" autoresize class="chart" />
+            </div>
+          </van-tab>
+          <van-tab title="分布" name="dist">
+            <div class="chart-card">
+              <VChart :option="quantityPieOption()" autoresize class="chart" />
+            </div>
+            <div class="chart-card">
+              <VChart :option="priceBarOption()" autoresize class="chart" />
+            </div>
+          </van-tab>
+        </van-tabs>
       </template>
     </div>
+    </div>
 
-    <van-popup v-model:show="showPicker" position="bottom" round>
-      <div class="picker">
-        <div class="picker-title">{{ pickerTitle }}</div>
-        <div class="picker-body">
-          <van-cell
-            v-for="opt in pickerMode === 'category' ? categoryOptions : subOptions"
-            :key="opt.value"
-            :title="opt.label"
-            is-link
-            @click="onPick(opt)"
-          />
-          <van-empty v-if="pickerMode === 'sub' && !subOptions.length" description="该大类暂无子分类" />
-        </div>
-        <van-button block plain @click="showPicker = false">取消</van-button>
-        <div class="pad" />
-      </div>
-    </van-popup>
+    <CascaderPicker
+      v-model:show="showPicker"
+      title="选择分类"
+      :categories="pickerCategories"
+      :subs-of="pickerSubsOf"
+      :initial-category-id="selectedCategoryId ?? undefined"
+      :initial-sub-id="selectedSubCategoryId ?? undefined"
+      @confirm="onPickerConfirm"
+    />
   </div>
 </template>
 
 <style scoped>
 .page {
-  padding: 12px 12px 90px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px var(--tabbar-height);
 }
 
 .ov-grid {
@@ -422,17 +410,13 @@ function fmt(v: number): string {
 }
 
 .ov-card {
-  background: #fff;
+  background: var(--van-background-2);
   border-radius: 10px;
   padding: 12px;
 }
 
-html.dark .ov-card {
-  background: #1c1c1e;
-}
-
 .ov-label {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 12px;
 }
 
@@ -460,21 +444,32 @@ html.dark .ov-card {
 
 .chart-card {
   margin-top: 12px;
-  background: #fff;
+  background: var(--van-background-2);
   border-radius: 10px;
   padding: 8px 4px 4px;
-}
-
-html.dark .chart-card {
-  background: #1c1c1e;
 }
 
 .chart {
   height: 230px;
 }
 
-.sel {
+.sel-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--van-background-2);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.sel-label {
+  flex: 1;
+  font-size: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .trend {
@@ -483,20 +478,5 @@ html.dark .chart-card {
 
 .tip {
   padding-top: 60px;
-}
-
-.picker-title {
-  padding: 16px 0;
-  text-align: center;
-  font-weight: 600;
-}
-
-.picker-body {
-  max-height: 45vh;
-  overflow-y: auto;
-}
-
-.pad {
-  height: 16px;
 }
 </style>

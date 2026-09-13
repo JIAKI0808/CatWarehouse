@@ -9,10 +9,14 @@ onMounted(() => theme.apply())
 
 <template>
   <van-config-provider :theme="theme.isDark ? 'dark' : 'light'">
-    <div class="app-main">
-      <router-view />
+    <div class="app-shell">
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </div>
-    <van-tabbar route safe-area-inset-bottom placeholder>
+    <van-tabbar route safe-area-inset-bottom>
       <van-tabbar-item replace to="/inventory" icon="shop-o">库存</van-tabbar-item>
       <van-tabbar-item replace to="/analytics" icon="chart-trending-o">数据</van-tabbar-item>
       <van-tabbar-item replace to="/ledger" icon="balance-list-o">账本</van-tabbar-item>

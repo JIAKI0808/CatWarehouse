@@ -204,17 +204,17 @@ function submit() {
 
 .price-symbol {
   margin-right: 4px;
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 
 .expire-right {
   display: flex;
   align-items: center;
-  color: #c8c9cc;
+  color: var(--van-text-color-3);
 }
 
 .expire-right .clear-icon {
   margin-right: 8px;
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 </style>

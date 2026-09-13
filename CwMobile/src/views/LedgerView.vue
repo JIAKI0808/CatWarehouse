@@ -30,8 +30,6 @@ const selectedDate = ref(Date.now())
 const showCalendar = ref(false)
 const searchQuery = ref('')
 const filterType = ref('')
-const calYear = ref(new Date().getFullYear())
-const calMonth = ref(new Date().getMonth())
 
 const rangeOptions = [
   { label: '按天', value: 'day' },
@@ -39,8 +37,6 @@ const rangeOptions = [
   { label: '按月', value: 'month' },
   { label: '按年', value: 'year' },
 ]
-
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
 
 const currentMonth = computed(() => {
   const d = new Date(selectedDate.value)
@@ -56,38 +52,30 @@ const dateLabel = computed(() => {
   })
 })
 
-interface CalDay {
-  day: number
-  income: number
-  expense: number
-  isCurrent: boolean
-}
-
-const calendarDays = computed<CalDay[]>(() => {
-  const y = calYear.value
-  const m = calMonth.value
-  const firstDay = new Date(y, m, 1).getDay()
-  const daysInMonth = new Date(y, m + 1, 0).getDate()
-  const cells: CalDay[] = []
-  for (let i = 0; i < firstDay; i++) {
-    cells.push({ day: 0, income: 0, expense: 0, isCurrent: false })
+const daySummary = computed(() => {
+  const map: Record<string, { income: number; expense: number }> = {}
+  for (const i of store.items) {
+    const key = i.date.slice(0, 10)
+    const e = map[key] ?? (map[key] = { income: 0, expense: 0 })
+    if (i.type === 'income') e.income += i.amount
+    else e.expense += i.amount
   }
-  const today = new Date()
-  for (let d = 1; d <= daysInMonth; d++) {
-    const prefix = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    const dayItems = store.items.filter((i) => i.date.startsWith(prefix))
-    const income = dayItems
-      .filter((i) => i.type === 'income')
-      .reduce((s, i) => s + i.amount, 0)
-    const expense = dayItems
-      .filter((i) => i.type === 'expense')
-      .reduce((s, i) => s + i.amount, 0)
-    const isCurrent =
-      today.getFullYear() === y && today.getMonth() === m && today.getDate() === d
-    cells.push({ day: d, income, expense, isCurrent })
-  }
-  return cells
+  return map
 })
+
+function calendarFormatter(item: { date?: Date }) {
+  const day = item.date
+  if (!day) return {}
+  const mm = String(day.getMonth() + 1).padStart(2, '0')
+  const dd = String(day.getDate()).padStart(2, '0')
+  const key = `${day.getFullYear()}-${mm}-${dd}`
+  const s = daySummary.value[key]
+  if (!s) return {}
+  const parts: string[] = []
+  if (s.income) parts.push(`+${s.income.toFixed(0)}`)
+  if (s.expense) parts.push(`-${s.expense.toFixed(0)}`)
+  return { bottomInfo: parts.join(' ') }
+}
 
 const filteredItems = computed(() => {
   const base = new Date(selectedDate.value)
@@ -115,7 +103,6 @@ onMounted(() => {
   store.fetchAll()
   store.fetchStats(range.value)
   budgetStore.fetchAll(currentMonth.value)
-  syncCalendar()
 })
 
 watch(range, (val) => store.fetchStats(val))
@@ -127,29 +114,19 @@ watch([searchQuery, filterType], () => {
   })
 })
 
-function syncCalendar() {
-  const d = new Date(selectedDate.value)
-  calYear.value = d.getFullYear()
-  calMonth.value = d.getMonth()
-}
-
 function navMonth(delta: number) {
   const d = new Date(selectedDate.value)
   d.setMonth(d.getMonth() + delta)
   selectedDate.value = d.getTime()
-  syncCalendar()
-}
-
-function selectDay(day: number) {
-  if (day === 0) return
-  const d = new Date(calYear.value, calMonth.value, day)
-  selectedDate.value = d.getTime()
-  showCalendar.value = false
 }
 
 function openCalendar() {
-  syncCalendar()
   showCalendar.value = true
+}
+
+function onCalendarConfirm(date: Date) {
+  selectedDate.value = date.getTime()
+  showCalendar.value = false
 }
 
 function handleAdd() {
@@ -226,7 +203,13 @@ function getChartOption() {
       splitLine: { lineStyle: { color: p.split } },
     },
     series: [
-      { name: '收入', type: 'bar', data: store.stats.map((s) => s.income), itemStyle: { color: '#10b981' }, barGap: '20%' },
+      {
+        name: '收入',
+        type: 'bar',
+        data: store.stats.map((s) => s.income),
+        itemStyle: { color: '#10b981' },
+        barGap: '20%',
+      },
       { name: '支出', type: 'bar', data: store.stats.map((s) => s.expense), itemStyle: { color: '#ef4444' } },
     ],
   }
@@ -243,15 +226,17 @@ function typeTag(t: string): string {
 
 <template>
   <div class="ledger">
-    <div class="ledger-head">
-      <div class="ledger-title">账本</div>
-      <van-icon name="plus" class="plus" @click="handleAdd" />
-    </div>
+    <van-nav-bar title="账本">
+      <template #right>
+        <van-icon name="plus" class="plus" @click="handleAdd" />
+      </template>
+    </van-nav-bar>
 
+    <div class="page-body">
     <div class="range-row">
       <van-icon name="arrow-left" class="arrow" @click="navMonth(-1)" />
       <div class="date-label" @click="openCalendar">
-        {{ dateLabel }} <van-icon name="arrow-down" size="12" color="#969799" />
+        {{ dateLabel }} <van-icon name="arrow-down" size="12" color="var(--van-text-color-2)" />
       </div>
       <van-icon name="arrow" class="arrow" @click="navMonth(1)" />
     </div>
@@ -337,40 +322,47 @@ function typeTag(t: string): string {
         v-if="!store.loading && !filteredItems.length"
         description="暂无账单记录"
       />
-      <van-cell-group v-else inset>
-        <van-cell
+      <div v-else class="ledger-cards">
+        <van-swipe-cell
           v-for="item in filteredItems"
           :key="item.id"
-          :title="item.description || item.platform || '未命名'"
-          :label="`${shortDate(item.date)} · ${item.platform || '-'} · ${item.person || '-'}`"
-          clickable
-          @click="handleEdit(item)"
+          class="card-swipe"
         >
-          <template #icon>
-            <van-tag
-              :type="item.type === 'income' ? 'success' : 'danger'"
-              class="type-tag"
-            >
-              {{ typeTag(item.type) }}
-            </van-tag>
-          </template>
-          <template #value>
-            <div class="amount-wrap">
+          <van-cell
+            :title="item.description || item.platform || '未命名'"
+            :label="`${shortDate(item.date)} · ${item.platform || '-'} · ${item.person || '-'}`"
+            clickable
+            @click="handleEdit(item)"
+          >
+            <template #icon>
+              <van-tag
+                :type="item.type === 'income' ? 'success' : 'danger'"
+                class="type-tag"
+              >
+                {{ typeTag(item.type) }}
+              </van-tag>
+            </template>
+            <template #value>
               <span
                 class="amount"
                 :class="item.type === 'income' ? 'in' : 'out'"
               >
                 {{ item.type === 'income' ? '+' : '-' }}¥{{ item.amount.toFixed(2) }}
               </span>
-              <van-icon
-                name="delete-o"
-                class="del"
-                @click.stop="askDelete(item)"
-              />
-            </div>
+            </template>
+          </van-cell>
+          <template #right>
+            <van-button
+              square
+              type="danger"
+              text="删除"
+              class="del-btn"
+              @click="askDelete(item)"
+            />
           </template>
-        </van-cell>
-      </van-cell-group>
+        </van-swipe-cell>
+      </div>
+    </div>
     </div>
 
     <LedgerForm
@@ -379,64 +371,33 @@ function typeTag(t: string): string {
       @submit="handleSubmit"
     />
 
-    <van-popup v-model:show="showCalendar" position="bottom" round>
-      <div class="cal">
-        <div class="cal-head">
-          <div class="cal-nav">
-            <van-icon name="arrow-left" class="arrow" @click="calMonth--" />
-            <span class="cal-month-label">
-              {{ calYear }} 年 {{ calMonth + 1 }} 月
-            </span>
-            <van-icon name="arrow" class="arrow" @click="calMonth++" />
-          </div>
-          <div class="cal-weekdays">
-            <div v-for="w in weekDays" :key="w" class="cal-wd">{{ w }}</div>
-          </div>
-          <div class="cal-grid">
-            <div
-              v-for="(d, i) in calendarDays"
-              :key="i"
-              class="cal-cell"
-              :class="{ empty: d.day === 0, today: d.isCurrent }"
-              @click="selectDay(d.day)"
-            >
-              <template v-if="d.day > 0">
-                <div class="cal-day">{{ d.day }}</div>
-                <div v-if="d.income > 0" class="cal-income">+{{ d.income.toFixed(0) }}</div>
-                <div v-if="d.expense > 0" class="cal-expense">-{{ d.expense.toFixed(0) }}</div>
-              </template>
-            </div>
-          </div>
-          <van-button block plain type="primary" @click="showCalendar = false">
-            完成
-          </van-button>
-          <div class="pad" />
-        </div>
-      </div>
-    </van-popup>
+    <van-calendar
+      v-model:show="showCalendar"
+      :default-date="new Date(selectedDate)"
+      :min-date="new Date(2000, 0, 1)"
+      :max-date="new Date(2100, 11, 31)"
+      :formatter="calendarFormatter"
+      @confirm="onCalendarConfirm"
+    />
   </div>
 </template>
 
 <style scoped>
 .ledger {
-  padding: 12px 12px 90px;
-}
-
-.ledger-head {
+  height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
 }
 
-.ledger-title {
-  font-size: 20px;
-  font-weight: 700;
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px var(--tabbar-height);
 }
 
 .plus {
   font-size: 22px;
-  color: #1989fa;
-  padding: 4px;
+  color: var(--van-primary-color);
 }
 
 .range-row {
@@ -449,7 +410,7 @@ function typeTag(t: string): string {
 
 .arrow {
   font-size: 16px;
-  color: #969799;
+  color: var(--van-text-color-2);
   padding: 6px;
 }
 
@@ -467,13 +428,9 @@ function typeTag(t: string): string {
 
 .chart-card {
   margin-top: 8px;
-  background: #fff;
+  background: var(--van-background-2);
   border-radius: 10px;
   padding: 8px 4px 4px;
-}
-
-html.dark .chart-card {
-  background: #1c1c1e;
 }
 
 .chart {
@@ -482,18 +439,14 @@ html.dark .chart-card {
 
 .budget {
   margin-top: 10px;
-  background: #fff;
+  background: var(--van-background-2);
   border-radius: 10px;
   padding: 10px 12px;
 }
 
-html.dark .budget {
-  background: #1c1c1e;
-}
-
 .budget-title {
   font-size: 13px;
-  color: #969799;
+  color: var(--van-text-color-2);
   margin-bottom: 8px;
 }
 
@@ -520,7 +473,7 @@ html.dark .budget {
   width: 92px;
   text-align: right;
   font-size: 11px;
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 
 .toolbar {
@@ -538,11 +491,7 @@ html.dark .budget {
 
 .chip {
   padding: 6px 12px;
-  border: 1px solid #e2e2e2;
-}
-
-html.dark .chip {
-  border-color: #3a3a3d;
+  border: 1px solid var(--van-border-color);
 }
 
 .list {
@@ -553,10 +502,18 @@ html.dark .chip {
   margin-right: 10px;
 }
 
-.amount-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+.ledger-cards {
+  padding: 0 12px;
+}
+
+.card-swipe {
+  margin-bottom: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.del-btn {
+  height: 100%;
 }
 
 .amount {
@@ -565,100 +522,11 @@ html.dark .chip {
 }
 
 .in {
-  color: #07c160;
+  color: var(--van-success-color);
 }
 
 .out {
-  color: #ee0a24;
+  color: var(--van-danger-color);
 }
 
-.del {
-  color: #c8c9cc;
-  font-size: 17px;
-}
-
-.cal {
-  padding: 16px 14px 0;
-}
-
-.cal-head {
-  text-align: center;
-}
-
-.cal-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  margin-bottom: 10px;
-}
-
-.cal-month-label {
-  font-weight: 600;
-  min-width: 110px;
-}
-
-.cal-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  font-size: 12px;
-  color: #969799;
-}
-
-.cal-wd {
-  padding: 4px 0;
-}
-
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  margin-bottom: 12px;
-}
-
-.cal-cell {
-  min-height: 52px;
-  padding: 2px;
-  text-align: center;
-  font-size: 11px;
-  line-height: 1.15;
-  border-radius: 4px;
-}
-
-.cal-cell:not(.empty) {
-  cursor: pointer;
-}
-
-.cal-cell:not(.empty):active {
-  background: #f2f3f5;
-}
-
-.cal-day {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.cal-income {
-  color: #07c160;
-  font-size: 9px;
-  overflow: hidden;
-}
-
-.cal-expense {
-  color: #ee0a24;
-  font-size: 9px;
-  overflow: hidden;
-}
-
-.cal-cell.today {
-  background: #e6f7ff;
-}
-
-html.dark .cal-cell.today {
-  background: rgba(25, 137, 250, 0.15);
-}
-
-.pad {
-  height: 16px;
-}
 </style>

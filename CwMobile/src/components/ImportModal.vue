@@ -112,7 +112,7 @@ async function executeImport() {
             :after-read="handleRead"
           >
             <div class="import-tip">
-              <van-icon name="description" size="40" color="#c8c9cc" />
+              <van-icon name="description" size="40" color="var(--van-text-color-3)" />
               <div>选择 JSON 备份文件</div>
             </div>
           </van-uploader>
@@ -194,9 +194,9 @@ async function executeImport() {
   margin: 0 auto;
   height: 110px;
   gap: 8px;
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 13px;
-  border: 1px dashed #c8c9cc;
+  border: 1px dashed var(--van-text-color-3);
   border-radius: 8px;
 }
 
@@ -205,7 +205,7 @@ async function executeImport() {
 }
 
 .conflict-desc {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 13px;
   padding: 4px 8px 8px;
 }
@@ -217,7 +217,7 @@ async function executeImport() {
 }
 
 .result-desc {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 13px;
   margin: 8px 0 16px;
   line-height: 1.5;

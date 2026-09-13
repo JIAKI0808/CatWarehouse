@@ -14,6 +14,8 @@ from api.tag_router import router as tag_router
 from api.alert_router import router as alert_router
 from api.recurring_router import router as recurring_router
 from api.upload_router import router as upload_router
+from api.ocr_router import router as ocr_router
+from api.voice_router import router as voice_router
 from api.backup_router import router as backup_router
 from api.currency_router import router as currency_router
 from api.pricing_router import router as pricing_router
@@ -33,6 +35,8 @@ router.include_router(tag_router)
 router.include_router(alert_router)
 router.include_router(recurring_router)
 router.include_router(upload_router)
+router.include_router(ocr_router)
+router.include_router(voice_router)
 router.include_router(backup_router)
 router.include_router(currency_router)
 router.include_router(pricing_router)

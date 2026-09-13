@@ -1,6 +1,8 @@
 :root {
   --page-bg: #f7f8fa;
   --page-color: #323233;
+  /* 底部 tabbar 高度 + 安全区，各页面滚动区用它做底部留白 */
+  --tabbar-height: calc(50px + env(safe-area-inset-bottom));
 }
 
 html.dark {
@@ -10,12 +12,16 @@ html.dark {
 }
 
 html,
-body {
+body,
+#app {
+  height: 100%;
   margin: 0;
   padding: 0;
 }
 
 body {
+  /* 滚动交给每个页面的 .page-body 容器，body 不再滚动，以支持 keep-alive 独立滚动位置 */
+  overflow: hidden;
   background: var(--page-bg);
   color: var(--page-color);
   -webkit-tap-highlight-color: transparent;
@@ -25,11 +31,6 @@ body {
     'Microsoft Yahei', sans-serif;
 }
 
-#app {
-  min-height: 100vh;
-}
-
-.app-main {
-  padding-bottom: calc(50px + env(safe-area-inset-bottom));
-  min-height: 100vh;
+.app-shell {
+  height: 100%;
 }

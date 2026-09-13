@@ -102,7 +102,7 @@ function formatTime(iso: string): string {
 }
 
 .section-label {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 13px;
   margin: 8px 0;
 }
@@ -124,7 +124,7 @@ function formatTime(iso: string): string {
   align-items: center;
   gap: 8px;
   padding: 10px 0;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid var(--van-border-color);
 }
 
 .note-main {
@@ -137,12 +137,12 @@ function formatTime(iso: string): string {
 }
 
 .note-row.read .note-msg {
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 
 .note-time {
   font-size: 12px;
-  color: #969799;
+  color: var(--van-text-color-2);
   margin-top: 4px;
 }
 </style>

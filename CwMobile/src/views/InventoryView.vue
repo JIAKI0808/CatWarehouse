@@ -12,6 +12,7 @@ import CategoryManager from '@/components/CategoryManager.vue'
 import NotificationSheet from '@/components/NotificationSheet.vue'
 import DataActionsSheet from '@/components/DataActionsSheet.vue'
 import ItemForm from '@/components/ItemForm.vue'
+import CascaderPicker from '@/components/CascaderPicker.vue'
 
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
@@ -24,6 +25,8 @@ const showCatMgr = ref(false)
 const showNotify = ref(false)
 const showDataSheet = ref(false)
 const showItemForm = ref(false)
+const showPicker = ref(false)
+const refreshing = ref(false)
 const editingItem = ref<Item | null>(null)
 const initialized = ref(false)
 
@@ -35,6 +38,45 @@ const selectedSub = computed<SubCategory | null>(() => {
   }
   return null
 })
+
+const pickerCategories = computed(() =>
+  categoryStore.categories.map((c) => ({ text: c.name, value: c.id }))
+)
+
+function pickerSubsOf(catId: number) {
+  return subCategoryStore
+    .getSubCategories(catId)
+    .map((s) => ({ text: s.name, value: s.id }))
+}
+
+async function openPicker() {
+  await Promise.all(
+    categoryStore.categories.map((c) => subCategoryStore.fetchByCategory(c.id))
+  )
+  showPicker.value = true
+}
+
+function onPickerConfirm(r: { categoryId: number; subId: number | null }) {
+  if (r.subId === null) {
+    showToast('请选择子分类')
+    return
+  }
+  const sub = subCategoryStore
+    .getSubCategories(r.categoryId)
+    .find((s) => s.id === r.subId)
+  if (sub) onSelectSub(sub)
+}
+
+async function onRefresh() {
+  try {
+    await categoryStore.fetchAll()
+    if (selectedSub.value) {
+      await itemStore.fetchBySubCategory(selectedSub.value.id)
+    }
+  } finally {
+    refreshing.value = false
+  }
+}
 
 const badgeCount = computed(() => {
   const unread = notificationStore.items.filter((n) => !n.is_read).length
@@ -145,22 +187,30 @@ function formatDate(str: string | null): string {
 
 <template>
   <div class="inv">
-    <div class="inv-head">
-      <van-icon name="apps-o" class="head-icon" @click="showCatMgr = true" />
-      <div class="head-title" @click="showCatMgr = true">
-        <span v-if="selectedSub" class="head-sub">{{ selectedSub.name }}</span>
-        <span v-else class="head-hint">选择子分类</span>
-        <van-icon name="arrow-down" size="12" color="#969799" />
-      </div>
-      <van-badge
-        :content="badgeCount > 0 ? badgeCount : ''"
-        :show-zero="false"
-        max="99"
-      >
-        <van-icon name="bell" class="head-icon" @click="showNotify = true" />
-      </van-badge>
-      <van-icon name="ellipsis" class="head-icon" @click="showDataSheet = true" />
-    </div>
+    <van-nav-bar>
+      <template #left>
+        <van-icon name="apps-o" size="20" @click="showCatMgr = true" />
+      </template>
+      <template #title>
+        <div class="head-title" @click="openPicker">
+          <span v-if="selectedSub" class="head-sub">{{ selectedSub.name }}</span>
+          <span v-else class="head-hint">选择子分类</span>
+          <van-icon name="arrow-down" size="12" color="var(--van-text-color-3)" />
+        </div>
+      </template>
+      <template #right>
+        <div class="head-right">
+          <van-badge
+            :content="badgeCount > 0 ? badgeCount : ''"
+            :show-zero="false"
+            max="99"
+          >
+            <van-icon name="bell" size="20" @click="showNotify = true" />
+          </van-badge>
+          <van-icon name="ellipsis" size="20" @click="showDataSheet = true" />
+        </div>
+      </template>
+    </van-nav-bar>
 
     <div v-if="selectedSub" class="inv-info">
       <span class="info-name">{{ selectedSub.name }}</span>
@@ -187,13 +237,10 @@ function formatDate(str: string | null): string {
           v-else-if="!itemStore.items.length"
           description="暂无物品，点击下方按钮新增"
         />
-        <div v-else class="inv-list">
-          <div
-            v-for="item in itemStore.items"
-            :key="item.id"
-            class="inv-item"
-            @click="openEditItem(item)"
-          >
+        <van-pull-refresh v-else v-model="refreshing" @refresh="onRefresh">
+          <div class="inv-list">
+            <van-swipe-cell v-for="item in itemStore.items" :key="item.id">
+              <div class="inv-item" @click="openEditItem(item)">
             <div class="item-main">
               <div class="item-row1">
                 <span class="item-name">{{ item.name }}</span>
@@ -215,13 +262,19 @@ function formatDate(str: string | null): string {
                 {{ item.recorder || '未记录录入人' }}
               </div>
             </div>
-            <van-icon
-              name="delete-o"
-              class="item-del"
-              @click.stop="askDeleteItem(item)"
-            />
+              </div>
+              <template #right>
+                <van-button
+                  square
+                  type="danger"
+                  text="删除"
+                  class="del-btn"
+                  @click="askDeleteItem(item)"
+                />
+              </template>
+            </van-swipe-cell>
           </div>
-        </div>
+        </van-pull-refresh>
       </template>
     </div>
 
@@ -238,6 +291,15 @@ function formatDate(str: string | null): string {
       </van-button>
     </div>
 
+    <CascaderPicker
+      v-model:show="showPicker"
+      title="选择分类"
+      :categories="pickerCategories"
+      :subs-of="pickerSubsOf"
+      :initial-category-id="selectedSub?.category_id ?? undefined"
+      :initial-sub-id="selectedSub?.id ?? undefined"
+      @confirm="onPickerConfirm"
+    />
     <CategoryManager v-model:visible="showCatMgr" @select="onSelectSub" />
     <NotificationSheet v-model:visible="showNotify" />
     <DataActionsSheet
@@ -256,28 +318,16 @@ function formatDate(str: string | null): string {
 .inv {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 50px - env(safe-area-inset-bottom));
+  height: 100%;
 }
 
-.inv-head {
+.head-right {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-}
-
-.head-icon {
-  font-size: 20px;
-  color: #323233;
-  cursor: pointer;
-}
-
-html.dark .head-icon {
-  color: #f5f5f5;
+  gap: 14px;
 }
 
 .head-title {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -286,7 +336,7 @@ html.dark .head-icon {
 }
 
 .head-hint {
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 
 .inv-info {
@@ -296,12 +346,8 @@ html.dark .head-icon {
   margin: 0 14px 4px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: #f7f8fa;
+  background: var(--van-background-2);
   font-size: 13px;
-}
-
-html.dark .inv-info {
-  background: #1c1c1e;
 }
 
 .info-name {
@@ -309,13 +355,13 @@ html.dark .inv-info {
 }
 
 .info-qty {
-  color: #969799;
+  color: var(--van-text-color-2);
 }
 
 .inv-body {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0 90px;
+  padding: 4px 0 calc(var(--tabbar-height) + 64px);
 }
 
 .inv-loading {
@@ -332,13 +378,9 @@ html.dark .inv-info {
   gap: 8px;
   padding: 12px;
   margin-bottom: 10px;
-  border: 1px solid #f2f3f5;
+  background: var(--van-background-2);
   border-radius: 10px;
   cursor: pointer;
-}
-
-html.dark .inv-item {
-  border-color: #1c1c1e;
 }
 
 .item-main {
@@ -362,13 +404,13 @@ html.dark .inv-item {
 }
 
 .item-meta {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 12px;
   margin-top: 2px;
 }
 
 .item-desc {
-  color: #969799;
+  color: var(--van-text-color-2);
   font-size: 12px;
   margin-top: 2px;
   overflow: hidden;
@@ -376,10 +418,8 @@ html.dark .inv-item {
   text-overflow: ellipsis;
 }
 
-.item-del {
-  font-size: 20px;
-  color: #c8c9cc;
-  padding: 8px;
+.del-btn {
+  height: 100%;
 }
 
 .inv-fab {
