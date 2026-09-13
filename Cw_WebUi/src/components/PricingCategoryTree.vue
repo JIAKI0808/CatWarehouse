@@ -2,8 +2,11 @@
 import { ref, onMounted, watch } from 'vue'
 import { NSpin, NButton, NIcon, NModal, NInput, NTooltip } from 'naive-ui'
 import { AddOutline, TrashOutline, CreateOutline, FolderOutline, DocumentOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { pricingCategoryApi, pricingSubCategoryApi } from '@/services/api'
 import type { PricingCategory, PricingSubCategory } from '@/types'
+
+const { t } = useI18n()
 
 const categories = ref<PricingCategory[]>([])
 const subCategoriesByCategory = ref<Record<number, PricingSubCategory[]>>({})
@@ -133,7 +136,7 @@ function selectSubCategory(subId: number) {
 <template>
   <div class="h-full flex flex-col">
     <div class="p-3 border-b flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-gray-600">售价分类</h3>
+      <h3 class="text-sm font-semibold text-gray-600">{{ t('app.pricing.categoryTitle') }}</h3>
       <NButton size="tiny" type="primary" @click="handleAddCategory">
         <template #icon><NIcon :size="14"><AddOutline /></NIcon></template>
       </NButton>
@@ -163,7 +166,7 @@ function selectSubCategory(subId: number) {
                   </div>
                 </div>
               </template>
-              {{ cat.description || '暂无描述' }}
+              {{ cat.description || t('app.common.noDescription') }}
             </NTooltip>
 
             <div v-if="subCategoriesByCategory[cat.id]?.length" class="ml-5 border-l-2 border-gray-200">
@@ -187,7 +190,7 @@ function selectSubCategory(subId: number) {
                       </div>
                     </div>
                   </template>
-                  {{ sub.description || '暂无描述' }}
+                  {{ sub.description || t('app.common.noDescription') }}
                 </NTooltip>
               </div>
             </div>
@@ -198,22 +201,26 @@ function selectSubCategory(subId: number) {
 
     <NModal v-model:show="showCategoryForm">
       <div class="bg-white rounded-lg p-4 w-80">
-        <h3 class="text-lg font-bold mb-4">{{ editingCategory ? '编辑分类' : '新增分类' }}</h3>
-        <NInput v-model:value="categoryFormName" placeholder="分类名称" />
+        <h3 class="text-lg font-bold mb-4">
+          {{ editingCategory ? t('app.pricing.editCategory') : t('app.pricing.addCategory') }}
+        </h3>
+        <NInput v-model:value="categoryFormName" :placeholder="t('app.pricing.categoryNamePlaceholder')" />
         <div class="flex justify-end gap-2 mt-4">
-          <NButton @click="showCategoryForm = false">取消</NButton>
-          <NButton type="primary" @click="handleCategorySubmit">保存</NButton>
+          <NButton @click="showCategoryForm = false">{{ t('app.common.cancel') }}</NButton>
+          <NButton type="primary" @click="handleCategorySubmit">{{ t('app.common.save') }}</NButton>
         </div>
       </div>
     </NModal>
 
     <NModal v-model:show="showSubCategoryForm">
       <div class="bg-white rounded-lg p-4 w-80">
-        <h3 class="text-lg font-bold mb-4">{{ editingSubCategory ? '编辑子分类' : '新增子分类' }}</h3>
-        <NInput v-model:value="subCategoryFormName" placeholder="子分类名称" />
+        <h3 class="text-lg font-bold mb-4">
+          {{ editingSubCategory ? t('app.pricing.editSubCategory') : t('app.pricing.addSubCategory') }}
+        </h3>
+        <NInput v-model:value="subCategoryFormName" :placeholder="t('app.pricing.subCategoryNamePlaceholder')" />
         <div class="flex justify-end gap-2 mt-4">
-          <NButton @click="showSubCategoryForm = false">取消</NButton>
-          <NButton type="primary" @click="handleSubCategorySubmit">保存</NButton>
+          <NButton @click="showSubCategoryForm = false">{{ t('app.common.cancel') }}</NButton>
+          <NButton type="primary" @click="handleSubCategorySubmit">{{ t('app.common.save') }}</NButton>
         </div>
       </div>
     </NModal>

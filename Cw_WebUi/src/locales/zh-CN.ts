@@ -60,6 +60,9 @@ const zhCN = {
       subCategory: '子分类',
       noData: '暂无数据',
       noDescription: '暂无描述',
+      // 「确认删除」原先放在 inventory 下，但账本、售价都要用同一句 —— 提到 common。
+      // （提出来的时机是它出现**第三个**使用者的那一刻，不是第一个。）
+      confirmDeleteTitle: '确认删除',
       quantity: '库存数量',
       inputName: '请输入名称',
       inputDescription: '请输入描述',
@@ -81,7 +84,6 @@ const zhCN = {
       exportFailed: '导出失败',
       uploadSuccess: '上传成功',
       uploadFailed: '上传失败',
-      confirmDeleteTitle: '确认删除',
       confirmDeleteCategory: '确定要删除大类「{name}」吗？',
       confirmDeleteSubCategory: '确定要删除子分类「{name}」吗？',
       addCategory: '新增大类',
@@ -162,6 +164,30 @@ const zhCN = {
         categoryStockShare: '分类库存占比',
         monthlyCompare: '月度收支对比',
       },
+    },
+
+    // 售价区。这里的「分类 / 子分类」是 **PricingCategory / PricingSubCategory**，
+    // 与库存区的大类/子分类是**不同的领域对象** —— 所以即便中文逐字相同也各开各的 key，
+    // 改售价页的措辞不会连带改掉库存页。
+    pricing: {
+      title: '售价管理',
+      productName: '商品名',
+      cost: '成本',
+      suggestedPrice: '建议售价',
+      discount: '折扣系数',
+      recordDate: '记录日期',
+      searchPlaceholder: '搜索商品名',
+      addPricing: '新增售价',
+      editPricing: '编辑售价',
+      deleteConfirm: '确定要删除这条售价记录吗？',
+      categoryTitle: '售价分类',
+      addCategory: '新增分类',
+      editCategory: '编辑分类',
+      categoryNamePlaceholder: '分类名称',
+      addSubCategory: '新增子分类',
+      editSubCategory: '编辑子分类',
+      subCategoryNamePlaceholder: '子分类名称',
+      inputName: '请输入商品名',
     },
 
     // 图标选择器的 48 个 tooltip。键就是 @vicons/ionicons5 的组件名 ——

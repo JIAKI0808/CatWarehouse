@@ -318,7 +318,7 @@ function getChartOption() {
     <NModal
       v-model:show="showDeleteConfirm"
       preset="dialog"
-      :title="t('app.inventory.confirmDeleteTitle')"
+      :title="t('app.common.confirmDeleteTitle')"
       :content="t('app.ledger.deleteConfirm')"
       :positive-text="t('app.common.remove')"
       :negative-text="t('app.common.cancel')"

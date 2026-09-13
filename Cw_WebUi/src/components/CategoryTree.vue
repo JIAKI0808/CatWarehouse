@@ -442,7 +442,7 @@ async function handleDeleteSubCategoryConfirm() {
     <NModal
       v-model:show="showDeleteConfirm"
       preset="dialog"
-      :title="t('app.inventory.confirmDeleteTitle')"
+      :title="t('app.common.confirmDeleteTitle')"
       :content="t('app.inventory.confirmDeleteCategory', { name: categoryToDelete?.name })"
       :positive-text="t('app.common.remove')"
       :negative-text="t('app.common.cancel')"
@@ -454,7 +454,7 @@ async function handleDeleteSubCategoryConfirm() {
     <NModal
       v-model:show="showSubDeleteConfirm"
       preset="dialog"
-      :title="t('app.inventory.confirmDeleteTitle')"
+      :title="t('app.common.confirmDeleteTitle')"
       :content="t('app.inventory.confirmDeleteSubCategory', { name: subCategoryToDelete?.name })"
       :positive-text="t('app.common.remove')"
       :negative-text="t('app.common.cancel')"

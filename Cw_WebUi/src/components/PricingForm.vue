@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NButton, NInputNumber, NDatePicker } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import type { Pricing } from '@/types'
 
 interface FormData {
@@ -22,6 +23,8 @@ const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
   (e: 'submit', data: FormData): void
 }>()
+
+const { t } = useI18n()
 
 const form = ref<FormData>({
   name: '',
@@ -74,33 +77,35 @@ function handleSubmit() {
 <template>
   <NModal :show="visible" @update:show="emit('update:visible', $event)">
     <div class="bg-white rounded-lg p-6 w-96">
-      <h2 class="text-lg font-bold mb-4">{{ editData ? '编辑售价' : '新增售价' }}</h2>
+      <h2 class="text-lg font-bold mb-4">
+        {{ editData ? t('app.pricing.editPricing') : t('app.pricing.addPricing') }}
+      </h2>
       <NForm>
-        <NFormItem label="商品名">
-          <NInput v-model:value="form.name" placeholder="请输入商品名" />
+        <NFormItem :label="t('app.pricing.productName')">
+          <NInput v-model:value="form.name" :placeholder="t('app.pricing.inputName')" />
         </NFormItem>
-        <NFormItem label="成本">
+        <NFormItem :label="t('app.pricing.cost')">
           <NInputNumber v-model:value="form.cost" :min="0" :precision="2" style="width: 100%" />
         </NFormItem>
-        <NFormItem label="建议售价">
+        <NFormItem :label="t('app.pricing.suggestedPrice')">
           <NInputNumber v-model:value="form.suggested_price" :min="0" :precision="2" style="width: 100%" />
         </NFormItem>
-        <NFormItem label="折扣系数">
+        <NFormItem :label="t('app.pricing.discount')">
           <NInputNumber v-model:value="form.discount" :min="0" :max="10" :step="0.1" :precision="2" style="width: 100%" />
         </NFormItem>
-        <NFormItem label="描述">
-          <NInput v-model:value="form.description" type="textarea" placeholder="请输入描述" />
+        <NFormItem :label="t('app.common.description')">
+          <NInput v-model:value="form.description" type="textarea" :placeholder="t('app.common.inputDescription')" />
         </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="form.notes" type="textarea" placeholder="请输入备注" />
+        <NFormItem :label="t('app.common.notes')">
+          <NInput v-model:value="form.notes" type="textarea" :placeholder="t('app.common.inputNotes')" />
         </NFormItem>
-        <NFormItem label="记录日期">
+        <NFormItem :label="t('app.pricing.recordDate')">
           <NDatePicker v-model:value="form.record_date" type="date" style="width: 100%" />
         </NFormItem>
       </NForm>
       <div class="flex justify-end gap-2 mt-4">
-        <NButton @click="handleClose">取消</NButton>
-        <NButton type="primary" @click="handleSubmit">保存</NButton>
+        <NButton @click="handleClose">{{ t('app.common.cancel') }}</NButton>
+        <NButton type="primary" @click="handleSubmit">{{ t('app.common.save') }}</NButton>
       </div>
     </div>
   </NModal>
