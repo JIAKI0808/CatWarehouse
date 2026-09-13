@@ -351,3 +351,45 @@ categories 8 / sub_categories 6 / specific_items 2 / settings 1 行，无丢失�
 | 布局 | 与改动前一致，无元素重叠 |
 
 **真实数据库未被触碰**：用真实库的**副本**，`catwarehouse.db` mtime 仍是 `01:23`。
+
+### `de26578` — P2c-2b 国际化 B-5：分析区文案迁移
+
+**只动分析区两个文件**：`AnalyticsCharts.vue` + `AnalyticsView.vue`。
+
+**迁移内容**
+- `AnalyticsView.vue`：页面标题
+- `AnalyticsCharts.vue`：4 张概览卡、2 个选择器占位符、2 个空态描述、
+  **8 个图表的标题 / 坐标轴名 / 系列名**
+
+**一处刻意的 key 拆分：指标名与坐标轴名分成两段**
+| 段 | 内容 | 用在哪 |
+| --- | --- | --- |
+| `analytics.metric.*` | 数量 / 价格 / 总价 / 单价 / 库存（**不带单位**） | 饼图扇区名、图例 |
+| `analytics.axis.*` | `数量 ({unit})` / `价格 (¥)` …（**带单位**） | 坐标轴名 |
+
+合成一个 key 会让饼图的扇区名变成「数量 (斤)」，很难看。
+「月度收支对比」的收入/支出直接**复用** `app.ledger.typeIncome/typeExpense` —— 同一份文案不写两遍。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | 18 → 18，逐文件计数**逐个不变**（`AnalyticsCharts` 仍是 1） |
+| 前端行为探针 | **PROBE IDENTICAL** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+| 中文残留扫描 | 两个文件**均为 0 行** |
+
+**真实浏览器端到端**（后端指向真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 数据分析 / 总库存数 / 总库存价值 / 总收入 / 总支出 / 选择大类 / 选择子类 / 请选择大类和子类查看趋势 |
+| `en-US` | Analytics / Total items / Total stock value / Total income / Total expense / Select a category / Select a sub-category / Pick a category and sub-category to see trends |
+| **图表实测**（选「日用品 → 纸巾」触发 **7 个 canvas**） | `Stock share by category` / `Quantity trend`（轴 `Quantity (包)`）/ `Price trend` / `Total price trend` / `Unit price trend` —— 标题与轴名全英文，**单位插值正确** |
+| 剩余中文 | 只有**用户数据**：分类名「日用品/纸巾」、单位「包」—— 不是界面文案 |
+| 控制台 | **零 warn / 零 error** |
+| 布局 | 与改动前一致，无元素重叠 |
+
+**顺带印证了 §C3.2 第 12 项的诊断**：本次**先经首页再点进**分析页（进场动画已结束），
+ECharts 的 0 尺寸警告**没有出现**；而直接加载账本页（动画期间挂载）就会出现 ——
+与「容器在动画期间 `display:none`」的结论一致。**同一现象两种路径下表现不同，
+这条对照本身也是对诊断的一次独立验证。**
