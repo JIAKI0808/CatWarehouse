@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import type { Item } from '@/types'
+
+const { t } = useI18n()
 
 interface FormModel {
   name: string
@@ -83,7 +86,7 @@ function formatDate(ts: number | null): string {
 
 function submit() {
   if (!form.value.name.trim()) {
-    showToast('请输入名称')
+    showToast(t('app.common.inputName'))
     return
   }
   const data: Record<string, unknown> = {
@@ -113,9 +116,9 @@ function submit() {
   >
     <div class="form-popup">
       <van-nav-bar
-        :title="item ? '编辑物品' : '新增物品'"
-        left-text="取消"
-        right-text="保存"
+        :title="item ? t('app.inventory.editItem') : t('app.inventory.addItem')"
+        :left-text="t('app.common.cancel')"
+        :right-text="t('app.common.save')"
         @click-left="close"
         @click-right="submit"
       />
@@ -123,13 +126,13 @@ function submit() {
         <van-cell-group inset>
           <van-field
             v-model="form.name"
-            label="名称"
-            placeholder="请输入名称"
+            :label="t('app.common.name')"
+            :placeholder="t('app.common.inputName')"
           />
           <van-field
             v-model="form.price"
             type="number"
-            label="价格"
+            :label="t('app.common.price')"
             placeholder="0.00"
           >
             <template #left-icon><span class="price-symbol">¥</span></template>
@@ -137,19 +140,23 @@ function submit() {
           <van-field
             v-model="form.quantity"
             type="number"
-            label="库存数量"
+            :label="t('app.common.quantity')"
             placeholder="0"
           />
-          <van-field v-model="form.unit" label="单位" placeholder="请输入单位" />
+          <van-field
+            v-model="form.unit"
+            :label="t('app.common.unit')"
+            :placeholder="t('app.common.inputUnit')"
+          />
           <van-field
             v-model="form.recorder"
-            label="录入人"
-            placeholder="请输入录入人"
+            :label="t('app.common.recorder')"
+            :placeholder="t('app.common.inputRecorder')"
           />
           <van-cell
-            title="过期时间"
+            :title="t('app.common.expiresAt')"
             is-link
-            :value="formatDate(form.expire_date) || '请选择'"
+            :value="formatDate(form.expire_date) || t('app.common.selectPlaceholder')"
             @click="showCalendar = true"
           >
             <template #right-icon>
@@ -169,10 +176,10 @@ function submit() {
             rows="2"
             autosize
             type="textarea"
-            label="描述"
-            placeholder="请输入描述"
+            :label="t('app.common.description')"
+            :placeholder="t('app.common.inputDescription')"
           />
-          <van-cell title="已过期" center>
+          <van-cell :title="t('app.common.expired')" center>
             <template #right-icon>
               <van-switch v-model="form.is_expired" size="22" />
             </template>

@@ -62,6 +62,25 @@ const zhCN = {
       inputNotes: '请输入备注',
     },
 
+    inventory: {
+      selectSubCategoryHint: '选择子分类',
+      // 「请选择子分类」（toast）与「选择子分类」（顶栏提示）字面不同、语气也不同，各开一个 key。
+      pickSubCategory: '请选择子分类',
+      pickSubCategoryEmpty: '请选择子分类后查看物品',
+      selectFirst: '请先在左上角选择子分类',
+      pickCategory: '选择分类',
+      noItems: '暂无物品，点击下方按钮新增',
+      addItem: '新增物品',
+      editItem: '编辑物品',
+      deleteItemTitle: '删除物品',
+      confirmDeleteItem: '确定要删除「{name}」吗？',
+      noRecorder: '未记录录入人',
+      // 原来在模板里由「价格 ¥… · 库存」+ 下一行「数量 单位」拼成，合并成一条带插值的文案，
+      // 英文语序才不会被中文写死。
+      priceStock: '价格 ¥{price} · 库存 {quantity} {unit}',
+      expiresOn: '过期 {date}',
+    },
+
     categoryManager: {
       title: '分类管理',
       addCategory: '新增大类',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { showToast, showConfirmDialog } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { useItemStore } from '@/stores/item'
@@ -20,6 +21,7 @@ const itemStore = useItemStore()
 const alertStore = useAlertStore()
 const notificationStore = useNotificationStore()
 const serverConfigStore = useServerConfigStore()
+const { t } = useI18n()
 
 const showCatMgr = ref(false)
 const showNotify = ref(false)
@@ -58,7 +60,7 @@ async function openPicker() {
 
 function onPickerConfirm(r: { categoryId: number; subId: number | null }) {
   if (r.subId === null) {
-    showToast('请选择子分类')
+    showToast(t('app.inventory.pickSubCategory'))
     return
   }
   const sub = subCategoryStore
@@ -119,7 +121,7 @@ function onSelectSub(sub: SubCategory) {
 
 function openAddItem() {
   if (!selectedSub.value) {
-    showToast('请先在左上角选择子分类')
+    showToast(t('app.inventory.selectFirst'))
     return
   }
   editingItem.value = null
@@ -134,9 +136,9 @@ function openEditItem(item: Item) {
 async function askDeleteItem(item: Item) {
   try {
     await showConfirmDialog({
-      title: '删除物品',
-      message: `确定要删除「${item.name}」吗？`,
-      confirmButtonText: '删除',
+      title: t('app.inventory.deleteItemTitle'),
+      message: t('app.inventory.confirmDeleteItem', { name: item.name }),
+      confirmButtonText: t('app.common.remove'),
       confirmButtonColor: '#ee0a24',
     })
   } catch {
@@ -194,7 +196,7 @@ function formatDate(str: string | null): string {
       <template #title>
         <div class="head-title" @click="openPicker">
           <span v-if="selectedSub" class="head-sub">{{ selectedSub.name }}</span>
-          <span v-else class="head-hint">选择子分类</span>
+          <span v-else class="head-hint">{{ t('app.inventory.selectSubCategoryHint') }}</span>
           <van-icon name="arrow-down" size="12" color="var(--van-text-color-3)" />
         </div>
       </template>
@@ -215,27 +217,27 @@ function formatDate(str: string | null): string {
     <div v-if="selectedSub" class="inv-info">
       <span class="info-name">{{ selectedSub.name }}</span>
       <span class="info-qty">
-        库存 {{ selectedSub.quantity }} {{ selectedSub.unit }}
+        {{ t('app.common.stock') }} {{ selectedSub.quantity }} {{ selectedSub.unit }}
       </span>
     </div>
 
     <div class="inv-body">
       <van-empty
         v-if="!selectedSub"
-        description="请选择子分类后查看物品"
+        :description="t('app.inventory.pickSubCategoryEmpty')"
       >
         <van-button type="primary" plain size="small" @click="showCatMgr = true">
-          选择分类
+          {{ t('app.inventory.pickCategory') }}
         </van-button>
       </van-empty>
 
       <template v-else>
         <van-loading v-if="itemStore.loading" class="inv-loading" vertical>
-          加载中
+          {{ t('app.common.loading') }}
         </van-loading>
         <van-empty
           v-else-if="!itemStore.items.length"
-          description="暂无物品，点击下方按钮新增"
+          :description="t('app.inventory.noItems')"
         />
         <van-pull-refresh v-else v-model="refreshing" @refresh="onRefresh">
           <div class="inv-list">
@@ -245,21 +247,24 @@ function formatDate(str: string | null): string {
               <div class="item-row1">
                 <span class="item-name">{{ item.name }}</span>
                 <van-tag v-if="item.is_expired" type="danger" class="item-tag">
-                  已过期
+                  {{ t('app.common.expired') }}
                 </van-tag>
               </div>
               <div class="item-meta">
-                价格 ¥{{ item.price.toFixed(2) }} · 库存
-                {{ item.quantity }} {{ item.unit || '' }}
+                {{ t('app.inventory.priceStock', {
+                  price: item.price.toFixed(2),
+                  quantity: item.quantity,
+                  unit: item.unit || '',
+                }) }}
               </div>
               <div v-if="item.expire_date" class="item-meta">
-                过期 {{ formatDate(item.expire_date) }}
+                {{ t('app.inventory.expiresOn', { date: formatDate(item.expire_date) }) }}
               </div>
               <div v-if="item.description" class="item-desc">
                 {{ item.description }}
               </div>
               <div class="item-meta item-recorder">
-                {{ item.recorder || '未记录录入人' }}
+                {{ item.recorder || t('app.inventory.noRecorder') }}
               </div>
             </div>
               </div>
@@ -267,7 +272,7 @@ function formatDate(str: string | null): string {
                 <van-button
                   square
                   type="danger"
-                  text="删除"
+                  :text="t('app.common.remove')"
                   class="del-btn"
                   @click="askDeleteItem(item)"
                 />
@@ -287,13 +292,13 @@ function formatDate(str: string | null): string {
         :disabled="!selectedSub"
         @click="openAddItem"
       >
-        新增物品
+        {{ t('app.inventory.addItem') }}
       </van-button>
     </div>
 
     <CascaderPicker
       v-model:show="showPicker"
-      title="选择分类"
+      :title="t('app.inventory.pickCategory')"
       :categories="pickerCategories"
       :subs-of="pickerSubsOf"
       :initial-category-id="selectedSub?.category_id ?? undefined"

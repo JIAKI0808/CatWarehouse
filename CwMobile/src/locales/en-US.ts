@@ -49,6 +49,22 @@ const enUS: MessageSchema = {
       inputNotes: 'Enter notes',
     },
 
+    inventory: {
+      selectSubCategoryHint: 'Pick a sub-category',
+      pickSubCategory: 'Please pick a sub-category',
+      pickSubCategoryEmpty: 'Pick a sub-category to see its items',
+      selectFirst: 'Pick a sub-category from the top left first',
+      pickCategory: 'Choose category',
+      noItems: 'No items yet — tap the button below to add one',
+      addItem: 'New item',
+      editItem: 'Edit item',
+      deleteItemTitle: 'Delete item',
+      confirmDeleteItem: 'Delete “{name}”?',
+      noRecorder: 'No recorder recorded',
+      priceStock: 'Price ¥{price} · Stock {quantity} {unit}',
+      expiresOn: 'Expires {date}',
+    },
+
     categoryManager: {
       title: 'Categories',
       addCategory: 'New category',
