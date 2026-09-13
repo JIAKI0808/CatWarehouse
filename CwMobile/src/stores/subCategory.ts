@@ -3,6 +3,7 @@ import { ref, reactive } from 'vue'
 import { useMessage } from '@/composables/useMessage'
 import type { SubCategory, SubCategoryUpdate } from '@/types'
 import { subCategoryApi } from '@/services/api'
+import { withMessage } from '@/stores/actions'
 
 export const useSubCategoryStore = defineStore('subCategory', () => {
   const subCategoriesByCategory = reactive<Record<number, SubCategory[]>>({})
@@ -13,6 +14,12 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
     return subCategoriesByCategory[categoryId] ?? []
   }
 
+  /**
+   * 这个动作**故意保持手写**，不套 `fetchInto`：
+   * 它写的是一张 `Record<number, SubCategory[]>` 键值表而不是列表 ref，并且要
+   * `Promise.all` 逐个子分类再查一次 quantity 合并（陷阱 T5）。硬套适配器会变成
+   * 「让所有调用方迁就抽象」，与「优先去重」相反。
+   */
   async function fetchByCategory(categoryId: number) {
     loading.value = true
     try {
@@ -33,14 +40,15 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
     }
   }
 
-  async function create(
-    categoryId: number,
-    name: string,
-    unit: string = '个',
-    description: string = '',
-    notes: string = ''
-  ) {
-    try {
+  const create = withMessage(
+    '创建子分类失败',
+    async (
+      categoryId: number,
+      name: string,
+      unit: string = '个',
+      description: string = '',
+      notes: string = ''
+    ) => {
       const newSubCategory = await subCategoryApi.create({
         category_id: categoryId,
         name,
@@ -49,46 +57,41 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
         notes,
       })
       const list = subCategoriesByCategory[categoryId] ?? []
+      // 新条目强制补 `quantity: 0`（陷阱 T7）——后端新建子分类还没有量。
       list.push({ ...newSubCategory, quantity: 0 })
+      // `reactive` 表里的数组要**重新赋值**才触发更新，就地 push 不够。
       subCategoriesByCategory[categoryId] = list
       return newSubCategory
-    } catch (e: any) {
-      useMessage().error(e.message || '创建子分类失败')
     }
-  }
+  )
 
-  async function update(id: number, data: SubCategoryUpdate) {
-    try {
-      const updated = await subCategoryApi.update(id, data)
-      for (const catId of Object.keys(subCategoriesByCategory)) {
-        const list = subCategoriesByCategory[Number(catId)]
-        if (!list) continue
-        const index = list.findIndex(s => s.id === id)
-        if (index !== -1) {
-          list[index] = { ...list[index], ...updated }
-          break
-        }
+  const update = withMessage('更新子分类失败', async (id: number, data: SubCategoryUpdate) => {
+    const updated = await subCategoryApi.update(id, data)
+    // 跨**所有**桶查找（陷阱 T6）：该子分类所属的桶不一定是当前选中的那个。
+    // 找到一个就 break —— 与既有实现一致。
+    for (const catId of Object.keys(subCategoriesByCategory)) {
+      const list = subCategoriesByCategory[Number(catId)]
+      if (!list) continue
+      const index = list.findIndex(s => s.id === id)
+      if (index !== -1) {
+        // 合并而非替换：保留列表里已有、而响应未返回的字段。
+        list[index] = { ...list[index], ...updated }
+        break
       }
-      return updated
-    } catch (e: any) {
-      useMessage().error(e.message || '更新子分类失败')
     }
-  }
+    return updated
+  })
 
-  async function remove(categoryId: number, id: number) {
-    try {
-      await subCategoryApi.delete(id)
-      const list = subCategoriesByCategory[categoryId]
-      if (list) {
-        subCategoriesByCategory[categoryId] = list.filter(s => s.id !== id)
-      }
-      if (selectedId.value === id) {
-        selectedId.value = null
-      }
-    } catch (e: any) {
-      useMessage().error(e.message || '删除子分类失败')
+  const remove = withMessage('删除子分类失败', async (categoryId: number, id: number) => {
+    await subCategoryApi.delete(id)
+    const list = subCategoriesByCategory[categoryId]
+    if (list) {
+      subCategoriesByCategory[categoryId] = list.filter(s => s.id !== id)
     }
-  }
+    if (selectedId.value === id) {
+      selectedId.value = null
+    }
+  })
 
   function select(id: number | null) {
     selectedId.value = id
