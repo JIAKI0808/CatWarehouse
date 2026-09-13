@@ -680,3 +680,51 @@ Vant 的语言包同样是单独一份：`van-config-provider` 的 `:locale` 要
 | 真实浏览器（390×844 移动视口） | `zh-CN`：库存/数据/账本/售价/设置；`en-US`：Stock/Charts/Ledger/Pricing/Settings；布局正常、无重叠 |
 
 > 页面主体文案仍是中文 —— 属 P4b 范围，本阶段刻意不动，把界面回归风险压到零。
+
+### `4f1841e` — P4b 国际化 D-2：移动端分类管理区文案迁移
+
+**批次收窄的理由**：原计划 P4b 是「库存区」，实测约 140 行文案、横跨 9 个文件。
+按「一批只做一块、每批独立跑闸门」的既有做法拆开，
+本批只做**分类管理**（`categoryIcons` + `CategoryForm` + `CategoryManager`），
+范围自洽、不留跨文件半成品。
+
+**迁移内容**
+| 文件 | 内容 |
+| --- | --- |
+| `utils/categoryIcons.ts` | 48 个图标 `label` **字段删除**，改键驱动 |
+| `components/CategoryForm.vue` | 名称/描述/图标/图标颜色/单位/备注 + 占位符 + 取消/保存 + 图标 tooltip |
+| `components/CategoryManager.vue` | 页面标题、增改标题、两个删除确认框、两个空态 |
+
+词汇表新增：`app.common`（27 条）、`app.categoryManager`（11 条）、`app.icons`（48 条）。
+
+**两个做法**
+1. **图标 label 键驱动**（沿用网页端 P2c-1 的结论）：删掉 `label` 字段，
+   模板用 `t('app.icons.' + icon.name)`。48 条中文留在 util 里 = 语言包之外又存一份。
+   `categoryIcons.ts` 因此**净减 48 行**。
+2. **弹层标题存键 + `computed`**：原先点击时就把中文取成字符串存进 ref，
+   改为存键、computed 取译文 —— 弹层开着时切语言，标题才会跟着变。
+
+**🐞 控制台检查抓到一个我自己引入的真问题**
+
+`catFormTitleKey` 初值是空串，直接 `t('')` 会让 vue-i18n 打出 **四条**警告
+（`Not found '' key in 'en' / 'zh-CN' / 'zh' …`）并逐级回落。
+改为 `key ? t(key) : ''` 后消失。
+
+**为什么值得单独记**：这个问题**类型检查过、构建过、界面也看不出异常** ——
+唯一能发现它的手段就是「控制台零警告」这条检查。
+它不是我碰巧看到的，是**逐条核对控制台输出**核对出来的。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error**（移动端基线本就是 0） |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 3 文件 / 0 违规 |
+| 中文残留 | 仅 4 处 `'个'` 表单默认值（属数据，同 P2c-1 的判断） |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 分类管理 / 取消·新增大类·保存 / 名称·描述·图标·图标颜色 / **48 个图标 tooltip**（文件夹…丝带） |
+| `en-US` | Categories / Cancel·New category·Save / Name·Description·Icon·Icon color / **48 个图标 tooltip**（Folder…Ribbon） |
+| 控制台 | 除一条既有的 `<meta apple-mobile-web-app-capable>` 弃用提示外**零警告** |
