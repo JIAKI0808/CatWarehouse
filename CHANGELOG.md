@@ -827,3 +827,46 @@ Vant 的语言包同样是单独一份：`van-config-provider` 的 `:locale` 要
 | `zh-CN` | 库存数据工具 / 上传单据·导出数据·导入数据 / 取消；消息中心 / 库存预警 / 低库存；导入数据 / 选择 JSON 备份文件 / 取消 —— **与改动前一致** |
 | `en-US` | Stock data tools / Upload receipt·Export·Import / Cancel；Notifications / Stock alerts / Low stock；Import / Choose a JSON backup file / Cancel |
 | 控制台 | 除既有的 `<meta>` 弃用提示外**零警告** |
+
+### `00207ae` — P4e 国际化 D-5：移动端账本区文案迁移
+
+**迁移内容**
+- `LedgerView.vue` — 页面标题、范围切换、图表标题与 Y 轴名、两条系列名、`typeTag`、
+  删除确认框、预算概览标题、搜索占位符、3 个筛选 chip、空态、「未命名」兜底、滑出删除
+- `LedgerForm.vue` — 标题、取消/保存、7 个字段、收支两个单选、金额校验 toast、3 个占位符
+
+新增 `app.ledger` 段（28 条）。
+
+**⚠️ 踩到一个作用域遮蔽（vue-tsc 抓不到的那种）**
+
+`LedgerView.vue` 原有：
+```ts
+function typeTag(t: string): string { return t === 'income' ? '收入' : '支出' }
+```
+形参就叫 `t`，**会把 i18n 的 `t` 遮住** —— 在函数体里写 `t('app...')`，
+调用的其实是那个字符串形参，运行时会直接 `TypeError: t is not a function`。
+
+**处置**：形参改名 `kind`，并把原因写进注释。
+
+> **为什么值得单独记**：`vue-tsc` **抓不到** ——
+> 形参类型是 `string`，而「把 string 当函数调」是**我引入**的新用法；
+> 类型检查只在签名对不上时报错，这里签名完全「合法」。
+> 与 P4b 的 `t('')`、P4c 的 Vant 语言包同性质：
+> **改文案这件事，静态检查能覆盖的面比想象中窄。**
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | **0 error** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+| 中文残留 | 两个文件**均为 0 行** |
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 账本 / 按天·按周·按月·按年 / 全部·收入·支出 / 暂无账单记录 / 占位符「搜索描述/平台/记账人」—— **与改动前一致** |
+| `en-US` | Ledger / Day·Week·Month·Year / All·Income·Expense / No ledger entries yet / 占位符 `Search description / platform / person` |
+| `en-US` 新增账单弹层 | Cancel / New entry / Save / Amount / Type / Expense·Income / Date / Platform / Description / Recorded by / Notes |
+| **整页零 CJK** | 脚本断言在两处界面均为 `false` |
+| 控制台 | 零 warn / 零 error |
