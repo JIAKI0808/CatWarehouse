@@ -5,11 +5,13 @@ import type { DataTableColumns } from 'naive-ui'
 import { gsap } from 'gsap'
 import { useI18n } from 'vue-i18n'
 import { useItemStore } from '@/stores/item'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
 import ViewToggle from './ViewToggle.vue'
 
 const itemStore = useItemStore()
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const showItemForm = ref(false)
@@ -35,7 +37,7 @@ const columns = computed<DataTableColumns<Item>>(() => [
     title: t('app.common.price'),
     key: 'price',
     sorter: true,
-    render: (row) => `¥${row.price.toFixed(2)}`,
+    render: (row) => `${currencyStore.symbol}${row.price.toFixed(2)}`,
   },
   {
     title: t('app.common.stock'),

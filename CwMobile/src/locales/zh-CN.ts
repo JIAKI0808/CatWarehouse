@@ -78,7 +78,9 @@ const zhCN = {
       noRecorder: '未记录录入人',
       // 原来在模板里由「价格 ¥… · 库存」+ 下一行「数量 单位」拼成，合并成一条带插值的文案，
       // 英文语序才不会被中文写死。
-      priceStock: '价格 ¥{price} · 库存 {quantity} {unit}',
+      // 货币符号由 `useCurrencyStore().symbol` 传入（后端偏好），不写死 ¥。
+      // 默认 CNY ⇒ `¥` ⇒ 与原字面量**逐字相同**。
+      priceStock: '价格 {symbol}{price} · 库存 {quantity} {unit}',
       expiresOn: '过期 {date}',
     },
 
@@ -179,7 +181,8 @@ const zhCN = {
       noRecords: '暂无售价记录',
       noCategories: '暂无售价分类',
       noSubCategories: '暂无子分类',
-      costSuggestedPrice: '成本 ¥{cost} · 建议售价 ¥{suggested} · 折扣 {discount}',
+      costSuggestedPrice:
+        '成本 {symbol}{cost} · 建议售价 {symbol}{suggested} · 折扣 {discount}',
       recordedOn: '记录日期 {date}',
       productName: '商品名',
       cost: '成本',
@@ -213,10 +216,10 @@ const zhCN = {
       },
       axis: {
         quantity: '数量 ({unit})',
-        price: '价格 (¥)',
-        totalPrice: '总价 (¥)',
-        unitPrice: '单价 (¥)',
-        amount: '金额 (¥)',
+        price: '价格 ({symbol})',
+        totalPrice: '总价 ({symbol})',
+        unitPrice: '单价 ({symbol})',
+        amount: '金额 ({symbol})',
       },
       chart: {
         quantityTrend: '数量趋势',
@@ -246,7 +249,7 @@ const zhCN = {
       person: '记账人',
       budgetOverview: '预算概览',
       chartTitle: '收支统计',
-      chartAmountAxis: '金额 (¥)',
+      chartAmountAxis: '金额 ({symbol})',
       searchPlaceholder: '搜索描述/平台/记账人',
       noEntries: '暂无账单记录',
       unnamed: '未命名',

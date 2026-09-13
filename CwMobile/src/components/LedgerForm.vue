@@ -2,8 +2,10 @@
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Ledger } from '@/types'
 
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 interface FormData {
@@ -113,7 +115,7 @@ function submit() {
             :label="t('app.ledger.amount')"
             placeholder="0.00"
           >
-            <template #left-icon><span class="sym">¥</span></template>
+            <template #left-icon><span class="sym">{{ currencyStore.symbol }}</span></template>
           </van-field>
 
           <van-field name="type" :label="t('app.ledger.type')">

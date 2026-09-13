@@ -39,6 +39,7 @@
     "src/stores/budget.ts",
     "src/stores/category.ts",
     "src/stores/counter.ts",
+    "src/stores/currency.ts",
     "src/stores/item.ts",
     "src/stores/ledger.ts",
     "src/stores/notification.ts",

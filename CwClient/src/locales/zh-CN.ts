@@ -132,7 +132,7 @@ const zhCN = {
       person: '记账人',
       budgetOverview: '预算概览',
       chartTitle: '收支统计',
-      chartAmountAxis: '金额 (¥)',
+      chartAmountAxis: '金额 ({symbol})',
       searchPlaceholder: '搜索描述/平台/记账人',
       create: '新增',
       addBill: '新增账单',
@@ -169,12 +169,14 @@ const zhCN = {
         unitPrice: '单价',
         stock: '库存',
       },
+      // 货币符号由 `useCurrencyStore().symbol` 传入 —— 它来自后端偏好，不再写死 ¥。
+      // 默认 CNY ⇒ `¥` ⇒ 与原字面量**逐字相同**。
       axis: {
         quantity: '数量 ({unit})',
-        price: '价格 (¥)',
-        totalPrice: '总价 (¥)',
-        unitPrice: '单价 (¥)',
-        amount: '金额 (¥)',
+        price: '价格 ({symbol})',
+        totalPrice: '总价 ({symbol})',
+        unitPrice: '单价 ({symbol})',
+        amount: '金额 ({symbol})',
       },
       chart: {
         quantityTrend: '数量趋势',

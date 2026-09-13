@@ -2,8 +2,10 @@
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Pricing } from '@/types'
 
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 export interface PricingFormData {
@@ -125,7 +127,7 @@ function submit() {
             :label="t('app.pricing.cost')"
             placeholder="0.00"
           >
-            <template #left-icon><span class="sym">¥</span></template>
+            <template #left-icon><span class="sym">{{ currencyStore.symbol }}</span></template>
           </van-field>
           <van-field
             v-model="form.suggested_price"
@@ -133,7 +135,7 @@ function submit() {
             :label="t('app.pricing.suggestedPrice')"
             placeholder="0.00"
           >
-            <template #left-icon><span class="sym">¥</span></template>
+            <template #left-icon><span class="sym">{{ currencyStore.symbol }}</span></template>
           </van-field>
           <van-field
             v-model="form.discount"

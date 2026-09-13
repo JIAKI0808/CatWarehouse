@@ -5,7 +5,9 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, PieChart, BarChart } from 'echarts/charts'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 import {
   TitleComponent,
@@ -192,7 +194,7 @@ function priceLineOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis(t('app.analytics.axis.price')),
+    yAxis: yAxis(t('app.analytics.axis.price', { symbol: currencyStore.symbol })),
     series: [lineSerie(t('app.analytics.metric.price'), d.map((t) => t.price), '#f59e0b')],
   }
 }
@@ -205,7 +207,7 @@ function totalPriceLineOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis(t('app.analytics.axis.totalPrice')),
+    yAxis: yAxis(t('app.analytics.axis.totalPrice', { symbol: currencyStore.symbol })),
     series: [
       lineSerie(t('app.analytics.metric.totalPrice'), d.map((t) => t.total_price), '#10b981'),
     ],
@@ -220,7 +222,7 @@ function unitPriceLineOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis(t('app.analytics.axis.unitPrice')),
+    yAxis: yAxis(t('app.analytics.axis.unitPrice', { symbol: currencyStore.symbol })),
     series: [
       lineSerie(t('app.analytics.metric.unitPrice'), d.map((t) => t.unit_price), '#8b5cf6'),
     ],
@@ -254,7 +256,7 @@ function priceBarOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: xAxis(d.map((t) => t.date)),
-    yAxis: yAxis(t('app.analytics.axis.price')),
+    yAxis: yAxis(t('app.analytics.axis.price', { symbol: currencyStore.symbol })),
     series: [
       {
         name: t('app.analytics.metric.price'),
@@ -292,7 +294,7 @@ function monthlyCompareOption() {
     legend: { top: 28, textStyle: { color: p.text, fontSize: 11 } },
     grid: { left: '12%', right: '6%', bottom: '12%', top: '72px' },
     xAxis: xAxis(monthlyCompare.value.map((m) => m.month)),
-    yAxis: yAxis(t('app.analytics.axis.amount')),
+    yAxis: yAxis(t('app.analytics.axis.amount', { symbol: currencyStore.symbol })),
     series: [
       {
         name: t('app.ledger.typeIncome'),
@@ -327,19 +329,19 @@ function fmt(v: number): string {
       <div class="ov-card">
         <div class="ov-label">{{ t('app.analytics.totalValue') }}</div>
         <div class="ov-value amber">
-          {{ overview ? '¥' + fmt(overview.total_value) : '-' }}
+          {{ overview ? currencyStore.symbol + fmt(overview.total_value) : '-' }}
         </div>
       </div>
       <div class="ov-card">
         <div class="ov-label">{{ t('app.analytics.totalIncome') }}</div>
         <div class="ov-value green">
-          {{ overview ? '¥' + fmt(overview.total_income) : '-' }}
+          {{ overview ? currencyStore.symbol + fmt(overview.total_income) : '-' }}
         </div>
       </div>
       <div class="ov-card">
         <div class="ov-label">{{ t('app.analytics.totalExpense') }}</div>
         <div class="ov-value red">
-          {{ overview ? '¥' + fmt(overview.total_expense) : '-' }}
+          {{ overview ? currencyStore.symbol + fmt(overview.total_expense) : '-' }}
         </div>
       </div>
     </div>

@@ -2,8 +2,10 @@
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Item } from '@/types'
 
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 interface FormModel {
@@ -135,7 +137,9 @@ function submit() {
             :label="t('app.common.price')"
             placeholder="0.00"
           >
-            <template #left-icon><span class="price-symbol">¥</span></template>
+            <template #left-icon>
+              <span class="price-symbol">{{ currencyStore.symbol }}</span>
+            </template>
           </van-field>
           <van-field
             v-model="form.quantity"

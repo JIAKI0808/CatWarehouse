@@ -18,7 +18,9 @@ import type {
 import PricingForm from '@/components/PricingForm.vue'
 import CascaderPicker from '@/components/CascaderPicker.vue'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const store = usePricingStore()
@@ -357,6 +359,7 @@ function fmtDate(s: string | null): string {
               <div class="item-sub">{{ item.sub_category_name || '-' }}</div>
               <div class="item-meta">
                 {{ t('app.pricing.costSuggestedPrice', {
+                  symbol: currencyStore.symbol,
                   cost: item.cost.toFixed(2),
                   suggested: item.suggested_price.toFixed(2),
                   discount: item.discount,

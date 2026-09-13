@@ -8,6 +8,7 @@ import { useItemStore } from '@/stores/item'
 import { useAlertStore } from '@/stores/alert'
 import { useNotificationStore } from '@/stores/notification'
 import { useServerConfigStore } from '@/stores/serverConfig'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Item, SubCategory } from '@/types'
 import CategoryManager from '@/components/CategoryManager.vue'
 import NotificationSheet from '@/components/NotificationSheet.vue'
@@ -21,6 +22,7 @@ const itemStore = useItemStore()
 const alertStore = useAlertStore()
 const notificationStore = useNotificationStore()
 const serverConfigStore = useServerConfigStore()
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const showCatMgr = ref(false)
@@ -252,6 +254,7 @@ function formatDate(str: string | null): string {
               </div>
               <div class="item-meta">
                 {{ t('app.inventory.priceStock', {
+                  symbol: currencyStore.symbol,
                   price: item.price.toFixed(2),
                   quantity: item.quantity,
                   unit: item.unit || '',

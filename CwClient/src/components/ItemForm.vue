@@ -2,7 +2,10 @@
 import { ref, watch } from 'vue'
 import { NModal, NForm, NFormItem, NInput, NInputNumber, NButton, NDatePicker, NSwitch } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 import type { Item } from '@/types'
+
+const currencyStore = useCurrencyStore()
 
 const props = defineProps<{
   visible: boolean
@@ -88,7 +91,7 @@ function handleSubmit() {
         </NFormItem>
         <NFormItem :label="t('app.common.price')">
           <NInputNumber v-model:value="form.price" :min="0" :precision="2">
-            <template #prefix>¥</template>
+            <template #prefix>{{ currencyStore.symbol }}</template>
           </NInputNumber>
         </NFormItem>
         <NFormItem :label="t('app.common.quantity')">

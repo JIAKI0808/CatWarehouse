@@ -13,6 +13,7 @@ import {
 } from 'echarts/components'
 import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
+import { useCurrencyStore } from '@/stores/currency'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { analyticsApi } from '@/services/api'
 import type { TrendData, AnalyticsOverview, CategoryStat, MonthlyCompare } from '@/types'
@@ -21,6 +22,7 @@ use([CanvasRenderer, LineChart, PieChart, BarChart, TitleComponent, TooltipCompo
 
 const categoryStore = useCategoryStore()
 const subCategoryStore = useSubCategoryStore()
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const selectedCategoryId = ref<number | null>(null)
@@ -107,7 +109,7 @@ function priceLineOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: t('app.analytics.axis.price') },
+    yAxis: { type: 'value', name: t('app.analytics.axis.price', { symbol: currencyStore.symbol }) },
     series: [{
       name: t('app.analytics.metric.price'), type: 'line', data: trendData.value.data.map(d => d.price),
       smooth: true, areaStyle: { opacity: 0.3 }, itemStyle: { color: '#f59e0b' },
@@ -122,7 +124,7 @@ function totalPriceLineOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: t('app.analytics.axis.totalPrice') },
+    yAxis: { type: 'value', name: t('app.analytics.axis.totalPrice', { symbol: currencyStore.symbol }) },
     series: [{
       name: t('app.analytics.metric.totalPrice'), type: 'line', data: trendData.value.data.map(d => d.total_price),
       smooth: true, areaStyle: { opacity: 0.3 }, itemStyle: { color: '#10b981' },
@@ -137,7 +139,7 @@ function unitPriceLineOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: t('app.analytics.axis.unitPrice') },
+    yAxis: { type: 'value', name: t('app.analytics.axis.unitPrice', { symbol: currencyStore.symbol }) },
     series: [{
       name: t('app.analytics.metric.unitPrice'), type: 'line', data: trendData.value.data.map(d => d.unit_price),
       smooth: true, areaStyle: { opacity: 0.3 }, itemStyle: { color: '#8b5cf6' },
@@ -164,7 +166,7 @@ function priceBarOption() {
     tooltip: { trigger: 'axis' },
     grid: baseGrid(),
     xAxis: { type: 'category', data: trendData.value.data.map(d => d.date) },
-    yAxis: { type: 'value', name: t('app.analytics.axis.price') },
+    yAxis: { type: 'value', name: t('app.analytics.axis.price', { symbol: currencyStore.symbol }) },
     series: [{
       name: t('app.analytics.metric.price'), type: 'bar', data: trendData.value.data.map(d => d.price),
       itemStyle: { color: '#f59e0b' },
@@ -190,7 +192,7 @@ function monthlyCompareOption() {
     legend: { top: 30 },
     grid: { left: '12%', right: '12%', bottom: '15%', top: '60px' },
     xAxis: { type: 'category', data: monthlyCompare.value.map(m => m.month) },
-    yAxis: { type: 'value', name: t('app.analytics.axis.amount') },
+    yAxis: { type: 'value', name: t('app.analytics.axis.amount', { symbol: currencyStore.symbol }) },
     series: [
       {
         name: t('app.ledger.typeIncome'),
@@ -219,17 +221,23 @@ const hasData = () => trendData.value && trendData.value.data.length > 0
       </NGridItem>
       <NGridItem>
         <NCard size="small" :title="t('app.analytics.totalValue')">
-          <div class="text-2xl font-bold text-amber-500">¥{{ overview.total_value.toFixed(0) }}</div>
+          <div class="text-2xl font-bold text-amber-500">
+            {{ currencyStore.symbol }}{{ overview.total_value.toFixed(0) }}
+          </div>
         </NCard>
       </NGridItem>
       <NGridItem>
         <NCard size="small" :title="t('app.analytics.totalIncome')">
-          <div class="text-2xl font-bold text-green-500">¥{{ overview.total_income.toFixed(0) }}</div>
+          <div class="text-2xl font-bold text-green-500">
+            {{ currencyStore.symbol }}{{ overview.total_income.toFixed(0) }}
+          </div>
         </NCard>
       </NGridItem>
       <NGridItem>
         <NCard size="small" :title="t('app.analytics.totalExpense')">
-          <div class="text-2xl font-bold text-red-500">¥{{ overview.total_expense.toFixed(0) }}</div>
+          <div class="text-2xl font-bold text-red-500">
+            {{ currencyStore.symbol }}{{ overview.total_expense.toFixed(0) }}
+          </div>
         </NCard>
       </NGridItem>
     </NGrid>

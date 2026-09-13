@@ -62,7 +62,7 @@ const enUS: MessageSchema = {
       deleteItemTitle: 'Delete item',
       confirmDeleteItem: 'Delete “{name}”?',
       noRecorder: 'No recorder recorded',
-      priceStock: 'Price ¥{price} · Stock {quantity} {unit}',
+      priceStock: 'Price {symbol}{price} · Stock {quantity} {unit}',
       expiresOn: 'Expires {date}',
     },
 
@@ -159,7 +159,8 @@ const enUS: MessageSchema = {
       noRecords: 'No pricing records yet',
       noCategories: 'No pricing categories yet',
       noSubCategories: 'No sub-categories',
-      costSuggestedPrice: 'Cost ¥{cost} · Suggested ¥{suggested} · Discount {discount}',
+      costSuggestedPrice:
+        'Cost {symbol}{cost} · Suggested {symbol}{suggested} · Discount {discount}',
       recordedOn: 'Recorded {date}',
       productName: 'Product',
       cost: 'Cost',
@@ -191,10 +192,10 @@ const enUS: MessageSchema = {
       },
       axis: {
         quantity: 'Quantity ({unit})',
-        price: 'Price (¥)',
-        totalPrice: 'Total price (¥)',
-        unitPrice: 'Unit price (¥)',
-        amount: 'Amount (¥)',
+        price: 'Price ({symbol})',
+        totalPrice: 'Total price ({symbol})',
+        unitPrice: 'Unit price ({symbol})',
+        amount: 'Amount ({symbol})',
       },
       chart: {
         quantityTrend: 'Quantity trend',
@@ -224,7 +225,7 @@ const enUS: MessageSchema = {
       person: 'Recorded by',
       budgetOverview: 'Budget overview',
       chartTitle: 'Income vs. expense',
-      chartAmountAxis: 'Amount (¥)',
+      chartAmountAxis: 'Amount ({symbol})',
       searchPlaceholder: 'Search description / platform / person',
       noEntries: 'No ledger entries yet',
       unnamed: 'Untitled',

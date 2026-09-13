@@ -12,6 +12,7 @@ import {
   LegendComponent,
 } from 'echarts/components'
 import { useI18n } from 'vue-i18n'
+import { useCurrencyStore } from '@/stores/currency'
 import { useLedgerStore } from '@/stores/ledger'
 import { useBudgetStore } from '@/stores/budget'
 import { useThemeStore } from '@/stores/theme'
@@ -32,6 +33,7 @@ const showCalendar = ref(false)
 const searchQuery = ref('')
 const filterType = ref('')
 
+const currencyStore = useCurrencyStore()
 const { t } = useI18n()
 
 const rangeOptions = computed(() => [
@@ -204,7 +206,7 @@ function getChartOption() {
     },
     yAxis: {
       type: 'value',
-      name: t('app.ledger.chartAmountAxis'),
+      name: t('app.ledger.chartAmountAxis', { symbol: currencyStore.symbol }),
       nameTextStyle: { color: p.text, fontSize: 10 },
       axisLabel: { color: p.text, fontSize: 10 },
       splitLine: { lineStyle: { color: p.split } },
@@ -284,7 +286,8 @@ function typeTag(kind: string): string {
           class="b-bar"
         />
         <span class="b-num">
-          ¥{{ b.spent.toFixed(0) }} / ¥{{ b.amount.toFixed(0) }}
+          {{ currencyStore.symbol }}{{ b.spent.toFixed(0) }} /
+          {{ currencyStore.symbol }}{{ b.amount.toFixed(0) }}
         </span>
       </div>
     </div>
@@ -360,7 +363,7 @@ function typeTag(kind: string): string {
                 class="amount"
                 :class="item.type === 'income' ? 'in' : 'out'"
               >
-                {{ item.type === 'income' ? '+' : '-' }}¥{{ item.amount.toFixed(2) }}
+                {{ item.type === 'income' ? '+' : '-' }}{{ currencyStore.symbol }}{{ item.amount.toFixed(2) }}
               </span>
             </template>
           </van-cell>
