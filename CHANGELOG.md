@@ -1055,3 +1055,63 @@ ECharts `Can't get DOM width or height`（4 次），与 §C3.2 第 12 项同类
 | `Cw_WebUi` | 全部 `.vue` / `.ts` 迁完，剩 1 处 `'个'`（数据） |
 | `CwClient` | 镜像同步零漂移，Electron 实测通过 |
 | `CwMobile` | 全部迁完 + 语言切换入口 + 后端偏好同步 |
+
+### `aa3575b` — P5 通用化-1：货币偏好接口 + 抽出共享的 settings 单行取用
+
+**先把「通用化」的判据定下来**（`plan.md` §C29）：链条里的方向都是产品向的
+（国际化 / 交互优化 / 快捷键优化 / 打包…），所以通用化 = **把写死的具体值变成通用能力**，
+不是「重构代码」。
+
+**选货币作为第一刀的证据**：后端早就有 `GET /api/currencies`（8 种货币含符号）、
+模型早有 `SpecificItem.currency` 列、**两端前端也都定义了 `currencyApi`** ——
+但**没有任何界面用过**，UI 到处写死 `¥`。这与任务 D 修掉的 `dataManager/` 是同一个
+signature：**造了零件却没接线**。
+
+**新增接口（只增不改）**
+| 方法 | 路径 | 作用 |
+| --- | --- | --- |
+| GET | `/api/currencies/preference` | `{code, symbol}` |
+| PUT | `/api/currencies/preference` | 写入；未知代码 → **422** |
+
+**三条设计**
+1. **默认值就是现状**：默认 `CNY` ⇒ 符号 `¥` ⇒ **界面逐字不变**
+   （与 i18n 默认 `zh-CN` 同一个把风险压到零的手法）；
+2. **符号由服务端查表**：PUT 只接受 `code`，客户端自报的 `symbol` 一律忽略
+   （已实测：传 `symbol="!!!FAKE!!!"` 仍返回 `€`）；
+3. **读接口对脏值宽容、写接口才校验**：列被手工改坏时读回默认而不是 500。
+   与「未知 locale 不回退」取向不同 —— 那是**请求**不存在，这是**存量数据**脏。
+
+**顺带做掉本环的一处真实重复**
+`api/system/settings_router.py` 与 `api/i18n/i18n_router.py` 各有一份私有的
+「取或建 settings 单行」（i18n 那份当时是为遵守「分区之间不互相 import」**刻意复制**的）。
+货币分区会带来**第三份** ⇒ 上移到 `models/settings.py::get_or_create()`。
+**放 `models/` 而不是某个分区里**：三个分区都不必 import 另一个分区，
+**既去了重、也没破坏分区独立性**。顺手删掉两处因改动而变成孤儿的 `select` import。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `verify_contract_additive` | 既有面逐字冻结，只多出 **2 条**货币路由 |
+| `http_probe`（81 条真实请求） | **逐字段一致** |
+| `pyright` | **66 → 66**，逐文件计数完全一致 |
+| `py_spec_check` | 52 文件 / **3 违规**（全部既有） |
+| `smoke_currency.py` | **14/14** |
+| 迁移冒烟（真实库副本） | **通过** |
+
+`smoke_currency.py` 覆盖：`/api/currencies` 仍 8 条且键未变；默认 `CNY/¥`；
+`PUT USD -> $`；客户端自报 symbol 被忽略；未知代码 422 且**不改动已存值**；
+**`/api/settings` 未长出 `currency` 字段**；**`/api/i18n/preference` 在共用助手重构后
+仍正常**（回归）；重启后偏好仍在。
+
+迁移冒烟：**真实库副本**原本只有 `locale` 列 → 启动后多出 `currency`（默认 `CNY`），
+`categories` 仍 8 行；**真 `catwarehouse.db` 未被触碰**（mtime + sha256 前后一致）。
+
+**未做的事（刻意）**：未改任何前端 —— 本 Phase 只做后端接口（合同第 1 条）。
+把 UI 里写死的 `¥` 换成后端符号是 **P6（WebUi）/ P7（Mobile + 镜像）**。
+
+**另外两个候选被评估后拒绝**（理由记在 `plan.md` §C29）：
+- **WebUi ↔ Mobile 的近重复**（`types/index.ts` 364 行仅 1 行不同等，约 500 行）：
+  去重需要把三个独立构建根合成 monorepo workspace，而根目录没有 `package.json`、
+  `.gitignore` 带冲突标记未授权改、客户端镜像以 `../Cw_WebUi` 为源。
+  **代价是一整套构建架构迁移，收益只是 500 行重复** ⇒ 记为「评估后拒绝」，不是遗漏。
+- **后端手工逐字段构造响应**：任务 D 已判「把原代码搬进钩子并没有减少任何东西」。
