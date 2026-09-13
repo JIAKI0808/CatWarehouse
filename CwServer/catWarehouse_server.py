@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     pkg = json.loads(
         (Path(__file__).parent.parent / "Cw_WebUi" / "package.json").read_text()
     )
-    import api.settings_router as sr
+    import api.system.settings_router as sr
     sr.APP_VERSION = pkg.get("version", "0.1.0")
     sr.set_start_time(datetime.now().isoformat())
 
