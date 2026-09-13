@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { Notification } from '@/types'
 import { notificationApi } from '@/services/api'
+import { fetchInto } from '@/stores/actions'
 
 export const useNotificationStore = defineStore('notification', () => {
   const items = ref<Notification[]>([])
@@ -10,16 +11,12 @@ export const useNotificationStore = defineStore('notification', () => {
 
   const unreadCount = computed(() => items.value.filter(n => !n.is_read).length)
 
-  async function fetchAll() {
-    loading.value = true
-    try {
-      items.value = await notificationApi.getAll()
-    } catch (e: any) {
-      useMessage().error(e.message || '获取通知失败')
-    } finally {
-      loading.value = false
-    }
-  }
+  const fetchAll = fetchInto({
+    list: items,
+    loading,
+    message: '获取通知失败',
+    run: () => notificationApi.getAll(),
+  })
 
   async function markRead(id: number) {
     try {

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { StockAlert } from '@/types'
 import { alertApi } from '@/services/api'
+import { fetchInto } from '@/stores/actions'
 
 export const useAlertStore = defineStore('alert', () => {
   const alerts = ref<StockAlert[]>([])
@@ -11,16 +12,12 @@ export const useAlertStore = defineStore('alert', () => {
 
   const alertCount = computed(() => alerts.value.length)
 
-  async function fetchAlerts() {
-    loading.value = true
-    try {
-      alerts.value = await alertApi.getAlerts(threshold.value)
-    } catch (e: any) {
-      useMessage().error(e.message || '获取预警失败')
-    } finally {
-      loading.value = false
-    }
-  }
+  const fetchAlerts = fetchInto({
+    list: alerts,
+    loading,
+    message: '获取预警失败',
+    run: () => alertApi.getAlerts(threshold.value),
+  })
 
   async function fetchConfig() {
     try {
@@ -35,6 +32,7 @@ export const useAlertStore = defineStore('alert', () => {
     try {
       await alertApi.updateConfig(newThreshold)
       threshold.value = newThreshold
+      // 阈值变了，预警列表要按新阈值重取 —— 这一步是既有行为，不是冗余。
       await fetchAlerts()
     } catch (e: any) {
       useMessage().error(e.message || '更新配置失败')

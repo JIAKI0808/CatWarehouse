@@ -3,52 +3,34 @@ import { ref } from 'vue'
 import { useMessage } from 'naive-ui'
 import type { RecurringBill, RecurringBillCreate, RecurringBillUpdate } from '@/types'
 import { recurringApi } from '@/services/api'
+import { fetchInto, writeActions } from '@/stores/actions'
 
 export const useRecurringStore = defineStore('recurring', () => {
   const items = ref<RecurringBill[]>([])
   const loading = ref(false)
 
-  async function fetchAll() {
-    loading.value = true
-    try {
-      items.value = await recurringApi.getAll()
-    } catch (e: any) {
-      useMessage().error(e.message || '获取周期账单失败')
-    } finally {
-      loading.value = false
-    }
-  }
+  const fetchAll = fetchInto({
+    list: items,
+    loading,
+    message: '获取周期账单失败',
+    run: () => recurringApi.getAll(),
+  })
 
-  async function create(data: RecurringBillCreate) {
-    try {
-      const item = await recurringApi.create(data)
-      items.value.push(item)
-      return item
-    } catch (e: any) {
-      useMessage().error(e.message || '创建周期账单失败')
-    }
-  }
+  const { create, update, remove } = writeActions<
+    RecurringBill,
+    RecurringBillCreate,
+    RecurringBillUpdate
+  >({
+    list: items,
+    api: recurringApi,
+    messages: {
+      create: '创建周期账单失败',
+      update: '更新周期账单失败',
+      remove: '删除周期账单失败',
+    },
+  })
 
-  async function update(id: number, data: RecurringBillUpdate) {
-    try {
-      const item = await recurringApi.update(id, data)
-      const index = items.value.findIndex(i => i.id === id)
-      if (index !== -1) items.value[index] = item
-      return item
-    } catch (e: any) {
-      useMessage().error(e.message || '更新周期账单失败')
-    }
-  }
-
-  async function remove(id: number) {
-    try {
-      await recurringApi.delete(id)
-      items.value = items.value.filter(i => i.id !== id)
-    } catch (e: any) {
-      useMessage().error(e.message || '删除周期账单失败')
-    }
-  }
-
+  /** **不用 `withMessage`**：它失败时返回 `undefined`，原实现返回的是 `0`。 */
   async function generate() {
     try {
       const result = await recurringApi.generate()
