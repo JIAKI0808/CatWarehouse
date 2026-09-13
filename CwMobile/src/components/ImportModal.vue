@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { showToast, type UploaderFileListItem } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { importApi, type ExportData, type ConflictItem, type ImportResult } from '@/services/api'
+
+const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{
@@ -52,7 +55,7 @@ async function handleRead(
       await executeImport()
     }
   } catch (e: any) {
-    showToast(e.message || '文件解析失败')
+    showToast(e.message || t('app.intake.parseFailed'))
   } finally {
     loading.value = false
   }
@@ -84,7 +87,7 @@ async function executeImport() {
     step.value = 'result'
     emit('imported')
   } catch (e: any) {
-    showToast(e.message || '导入失败')
+    showToast(e.message || t('app.intake.importFailed'))
   } finally {
     loading.value = false
   }
@@ -100,7 +103,7 @@ async function executeImport() {
     @update:show="emit('update:visible', $event)"
   >
     <div class="import">
-      <div class="import-title">导入数据</div>
+      <div class="import-title">{{ t('app.intake.importData') }}</div>
       <div class="import-body" :style="{ textAlign: 'center' }">
         <van-loading v-if="loading" />
 
@@ -113,21 +116,23 @@ async function executeImport() {
           >
             <div class="import-tip">
               <van-icon name="description" size="40" color="var(--van-text-color-3)" />
-              <div>选择 JSON 备份文件</div>
+              <div>{{ t('app.intake.importPickFile') }}</div>
             </div>
           </van-uploader>
         </div>
 
         <div v-else-if="step === 'conflicts'" class="left">
           <div class="conflict-desc">
-            发现以下冲突项，勾选的项目将被跳过：
+            {{ t('app.intake.importConflicts') }}
           </div>
           <van-cell-group inset>
             <van-cell
               v-for="c in conflicts"
               :key="conflictKey(c)"
               :title="c.name"
-              :label="c.type === 'category' ? '大类' : '子分类'"
+              :label="c.type === 'category'
+                ? t('app.intake.importKindCategory')
+                : t('app.intake.importKindSubCategory')"
               clickable
               @click="toggleSkip(c)"
             >
@@ -145,24 +150,28 @@ async function executeImport() {
             :disabled="loading"
             @click="executeImport"
           >
-            确认导入
+            {{ t('app.intake.importConfirm') }}
           </van-button>
         </div>
 
         <div v-else-if="step === 'result' && result">
           <van-icon name="checked" size="56" color="#07c160" />
-          <div class="result-title">导入完成</div>
+          <div class="result-title">{{ t('app.intake.importDoneTitle') }}</div>
           <div class="result-desc">
-            新增大类 {{ result.categories_created }} 个，子分类
-            {{ result.sub_categories_created }} 个，物品
-            {{ result.items_created }} 个
+            {{ t('app.intake.importDoneDesc', {
+              categories: result.categories_created,
+              subCategories: result.sub_categories_created,
+              items: result.items_created,
+            }) }}
           </div>
-          <van-button block plain type="primary" @click="close">关闭</van-button>
+          <van-button block plain type="primary" @click="close">
+            {{ t('app.common.close') }}
+          </van-button>
         </div>
       </div>
 
       <template v-if="step !== 'result'">
-        <van-button block plain @click="close">取消</van-button>
+        <van-button block plain @click="close">{{ t('app.common.cancel') }}</van-button>
         <div class="pad" />
       </template>
     </div>

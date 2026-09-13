@@ -35,6 +35,7 @@ const zhCN = {
     // 只在**字面确实相同**时才复用；语境不同就各自开 key。
     common: {
       cancel: '取消',
+      close: '关闭',
       save: '保存',
       remove: '删除',
       create: '新增',
@@ -79,6 +80,40 @@ const zhCN = {
       // 英文语序才不会被中文写死。
       priceStock: '价格 ¥{price} · 库存 {quantity} {unit}',
       expiresOn: '过期 {date}',
+    },
+
+    // 录入区（导入 / 上传）与通知区。
+    // 「上传单据」「导入数据」在**菜单项**与**弹层标题**两处出现，且指的是同一个东西，
+    // 所以各只有一个 key，不是巧合重名。
+    intake: {
+      uploadReceipt: '上传单据',
+      exportData: '导出数据',
+      importData: '导入数据',
+      dataTools: '库存数据工具',
+      chooseImage: '点击选择图片上传',
+      uploading: '上传中…',
+      exportSuccess: '导出成功',
+      exportFailed: '导出失败',
+      uploadSuccess: '上传成功',
+      uploadFailed: '上传失败',
+      parseFailed: '文件解析失败',
+      importFailed: '导入失败',
+      importPickFile: '选择 JSON 备份文件',
+      importConflicts: '发现以下冲突项，勾选的项目将被跳过：',
+      importKindCategory: '大类',
+      importKindSubCategory: '子分类',
+      importConfirm: '确认导入',
+      importDoneTitle: '导入完成',
+      importDoneDesc: '新增大类 {categories} 个，子分类 {subCategories} 个，物品 {items} 个',
+    },
+
+    notify: {
+      title: '消息中心',
+      stockAlerts: '库存预警',
+      lowStock: '低库存',
+      systemNotifications: '系统通知',
+      markRead: '已读',
+      empty: '暂无通知',
     },
 
     categoryManager: {

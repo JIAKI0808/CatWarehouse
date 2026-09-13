@@ -22,6 +22,7 @@ const enUS: MessageSchema = {
 
     common: {
       cancel: 'Cancel',
+      close: 'Close',
       save: 'Save',
       remove: 'Delete',
       create: 'Add',
@@ -63,6 +64,37 @@ const enUS: MessageSchema = {
       noRecorder: 'No recorder recorded',
       priceStock: 'Price ¥{price} · Stock {quantity} {unit}',
       expiresOn: 'Expires {date}',
+    },
+
+    intake: {
+      uploadReceipt: 'Upload receipt',
+      exportData: 'Export',
+      importData: 'Import',
+      dataTools: 'Stock data tools',
+      chooseImage: 'Tap to choose an image',
+      uploading: 'Uploading…',
+      exportSuccess: 'Exported',
+      exportFailed: 'Export failed',
+      uploadSuccess: 'Uploaded',
+      uploadFailed: 'Upload failed',
+      parseFailed: 'Could not parse the file',
+      importFailed: 'Import failed',
+      importPickFile: 'Choose a JSON backup file',
+      importConflicts: 'The following conflicts were found. Checked items will be skipped:',
+      importKindCategory: 'Category',
+      importKindSubCategory: 'Sub-category',
+      importConfirm: 'Confirm import',
+      importDoneTitle: 'Import complete',
+      importDoneDesc: 'Added {categories} categories, {subCategories} sub-categories, {items} items',
+    },
+
+    notify: {
+      title: 'Notifications',
+      stockAlerts: 'Stock alerts',
+      lowStock: 'Low stock',
+      systemNotifications: 'Messages',
+      markRead: 'Read',
+      empty: 'No notifications',
     },
 
     categoryManager: {

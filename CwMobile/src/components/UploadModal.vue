@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { showToast, showSuccessToast, type UploaderFileListItem } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { uploadApi } from '@/services/api'
+
+const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', value: boolean): void }>()
@@ -18,11 +21,11 @@ async function handleRead(
   uploading.value = true
   try {
     await uploadApi.upload(file)
-    showSuccessToast('上传成功')
+    showSuccessToast(t('app.intake.uploadSuccess'))
     emit('update:visible', false)
     fileList.value = []
   } catch (e: any) {
-    showToast(e.message || '上传失败')
+    showToast(e.message || t('app.intake.uploadFailed'))
   } finally {
     uploading.value = false
   }
@@ -42,7 +45,7 @@ function close() {
     @update:show="emit('update:visible', $event)"
   >
     <div class="upload">
-      <div class="upload-title">上传单据</div>
+      <div class="upload-title">{{ t('app.intake.uploadReceipt') }}</div>
       <div class="upload-body">
         <van-uploader
           v-model="fileList"
@@ -52,12 +55,12 @@ function close() {
         >
           <div class="upload-tip">
             <van-icon name="photograph" size="36" color="var(--van-text-color-3)" />
-            <div>点击选择图片上传</div>
+            <div>{{ t('app.intake.chooseImage') }}</div>
           </div>
         </van-uploader>
-        <div v-if="uploading" class="uploading">上传中…</div>
+        <div v-if="uploading" class="uploading">{{ t('app.intake.uploading') }}</div>
       </div>
-      <van-button block plain @click="close">取消</van-button>
+      <van-button block plain @click="close">{{ t('app.common.cancel') }}</van-button>
       <div class="pad" />
     </div>
   </van-popup>

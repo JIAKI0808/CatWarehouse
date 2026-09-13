@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAlertStore } from '@/stores/alert'
 import { useNotificationStore } from '@/stores/notification'
+
+const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ (e: 'update:visible', value: boolean): void }>()
@@ -40,18 +43,18 @@ function formatTime(iso: string): string {
     @update:show="emit('update:visible', $event)"
   >
     <div class="notify">
-      <div class="notify-title">消息中心</div>
+      <div class="notify-title">{{ t('app.notify.title') }}</div>
       <div class="notify-body">
         <div v-if="alertStore.alerts.length" class="section">
-          <div class="section-label">库存预警</div>
+          <div class="section-label">{{ t('app.notify.stockAlerts') }}</div>
           <div v-for="a in alertStore.alerts" :key="a.id" class="alert-row">
-            <van-tag type="warning">低库存</van-tag>
+            <van-tag type="warning">{{ t('app.notify.lowStock') }}</van-tag>
             <span class="alert-msg">{{ a.message }}</span>
           </div>
         </div>
 
         <div v-if="notificationStore.items.length" class="section">
-          <div class="section-label">系统通知</div>
+          <div class="section-label">{{ t('app.notify.systemNotifications') }}</div>
           <div
             v-for="n in notificationStore.items"
             :key="n.id"
@@ -69,14 +72,14 @@ function formatTime(iso: string): string {
               type="primary"
               @click="markRead(n.id)"
             >
-              已读
+              {{ t('app.notify.markRead') }}
             </van-button>
           </div>
         </div>
 
         <van-empty
           v-if="!alertStore.alerts.length && !notificationStore.items.length"
-          description="暂无通知"
+          :description="t('app.notify.empty')"
         />
       </div>
     </div>

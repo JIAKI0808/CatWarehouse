@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { showToast, showSuccessToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { exportApi } from '@/services/api'
 import UploadModal from './UploadModal.vue'
 import ImportModal from './ImportModal.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{
@@ -14,11 +17,12 @@ const emit = defineEmits<{
 const showUpload = ref(false)
 const showImport = ref(false)
 
-const actions = [
-  { name: '上传单据', key: 'upload' },
-  { name: '导出数据', key: 'export' },
-  { name: '导入数据', key: 'import' },
-]
+// computed：`:actions` 要随语言切换重算。
+const actions = computed(() => [
+  { name: t('app.intake.uploadReceipt'), key: 'upload' },
+  { name: t('app.intake.exportData'), key: 'export' },
+  { name: t('app.intake.importData'), key: 'import' },
+])
 
 function onAction(action: { key: string }) {
   emit('update:visible', false)
@@ -43,9 +47,9 @@ async function handleExport() {
     a.download = `catwarehouse-export-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
-    showSuccessToast('导出成功')
+    showSuccessToast(t('app.intake.exportSuccess'))
   } catch (e: any) {
-    showToast(e.message || '导出失败')
+    showToast(e.message || t('app.intake.exportFailed'))
   }
 }
 
@@ -58,8 +62,8 @@ function onImported() {
   <van-action-sheet
     :show="visible"
     :actions="actions"
-    cancel-text="取消"
-    description="库存数据工具"
+    :cancel-text="t('app.common.cancel')"
+    :description="t('app.intake.dataTools')"
     @update:show="emit('update:visible', $event)"
     @select="onAction"
   />
