@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useMessage } from '@/composables/useMessage'
 import type { AIConfig, PluginConfig, VersionResponse } from '@/types'
 import { settingsApi } from '@/services/api'
+import { translate } from '@/i18n'
 
 export const useSettingsStore = defineStore('settings', () => {
   const aiConfig = ref<AIConfig>({
@@ -28,7 +29,7 @@ export const useSettingsStore = defineStore('settings', () => {
       aiConfig.value = data.ai_config
       pluginConfig.value = data.plugin_config
     } catch (e: any) {
-      useMessage().error(e.message || '获取配置失败')
+      useMessage().error(e.message || translate('app.stores.fetchSettingsFailed'))
     } finally {
       loading.value = false
     }
@@ -44,7 +45,7 @@ export const useSettingsStore = defineStore('settings', () => {
       aiConfig.value = data.ai_config
       pluginConfig.value = data.plugin_config
     } catch (e: any) {
-      useMessage().error(e.message || '保存配置失败')
+      useMessage().error(e.message || translate('app.stores.saveSettingsFailed'))
     } finally {
       saving.value = false
     }
@@ -54,7 +55,7 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       version.value = await settingsApi.getVersion()
     } catch (e: any) {
-      useMessage().error(e.message || '获取版本失败')
+      useMessage().error(e.message || translate('app.stores.fetchVersionFailed'))
     }
   }
 

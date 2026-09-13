@@ -12,7 +12,7 @@ export const useCategoryStore = defineStore('category', () => {
   const fetchAll = fetchInto({
     list: categories,
     loading,
-    message: '获取分类失败',
+    messageKey: 'app.stores.fetchCategoryFailed',
     run: () => categoryApi.getAll(),
   })
 
@@ -23,7 +23,11 @@ export const useCategoryStore = defineStore('category', () => {
   >({
     list: categories,
     api: categoryApi,
-    messages: { create: '创建分类失败', update: '更新分类失败', remove: '删除分类失败' },
+    messageKeys: {
+      create: 'app.stores.createCategoryFailed',
+      update: 'app.stores.updateCategoryFailed',
+      remove: 'app.stores.removeCategoryFailed',
+    },
     // 删除命中当前选中项时顺带清空选中（既有行为，陷阱 T3）。
     onRemoved: (id) => {
       if (selectedId.value === id) selectedId.value = null

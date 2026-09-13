@@ -4,6 +4,7 @@ import { useMessage } from '@/composables/useMessage'
 import type { SubCategory, SubCategoryUpdate } from '@/types'
 import { subCategoryApi } from '@/services/api'
 import { withMessage } from '@/stores/actions'
+import { translate } from '@/i18n'
 
 export const useSubCategoryStore = defineStore('subCategory', () => {
   const subCategoriesByCategory = reactive<Record<number, SubCategory[]>>({})
@@ -34,14 +35,14 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
 
       subCategoriesByCategory[categoryId] = categoriesWithQuantity
     } catch (e: any) {
-      useMessage().error(e.message || '获取子分类失败')
+      useMessage().error(e.message || translate('app.stores.fetchSubCategoryFailed'))
     } finally {
       loading.value = false
     }
   }
 
   const create = withMessage(
-    '创建子分类失败',
+    'app.stores.createSubCategoryFailed',
     async (
       categoryId: number,
       name: string,
@@ -65,7 +66,9 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
     }
   )
 
-  const update = withMessage('更新子分类失败', async (id: number, data: SubCategoryUpdate) => {
+  const update = withMessage(
+    'app.stores.updateSubCategoryFailed',
+    async (id: number, data: SubCategoryUpdate) => {
     const updated = await subCategoryApi.update(id, data)
     // 跨**所有**桶查找（陷阱 T6）：该子分类所属的桶不一定是当前选中的那个。
     // 找到一个就 break —— 与既有实现一致。
@@ -82,7 +85,9 @@ export const useSubCategoryStore = defineStore('subCategory', () => {
     return updated
   })
 
-  const remove = withMessage('删除子分类失败', async (categoryId: number, id: number) => {
+  const remove = withMessage(
+    'app.stores.removeSubCategoryFailed',
+    async (categoryId: number, id: number) => {
     await subCategoryApi.delete(id)
     const list = subCategoriesByCategory[categoryId]
     if (list) {

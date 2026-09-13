@@ -41,6 +41,7 @@ import type {
   PricingSubCategoryUpdate,
 } from '@/types'
 import { useServerConfigStore } from '@/stores/serverConfig'
+import { translate } from '@/i18n'
 
 function getBaseUrl(): string {
   try {
@@ -56,7 +57,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   })
   if (!response.ok) {
-    let detail = `请求失败 (${response.status})`
+    let detail = translate('app.api.requestFailed', { status: response.status })
     try {
       const body = await response.json()
       if (body.detail) detail = body.detail
@@ -265,7 +266,7 @@ export const uploadApi = {
       method: 'POST',
       body: formData,
     })
-    if (!response.ok) throw new Error('上传失败')
+    if (!response.ok) throw new Error(translate('app.api.uploadFailed'))
     return response.json()
   },
 }

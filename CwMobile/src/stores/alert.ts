@@ -15,12 +15,12 @@ export const useAlertStore = defineStore('alert', () => {
   const fetchAlerts = fetchInto({
     list: alerts,
     loading,
-    message: '获取预警失败',
+    messageKey: 'app.stores.fetchAlertFailed',
     run: () => alertApi.getAlerts(threshold.value),
   })
 
   /** 写的是 `threshold` 且不碰 `loading`（陷阱 T13）→ 只把重复的 catch 收起来。 */
-  const fetchConfig = withMessage('获取配置失败', async () => {
+  const fetchConfig = withMessage('app.stores.fetchAlertConfigFailed', async () => {
     const config = await alertApi.getConfig()
     threshold.value = config.threshold
   })
@@ -29,7 +29,7 @@ export const useAlertStore = defineStore('alert', () => {
    * 成功后立刻按新阈值重取预警列表（陷阱 T10）——这一步是既有行为，不是冗余；
    * 删掉它 threshold 与 alerts 就会不一致。
    */
-  const updateConfig = withMessage('更新配置失败', async (newThreshold: number) => {
+  const updateConfig = withMessage('app.stores.updateAlertConfigFailed', async (newThreshold: number) => {
     await alertApi.updateConfig(newThreshold)
     threshold.value = newThreshold
     await fetchAlerts()

@@ -13,7 +13,7 @@ export const useNotificationStore = defineStore('notification', () => {
   const fetchAll = fetchInto({
     list: items,
     loading,
-    message: '获取通知失败',
+    messageKey: 'app.stores.fetchNotificationFailed',
     run: () => notificationApi.getAll(),
   })
 
@@ -21,7 +21,7 @@ export const useNotificationStore = defineStore('notification', () => {
    * **就地改属性**（陷阱 T8）——`item.is_read = true`，不是替换数组元素，
    * 也不是重新取列表；因此不能套 `writeActions`。
    */
-  const markRead = withMessage('标记已读失败', async (id: number) => {
+  const markRead = withMessage('app.stores.markNotificationReadFailed', async (id: number) => {
     await notificationApi.markRead(id)
     const item = items.value.find(n => n.id === id)
     if (item) item.is_read = true
@@ -31,7 +31,7 @@ export const useNotificationStore = defineStore('notification', () => {
    * 两步：先 `check()`，再 `await fetchAll()`（陷阱 T9）。
    * `fetchAll` 失败时自己会提示，不会冒泡到这里，所以不会重复弹两次。
    */
-  const check = withMessage('检查通知失败', async () => {
+  const check = withMessage('app.stores.checkNotificationFailed', async () => {
     await notificationApi.check()
     await fetchAll()
   })
