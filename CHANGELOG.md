@@ -584,3 +584,54 @@ zh-CN 下每条译文与原中文**逐字节相同**，探针捕获的 **204 条
 
 **至此链条第 1 环「国际化」的网页端部分全部完成** —— `.vue` / `.ts` 全部迁完，
 仅剩 1 行表单默认值刻意保留。
+
+### `9e0165d` — P3 国际化 C：CwClient 镜像同步
+
+**这一步没有「翻译」**：客户端是网页端的逐字节镜像（`mirror.manifest.json` + `mirror.mjs`），
+本 Phase 只有「把源端的新内容同步过去」，没有任何适配或改写。
+
+**清单变更**
+```
++ src/i18n.ts
++ src/locales/en-US.ts
++ src/locales/zh-CN.ts
+```
+这三条此前是 `EXTRA_SOURCE`（源端有、清单未收录）。**镜像工具主动报了出来**，
+不是静默漏掉 —— `uncovered()` 两端都查（源端漏收 = 新页面没被镜像；
+目标端多出 = 违规本地改动）。没有这个检查，新增的 i18n 文件会一直不在客户端里，
+而 `--check` 仍然「通过」。
+
+依赖：`package.json` + `vue-i18n ^11.4.10`。**这一条不加就会炸** ——
+镜像过去的 `main.ts` 与各 store 都 `import` 了 `@/i18n`，客户端缺这个包直接起不来。
+
+**同步结果**
+| 命令 | 结果 |
+| --- | --- |
+| `mirror.mjs --apply` | 52 entries — **ADDED 3, UPDATED 34**, UNCHANGED 15, PRUNED 0, NO_SOURCE 0 |
+| `mirror.mjs --check` | 52 entries, **52 SAME, 0 drifted** → `OK: mirror is byte-identical to Cw_WebUi` |
+
+**验证**
+| 项 | 结果 |
+| --- | --- |
+| **源端只读性** | 同步后 `git status --short Cw_WebUi` **无输出** |
+| 客户端 `vue-tsc` | **18 error / 9 文件，与网页端逐个文件计数完全一致** |
+| 客户端 `vite build` | 退出码 0 |
+| **真实 Electron 端到端** | 见下 |
+
+**真实 Electron 端到端**（`npm run dev -- --remote-debugging-port=9333`）
+1. CDP `/json` 确认渲染进程已加载 `http://localhost:5173/`，标题 `CatWareHouse`；
+2. 窗口截图：原生菜单栏（File/Edit/View/Window/Help）+ 应用外壳正常渲染；
+3. 起真实后端后，**后端访问日志确证客户端发出了请求**：`OPTIONS` 预检 +
+   `GET /api/categories`、`/api/notifications`、`/api/alerts`、
+   `POST /api/notifications/check`，**全部 200**；
+4. 截图确认侧栏渲染出**真实 8 个大类**（日用品 / 3d打印耗材 / 调料 / 衣物 /
+   电子产品 / 车辆 / 猫猫 / 打印件，各带彩色图标）、库存列表表头与空态。
+
+> **一次排查值得记**：首次启动时客户端侧栏是**空的**。查后端访问日志发现
+> **一条请求都没有** —— 因为客户端在**后端起来之前**就挂载了，`onMounted` 只取一次，
+> 失败后不重试也不提示。重启客户端后一切正常。这是既有的「失败不重试、不提示」模式
+> （同 §C3.2 第 13/14 项），**不是 P3 引入的回归**——
+> 但它再次说明：**判断「是不是我弄坏的」要靠日志证据，不能靠界面表现猜。**
+
+**一个观察（非本次引入，未深究）**：客户端窗口跟随系统深色主题，主内容区呈深色，
+但表格头与部分区域仍是浅色，**明暗混用**。只记录现象、**没有查成因**，归属「交互优化」环。
