@@ -92,6 +92,41 @@ const zhCN = {
       editItem: '编辑物品',
     },
 
+    ledger: {
+      title: '账本',
+      scopeDay: '按天',
+      scopeWeek: '按周',
+      scopeMonth: '按月',
+      scopeYear: '按年',
+      typeAll: '全部',
+      typeIncome: '收入',
+      typeExpense: '支出',
+      amount: '金额',
+      type: '类型',
+      date: '日期',
+      platform: '平台',
+      person: '记账人',
+      budgetOverview: '预算概览',
+      chartTitle: '收支统计',
+      chartAmountAxis: '金额 (¥)',
+      searchPlaceholder: '搜索描述/平台/记账人',
+      create: '新增',
+      addBill: '新增账单',
+      editBill: '编辑账单',
+      deleteConfirm: '确定要删除这条账单吗？',
+      // 年月与星期是**语言相关的格式**，不是可以逐字替换的文案：
+      // 英文是 "2026" / "Jan" / "Su"，照搬「年」「月」会出洋相。所以它们也进语言包。
+      yearLabel: '{year}年',
+      months: [
+        '1月', '2月', '3月', '4月', '5月', '6月',
+        '7月', '8月', '9月', '10月', '11月', '12月',
+      ],
+      weekdays: ['日', '一', '二', '三', '四', '五', '六'],
+      inputPlatform: '支付宝/微信/银行等',
+      inputDescription: '消费描述',
+      inputPerson: '谁记的',
+    },
+
     // 图标选择器的 48 个 tooltip。键就是 @vicons/ionicons5 的组件名 ——
     // 换图标库时键跟着变，比「按序号 icon1..icon48」可维护得多。
     icons: {
