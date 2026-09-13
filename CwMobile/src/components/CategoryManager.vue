@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { showConfirmDialog } from 'vant'
+import { useI18n } from 'vue-i18n'
 import { useCategoryStore } from '@/stores/category'
 import { useSubCategoryStore } from '@/stores/subCategory'
 import { getCategoryIcon } from '@/utils/categoryIcons'
@@ -36,8 +37,15 @@ const subCategoryStore = useSubCategoryStore()
 const activeCats = ref<number[]>([])
 const loadedCats = ref<Set<number>>(new Set())
 const showCatForm = ref(false)
+const { t } = useI18n()
+
 const catFormType = ref<'category' | 'subCategory'>('category')
-const catFormTitle = ref('')
+// 存**键**、用 computed 取译文，而不是在点击时就把译文取成字符串：
+// 弹出层开着的时候切语言，标题才会跟着变。
+// ⚠️ 必须先判空再 `t()`：`t('')` 会让 vue-i18n 打出
+// 「Not found '' key …」并逐级回落，控制台刷四条警告。空键就该是空标题。
+const catFormTitleKey = ref('')
+const catFormTitle = computed(() => (catFormTitleKey.value ? t(catFormTitleKey.value) : ''))
 const editingCategory = ref<CatEdit | null>(null)
 const editingSubCategory = ref<SubEdit | null>(null)
 const contextCategoryId = ref<number | null>(null)
@@ -74,7 +82,7 @@ function onSelect(sub: SubCategory) {
 function openAddCategory() {
   editingCategory.value = null
   catFormType.value = 'category'
-  catFormTitle.value = '新增大类'
+  catFormTitleKey.value = 'app.categoryManager.addCategory'
   showCatForm.value = true
 }
 
@@ -87,7 +95,7 @@ function openEditCategory(cat: Category) {
     icon_color: cat.icon_color ?? '#f59e0b',
   }
   catFormType.value = 'category'
-  catFormTitle.value = '编辑大类'
+  catFormTitleKey.value = 'app.categoryManager.editCategory'
   showCatForm.value = true
 }
 
@@ -95,7 +103,7 @@ function openAddSub(catId: number) {
   contextCategoryId.value = catId
   editingSubCategory.value = null
   catFormType.value = 'subCategory'
-  catFormTitle.value = '新增子分类'
+  catFormTitleKey.value = 'app.categoryManager.addSubCategory'
   showCatForm.value = true
 }
 
@@ -110,7 +118,7 @@ function openEditSub(sub: SubCategory) {
     notes: sub.notes,
   }
   catFormType.value = 'subCategory'
-  catFormTitle.value = '编辑子分类'
+  catFormTitleKey.value = 'app.categoryManager.editSubCategory'
   showCatForm.value = true
 }
 
@@ -160,18 +168,18 @@ async function submitSub(data: Record<string, string>) {
 
 function askDeleteCategory(cat: Category) {
   showConfirmDialog({
-    title: '删除大类',
-    message: `确定要删除大类「${cat.name}」吗？`,
-    confirmButtonText: '删除',
+    title: t('app.categoryManager.deleteCategory'),
+    message: t('app.categoryManager.confirmDeleteCategory', { name: cat.name }),
+    confirmButtonText: t('app.common.remove'),
     confirmButtonColor: '#ee0a24',
   }).then(() => categoryStore.remove(cat.id)).catch(() => undefined)
 }
 
 function askDeleteSub(sub: SubCategory) {
   showConfirmDialog({
-    title: '删除子分类',
-    message: `确定要删除子分类「${sub.name}」吗？`,
-    confirmButtonText: '删除',
+    title: t('app.categoryManager.deleteSubCategory'),
+    message: t('app.categoryManager.confirmDeleteSubCategory', { name: sub.name }),
+    confirmButtonText: t('app.common.remove'),
     confirmButtonColor: '#ee0a24',
   }).then(() => subCategoryStore.remove(sub.category_id, sub.id)).catch(() => undefined)
 }
@@ -185,7 +193,7 @@ function askDeleteSub(sub: SubCategory) {
     @update:show="emit('update:visible', $event)"
   >
     <div class="mgr">
-      <van-nav-bar title="分类管理" left-arrow @click-left="close">
+      <van-nav-bar :title="t('app.categoryManager.title')" left-arrow @click-left="close">
         <template #right>
           <van-icon name="plus" class="nav-plus" @click="openAddCategory" />
         </template>
@@ -194,7 +202,7 @@ function askDeleteSub(sub: SubCategory) {
       <div class="mgr-body">
         <van-empty
           v-if="!categoryStore.categories.length && !categoryStore.loading"
-          description="暂无分类，点击右上角新增"
+          :description="t('app.categoryManager.noCategories')"
         />
         <van-collapse v-else v-model="activeCats">
           <van-collapse-item
@@ -225,7 +233,7 @@ function askDeleteSub(sub: SubCategory) {
             <div class="sub-list">
               <van-empty
                 v-if="!subCategoryStore.getSubCategories(cat.id).length"
-                description="暂无子分类"
+                :description="t('app.categoryManager.noSubCategories')"
               />
               <div
                 v-for="sub in subCategoryStore.getSubCategories(cat.id)"

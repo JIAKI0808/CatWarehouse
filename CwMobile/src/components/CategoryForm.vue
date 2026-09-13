@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import {
   categoryIconOptions,
   categoryColors,
   getCategoryIcon,
 } from '@/utils/categoryIcons'
+
+const { t } = useI18n()
 
 interface FormModel {
   name: string
@@ -65,7 +68,7 @@ function close() {
 
 function submit() {
   if (!form.value.name.trim()) {
-    showToast('请输入名称')
+    showToast(t('app.common.inputName'))
     return
   }
   emit('submit', { ...form.value })
@@ -83,31 +86,35 @@ function submit() {
   >
     <van-nav-bar
       :title="title"
-      left-text="取消"
-      right-text="保存"
+      :left-text="t('app.common.cancel')"
+      :right-text="t('app.common.save')"
       @click-left="close"
       @click-right="submit"
     />
     <div class="cat-body">
       <van-cell-group inset>
-        <van-field v-model="form.name" label="名称" placeholder="请输入名称" />
+        <van-field
+          v-model="form.name"
+          :label="t('app.common.name')"
+          :placeholder="t('app.common.inputName')"
+        />
         <van-field
           v-model="form.description"
           rows="2"
           autosize
           type="textarea"
-          label="描述"
-          placeholder="请输入描述"
+          :label="t('app.common.description')"
+          :placeholder="t('app.common.inputDescription')"
         />
         <template v-if="type === 'category'">
-          <van-cell title="图标" :border="false" />
+          <van-cell :title="t('app.common.icon')" :border="false" />
           <div class="icon-grid">
             <div
               v-for="icon in categoryIconOptions"
               :key="icon.name"
               class="icon-item"
               :class="{ active: form.icon === icon.name }"
-              :title="icon.label"
+              :title="t('app.icons.' + icon.name)"
               @click="form.icon = icon.name"
             >
               <component
@@ -116,7 +123,7 @@ function submit() {
               />
             </div>
           </div>
-          <van-cell title="图标颜色" :border="false" />
+          <van-cell :title="t('app.common.iconColor')" :border="false" />
           <div class="color-row">
             <span
               v-for="c in categoryColors"
@@ -129,14 +136,14 @@ function submit() {
           </div>
         </template>
         <template v-else>
-          <van-field v-model="form.unit" label="单位" placeholder="个" />
+          <van-field v-model="form.unit" :label="t('app.common.unit')" placeholder="个" />
           <van-field
             v-model="form.notes"
             rows="2"
             autosize
             type="textarea"
-            label="备注"
-            placeholder="请输入备注"
+            :label="t('app.common.notes')"
+            :placeholder="t('app.common.inputNotes')"
           />
         </template>
       </van-cell-group>
