@@ -529,3 +529,58 @@ ECharts 的 0 尺寸警告**没有出现**；而直接加载账本页（动画�
 | `en-US` 点 "Test connection" | 提示 **Connected** |
 | **整页零 CJK** | 脚本断言通过（含后端 tagline 已译出） |
 | 控制台 | 零 warn / 零 error |
+
+### `219a032` — P2c-4 国际化 B-9：store/api 兜底文案迁移（链条第 1 环收尾）
+
+**这是唯一动 `stores/services` 的一批**，动它之前前端探针一直是「零变化」闸门，故排到最后。
+
+**迁移 48 条兜底文案 + 2 条 api 文案**
+- 11 个 store 的 fetch/create/update/remove/自定义动作兜底（按 store 分组命名，便于对照排查）
+- `services/api.ts` 的 `请求失败 ({status})` 与 `上传失败`
+
+**关键设计：传 key，在出错那一刻才查表**
+
+`actions.ts` 的三个零件原先收**中文常量**，现在收**语言包 key**
+（`message` → `messageKey`、`messages` → `messageKeys`），在 `catch` 里调 `translate(key)`。
+
+**为什么不是「直接传 `translate(key)` 的结果」**：store 是**单例**，配置对象在
+**首次创建 store 时**求值一次。若那时就把中文取成常量，用户切语言后这些兜底文案会
+**停在旧语言直到刷新页面**。传 key 就没有这个问题。
+
+`i18n.ts` 新增 `translate()` —— 供**组件之外**（store / api 层）取译文。
+docstring 明确写了它**不是响应式的**、**禁止在模板与 computed 里用**；
+用途只有一类：「出错时取一条消息」这种一次性读取。
+
+**⚠️ 计划里「会动探针、需重采基线」的预判没有成立 —— 而且是好事**
+
+计划预判本批会改变探针观测到的文案、必须重采基线。**实际不需要**：
+zh-CN 下每条译文与原中文**逐字节相同**，探针捕获的 **204 条文案 / 46 条兜底文案一字未变**
+⇒ **`PROBE IDENTICAL`**。探针没失去「零变化」闸门的作用，也就不需要为「为什么文案变了」逐条辩解。
+
+这不是运气，是前面每一步都坚持「zh-CN 逐字不变」的自然结果。
+
+**唯一剩下的中文**：`stores/subCategory.ts` 的 `unit: string = '个'` —— **表单默认值**，
+会随提交写进数据库，属**数据**而非界面文案（同 P2c-1 的判断）。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| **前端行为探针** | **PROBE IDENTICAL** —— 本批最要紧的一条 |
+| `vue-tsc` | 18 → 18，逐文件计数**逐个不变** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 4 文件 / 0 违规 |
+| 中文残留扫描 | stores/services 仅剩 1 行（上述表单默认值） |
+
+> **类型闸门当场逮到一次真错**：改了 pricing/recurring 的内层 key 却漏改外层 `messages:`
+> 属性名，`vue-tsc` 立刻报 2 处 `TS2353`。已修 —— 这说明「18 → 18」这个数字背后有判别力。
+
+**真实浏览器验证（探针覆盖不到的一层）**
+探针跑的是 zh-CN，**en-US 的这 46 条兜底文案它看不到**。补了一次直接求值：
+- 动态 `import('/src/i18n.ts')`，把 `app.stores.*` + `app.api.*` **全部 49 个 key**
+  在两种语言下逐个求值 → **无缺失**（没有任何 key 回落成 key 本身）
+- `zh-CN`：`获取分类失败`、`请求失败 (500)`
+- `en-US`：`Could not load categories`、`Request failed (500)`、`Could not load the statistics`
+- 起真实后端确认改名后 `fetchInto` / `writeActions` 仍正常：库存页分类数据照常渲染
+
+**至此链条第 1 环「国际化」的网页端部分全部完成** —— `.vue` / `.ts` 全部迁完，
+仅剩 1 行表单默认值刻意保留。
