@@ -393,3 +393,47 @@ categories 8 / sub_categories 6 / specific_items 2 / settings 1 行，无丢失�
 ECharts 的 0 尺寸警告**没有出现**；而直接加载账本页（动画期间挂载）就会出现 ——
 与「容器在动画期间 `display:none`」的结论一致。**同一现象两种路径下表现不同，
 这条对照本身也是对诊断的一次独立验证。**
+
+### `d339cba` — P2c-3a 国际化 B-6：售价区文案迁移
+
+**只动售价区三个文件**：`PricingTable.vue` / `PricingForm.vue` / `PricingCategoryTree.vue`。
+
+**迁移内容**
+- `PricingTable.vue`：7 个列标题 + 编辑/删除、页面标题、搜索占位符、新增按钮、删除确认框
+- `PricingForm.vue`：标题（新增/编辑售价）+ 7 个表单标签与占位符 + 按钮
+- `PricingCategoryTree.vue`：侧栏标题、两处「暂无描述」、分类与子分类两个弹窗的标题/占位符/按钮
+
+**一处 key 归属的调整（我自己之前放错了）**
+「确认删除」原先叫 `app.inventory.confirmDeleteTitle`，但**账本页也要用同一句** ——
+说明它并不属于库存。本次它出现**第三个使用者**（售价）时提升为
+`app.common.confirmDeleteTitle`，并同步改了 `CategoryTree`（2 处）与 `LedgerView`（1 处）的引用。
+
+> **提取的时机是「第三个使用者出现的那一刻」，不是第一个。**
+> 一个使用者时留在原地最省事；两个时还可能是巧合；到第三个才确认它真的是公共词汇。
+
+**一处刻意的「不复用」**
+售价区的「新增分类 / 新增子分类 / 编辑分类 / 编辑子分类」与库存区中文**逐字相同**，
+但仍各开 `app.pricing.*` 的 key —— 因为它们指的不是同一个领域对象
+（`PricingCategory`/`PricingSubCategory` vs `Category`/`SubCategory`）。
+**改售价页的措辞不该连带改掉库存页**。
+判据依旧是「**是不是同一个东西**」，而不是「中文是不是一样」。
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | 18 → 18，逐文件计数**逐个不变**（`PricingTable` 仍是 1） |
+| 前端行为探针 | **PROBE IDENTICAL** |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+| 中文残留扫描 | 三个文件**均为 0 行** |
+
+**真实浏览器端到端**（后端指向真实库副本）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 售价分类 / 售价管理 / 搜索商品名 / 新增 / 商品名·成本·建议售价·折扣系数·描述·备注·记录日期·操作 / 无数据 |
+| `en-US` | Pricing categories / Pricing / Search product name / Add / Product·Cost·Suggested price·Discount factor·Description·Notes·Recorded on·Actions / No Data |
+| `en-US` 售价表单弹窗 | New pricing record / Product / Enter a product name / Cost / Suggested price / Discount factor / Description / Enter a description / Notes / Enter notes / Recorded on / Cancel |
+| `en-US` 分类弹窗 | New category / Category name / Cancel / Save |
+| **整页零 CJK** | 脚本断言通过（三处界面） |
+| 控制台 | 零 warn / 零 error |
+| 布局 | 与改动前一致，无元素重叠 |
