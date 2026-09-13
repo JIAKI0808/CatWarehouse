@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { NButtonGroup, NButton } from 'naive-ui'
 import { GridOutline, CardOutline } from '@vicons/ionicons5'
+import { useI18n } from 'vue-i18n'
 import { useItemStore } from '@/stores/item'
 import type { ViewMode } from '@/types'
 
 const itemStore = useItemStore()
+const { t } = useI18n()
 
-const options = [
-  { label: '表格', value: 'table', icon: GridOutline },
-  { label: '卡片', value: 'card', icon: CardOutline },
-]
+// computed 而非 const：文案必须随语言切换重算（模板里 v-for 会自动解包）。
+const options = computed(() => [
+  { label: t('app.inventory.viewTable'), value: 'table', icon: GridOutline },
+  { label: t('app.inventory.viewCard'), value: 'card', icon: CardOutline },
+])
 
 function handleChange(mode: ViewMode) {
   itemStore.setViewMode(mode)

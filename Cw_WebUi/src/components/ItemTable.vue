@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, h, watch, nextTick } from 'vue'
+import { ref, h, watch, nextTick, computed } from 'vue'
 import { NDataTable, NButton, NSpace, NSpin } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { gsap } from 'gsap'
+import { useI18n } from 'vue-i18n'
 import { useItemStore } from '@/stores/item'
 import type { Item } from '@/types'
 import ItemForm from './ItemForm.vue'
 import ViewToggle from './ViewToggle.vue'
 
 const itemStore = useItemStore()
+const { t } = useI18n()
 
 const showItemForm = ref(false)
 const editingItem = ref<Item | null>(null)
@@ -26,43 +28,44 @@ watch(
   }
 )
 
-const columns: DataTableColumns<Item> = [
-  { title: '名称', key: 'name', sorter: true },
+// computed 而非 const：列标题与操作按钮文案都要随语言切换重算。
+const columns = computed<DataTableColumns<Item>>(() => [
+  { title: t('app.common.name'), key: 'name', sorter: true },
   {
-    title: '价格',
+    title: t('app.common.price'),
     key: 'price',
     sorter: true,
     render: (row) => `¥${row.price.toFixed(2)}`,
   },
   {
-    title: '库存',
+    title: t('app.common.stock'),
     key: 'quantity',
     sorter: true,
     render: (row) => `${row.quantity} ${row.unit}`,
   },
   {
-    title: '更新日期',
+    title: t('app.common.updatedAt'),
     key: 'update_date',
     render: (row) =>
       row.update_date ? new Date(row.update_date).toLocaleDateString() : '-',
   },
   {
-    title: '过期时间',
+    title: t('app.common.expiresAt'),
     key: 'expire_date',
     render: (row) =>
       row.expire_date ? new Date(row.expire_date).toLocaleDateString() : '-',
   },
-  { title: '描述', key: 'description' },
-  { title: '录入人', key: 'recorder' },
+  { title: t('app.common.description'), key: 'description' },
+  { title: t('app.common.recorder'), key: 'recorder' },
   {
-    title: '操作',
+    title: t('app.common.actions'),
     key: 'actions',
     render: (row) =>
       h(NSpace, () => [
         h(
           NButton,
           { size: 'small', onClick: () => handleEdit(row) },
-          { default: () => '编辑' }
+          { default: () => t('app.common.edit') }
         ),
         h(
           NButton,
@@ -71,11 +74,11 @@ const columns: DataTableColumns<Item> = [
             type: 'error',
             onClick: () => handleDelete(row.id),
           },
-          { default: () => '删除' }
+          { default: () => t('app.common.remove') }
         ),
       ]),
   },
-]
+])
 
 function handleEdit(item: Item) {
   editingItem.value = item
@@ -98,7 +101,7 @@ async function handleSubmit(data: Record<string, unknown>) {
 <template>
   <div class="h-full flex flex-col">
     <div class="flex items-center justify-between p-4 border-b">
-      <div class="text-lg font-medium">库存列表</div>
+      <div class="text-lg font-medium">{{ t('app.inventory.title') }}</div>
       <ViewToggle />
     </div>
     <div class="flex-1 overflow-auto p-4 min-h-0">
