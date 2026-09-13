@@ -132,3 +132,62 @@
   OpenAPI 既有子树不许变、列表只许增长）。**带 `--selftest` 6/6** ——
   能拒删除、拒改名、拒 schema 变异、拒列表重排，且放过良性新增。
 - `smoke_i18n.py` / `smoke_i18n_migrate.py` / `upload_probe.py`
+
+### `e8d2ff5` — P2a 国际化 B-1：Cw_WebUi 接入 vue-i18n 基础设施
+
+**目标**：先立地基，**不动任何既有界面文案**，把界面回归风险压到零。
+
+**新增**
+- `Cw_WebUi/src/locales/zh-CN.ts` — 简体中文语言包（默认语言），导出 `MessageSchema`
+- `Cw_WebUi/src/locales/en-US.ts` — 英文语言包，用 `MessageSchema` 约束
+  ⇒ **漏翻一个键 = `vue-tsc` 编译错误**，而不是界面上显示出一串 raw key
+- `Cw_WebUi/src/i18n.ts` — i18n 实例 + 语言偏好读写 + `translateBackendMessage()`
+
+**修改**
+- `Cw_WebUi/src/main.ts` — +2 行（import + `app.use(i18n)`）
+- `Cw_WebUi/src/App.vue` — 外壳接入：`navItems` 由 `const` 改 `computed`；
+  侧栏「设置」tooltip 改用 `t('app.nav.settings')`；
+  `NConfigProvider` 接上 `:locale` / `:date-locale`
+- `Cw_WebUi/package.json` — + `vue-i18n ^11.4.10`（含 lock）
+
+**三条设计决策**（写进 `src/i18n.ts` docstring）
+1. 语言偏好以 **localStorage 为准**，后端 `/api/i18n/preference` 用于多设备一致（P2b 接）。
+   首屏渲染不能等后端 —— 服务端不可达是本应用的正常状态。
+2. 默认语言写死 **`zh-CN`，不跟随 `navigator.language`**。国际化之前界面硬编码中文，
+   跟随浏览器语言会让老用户升级后突然看到英文 —— 那是行为变化，不是改进。
+3. 语言包分两区：`app.*` 是前端自己的界面文案；`backend.*` 是后端 `detail` 原文的对照表
+   （与 `CwServer/locales/*.json` 内容一致），用 `translateBackendMessage()` 查询，
+   查不到**原样显示原文**，绝不返回空串。
+
+**一个踩到的坑**（已记录在 `src/i18n.ts`）
+`createI18n` 的泛型顺序是 `<Schema, Locales, Legacy>`，第三个**必须显式传 `false`**。
+不传时默认 `legacy: true`，`global.locale` 会是普通字符串而不是 `ref` ——
+切语言**不触发重渲染**，且类型上拿不到 `.value`。这是 `vue-tsc` 直接报出来的。
+
+**验证（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | 18 → 18 error，逐文件分布与基线**完全一致**（新文件零错误） |
+| 前端行为探针 | **PROBE IDENTICAL**（78 api 调用 / 13 store / 58 动作 / 204 文案） |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 4 文件 / 0 违规 |
+| **真实浏览器端到端** | 见下 |
+
+**浏览器端到端**（`vite dev` + 真实后端 + chrome-devtools，非 mock）
+| 语言 | 侧栏 tooltip | naive-ui 空状态 | 布局 |
+| --- | --- | --- | --- |
+| `zh-CN`（默认，无 localStorage） | **设置** | **无数据** | 正常 |
+| `en-US`（写 localStorage 后重载） | **Settings** | **No Data** | 正常 |
+
+两侧均无元素重叠/错位。业务文案在 en-US 下**仍是中文** —— 这是 P2a 的**预期状态**
+（本阶段刻意不迁移业务文案），P2c 分批迁移。
+
+**⚠️ 副作用（如实记录）**
+做浏览器验证时以**默认 `DATABASE_URL`** 起了真实服务器，`lifespan` 里的
+`create_all` + `_migrate_tables` 因此在**真实 `catwarehouse.db`** 上执行了一次迁移：
+`settings` 表新增 `locale` 列（默认 `zh-CN`）。**数据完好** ——
+categories 8 / sub_categories 6 / specific_items 2 / settings 1 行，无丢失。
+
+该迁移此前已在**库副本**上演练过（`smoke_i18n_migrate.py` 7/7），实际执行结果与演练一致。
+但这与本计划「不动 `catwarehouse.db`」的说法不符，**如实记录，不掩饰**。
+后续涉及真实库的验证会继续用临时库，只有确实需要端到端时才动真库并在此登记。
