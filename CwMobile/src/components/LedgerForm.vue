@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { showToast } from 'vant'
+import { useI18n } from 'vue-i18n'
 import type { Ledger } from '@/types'
+
+const { t } = useI18n()
 
 interface FormData {
   amount: number
@@ -78,7 +81,7 @@ function formatDate(ts: number): string {
 function submit() {
   const amount = Number(form.value.amount)
   if (Number.isNaN(amount) || amount <= 0) {
-    showToast('请输入正确的金额')
+    showToast(t('app.ledger.inputAmountInvalid'))
     return
   }
   emit('submit', { ...form.value, amount })
@@ -96,9 +99,9 @@ function submit() {
   >
     <div class="form-popup">
       <van-nav-bar
-        :title="editData ? '编辑账单' : '新增账单'"
-        left-text="取消"
-        right-text="保存"
+        :title="editData ? t('app.ledger.editBill') : t('app.ledger.addBill')"
+        :left-text="t('app.common.cancel')"
+        :right-text="t('app.common.save')"
         @click-left="close"
         @click-right="submit"
       />
@@ -107,27 +110,27 @@ function submit() {
           <van-field
             v-model="form.amount"
             type="number"
-            label="金额"
+            :label="t('app.ledger.amount')"
             placeholder="0.00"
           >
             <template #left-icon><span class="sym">¥</span></template>
           </van-field>
 
-          <van-field name="type" label="类型">
+          <van-field name="type" :label="t('app.ledger.type')">
             <template #input>
               <van-radio-group v-model="form.type" direction="horizontal">
                 <van-radio name="expense" checked-color="#ee0a24">
-                  支出
+                  {{ t('app.ledger.typeExpense') }}
                 </van-radio>
                 <van-radio name="income" checked-color="#07c160">
-                  收入
+                  {{ t('app.ledger.typeIncome') }}
                 </van-radio>
               </van-radio-group>
             </template>
           </van-field>
 
           <van-cell
-            title="日期"
+            :title="t('app.ledger.date')"
             is-link
             :value="formatDate(form.date)"
             @click="showCalendar = true"
@@ -135,22 +138,26 @@ function submit() {
 
           <van-field
             v-model="form.platform"
-            label="平台"
-            placeholder="支付宝/微信/银行等"
+            :label="t('app.ledger.platform')"
+            :placeholder="t('app.ledger.inputPlatform')"
           />
           <van-field
             v-model="form.description"
-            label="描述"
-            placeholder="消费描述"
+            :label="t('app.common.description')"
+            :placeholder="t('app.ledger.inputDescription')"
           />
-          <van-field v-model="form.person" label="记账人" placeholder="谁记的" />
+          <van-field
+            v-model="form.person"
+            :label="t('app.ledger.person')"
+            :placeholder="t('app.ledger.inputPerson')"
+          />
           <van-field
             v-model="form.notes"
             rows="2"
             autosize
             type="textarea"
-            label="备注"
-            placeholder="备注"
+            :label="t('app.common.notes')"
+            :placeholder="t('app.common.notes')"
           />
         </van-cell-group>
       </div>

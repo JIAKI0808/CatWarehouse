@@ -82,6 +82,36 @@ const zhCN = {
       expiresOn: '过期 {date}',
     },
 
+    ledger: {
+      title: '账本',
+      scopeDay: '按天',
+      scopeWeek: '按周',
+      scopeMonth: '按月',
+      scopeYear: '按年',
+      typeAll: '全部',
+      typeIncome: '收入',
+      typeExpense: '支出',
+      amount: '金额',
+      type: '类型',
+      date: '日期',
+      platform: '平台',
+      person: '记账人',
+      budgetOverview: '预算概览',
+      chartTitle: '收支统计',
+      chartAmountAxis: '金额 (¥)',
+      searchPlaceholder: '搜索描述/平台/记账人',
+      noEntries: '暂无账单记录',
+      unnamed: '未命名',
+      addBill: '新增账单',
+      editBill: '编辑账单',
+      deleteTitle: '删除账单',
+      deleteConfirm: '确定要删除这条账单吗？',
+      inputAmountInvalid: '请输入正确的金额',
+      inputPlatform: '支付宝/微信/银行等',
+      inputDescription: '消费描述',
+      inputPerson: '谁记的',
+    },
+
     // 录入区（导入 / 上传）与通知区。
     // 「上传单据」「导入数据」在**菜单项**与**弹层标题**两处出现，且指的是同一个东西，
     // 所以各只有一个 key，不是巧合重名。

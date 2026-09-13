@@ -11,6 +11,7 @@ import {
   GridComponent,
   LegendComponent,
 } from 'echarts/components'
+import { useI18n } from 'vue-i18n'
 import { useLedgerStore } from '@/stores/ledger'
 import { useBudgetStore } from '@/stores/budget'
 import { useThemeStore } from '@/stores/theme'
@@ -31,12 +32,14 @@ const showCalendar = ref(false)
 const searchQuery = ref('')
 const filterType = ref('')
 
-const rangeOptions = [
-  { label: '按天', value: 'day' },
-  { label: '按周', value: 'week' },
-  { label: '按月', value: 'month' },
-  { label: '按年', value: 'year' },
-]
+const { t } = useI18n()
+
+const rangeOptions = computed(() => [
+  { label: t('app.ledger.scopeDay'), value: 'day' },
+  { label: t('app.ledger.scopeWeek'), value: 'week' },
+  { label: t('app.ledger.scopeMonth'), value: 'month' },
+  { label: t('app.ledger.scopeYear'), value: 'year' },
+])
 
 const currentMonth = computed(() => {
   const d = new Date(selectedDate.value)
@@ -142,9 +145,9 @@ function handleEdit(item: Ledger) {
 async function askDelete(item: Ledger) {
   try {
     await showConfirmDialog({
-      title: '删除账单',
-      message: '确定要删除这条账单吗？',
-      confirmButtonText: '删除',
+      title: t('app.ledger.deleteTitle'),
+      message: t('app.ledger.deleteConfirm'),
+      confirmButtonText: t('app.common.remove'),
       confirmButtonColor: '#ee0a24',
     })
   } catch {
@@ -185,7 +188,11 @@ function chartPalette() {
 function getChartOption() {
   const p = chartPalette()
   return {
-    title: { text: '收支统计', left: 'center', textStyle: { fontSize: 14, color: p.text } },
+    title: {
+      text: t('app.ledger.chartTitle'),
+      left: 'center',
+      textStyle: { fontSize: 14, color: p.text },
+    },
     tooltip: { trigger: 'axis' },
     legend: { top: 30, textStyle: { color: p.text } },
     grid: { left: '12%', right: '6%', bottom: '12%', top: '80px' },
@@ -197,20 +204,25 @@ function getChartOption() {
     },
     yAxis: {
       type: 'value',
-      name: '金额 (¥)',
+      name: t('app.ledger.chartAmountAxis'),
       nameTextStyle: { color: p.text, fontSize: 10 },
       axisLabel: { color: p.text, fontSize: 10 },
       splitLine: { lineStyle: { color: p.split } },
     },
     series: [
       {
-        name: '收入',
+        name: t('app.ledger.typeIncome'),
         type: 'bar',
         data: store.stats.map((s) => s.income),
         itemStyle: { color: '#10b981' },
         barGap: '20%',
       },
-      { name: '支出', type: 'bar', data: store.stats.map((s) => s.expense), itemStyle: { color: '#ef4444' } },
+      {
+        name: t('app.ledger.typeExpense'),
+        type: 'bar',
+        data: store.stats.map((s) => s.expense),
+        itemStyle: { color: '#ef4444' },
+      },
     ],
   }
 }
@@ -219,14 +231,15 @@ function shortDate(s: string): string {
   return new Date(s).toLocaleDateString()
 }
 
-function typeTag(t: string): string {
-  return t === 'income' ? '收入' : '支出'
+// 形参改名 `kind`：原来叫 `t`，会把 i18n 的 `t` 遮住，改完就取不到译文了。
+function typeTag(kind: string): string {
+  return kind === 'income' ? t('app.ledger.typeIncome') : t('app.ledger.typeExpense')
 }
 </script>
 
 <template>
   <div class="ledger">
-    <van-nav-bar title="账本">
+    <van-nav-bar :title="t('app.ledger.title')">
       <template #right>
         <van-icon name="plus" class="plus" @click="handleAdd" />
       </template>
@@ -260,7 +273,7 @@ function typeTag(t: string): string {
     </div>
 
     <div v-if="budgetStore.items.length" class="budget">
-      <div class="budget-title">预算概览</div>
+      <div class="budget-title">{{ t('app.ledger.budgetOverview') }}</div>
       <div v-for="b in budgetStore.items" :key="b.id" class="budget-row">
         <span class="b-name">{{ b.category_name }}</span>
         <van-progress
@@ -280,7 +293,7 @@ function typeTag(t: string): string {
       <van-field
         v-model="searchQuery"
         clearable
-        placeholder="搜索描述/平台/记账人"
+        :placeholder="t('app.ledger.searchPlaceholder')"
         class="search"
       />
       <div class="type-chips">
@@ -292,7 +305,7 @@ function typeTag(t: string): string {
           class="chip"
           @click="filterType = ''"
         >
-          全部
+          {{ t('app.ledger.typeAll') }}
         </van-tag>
         <van-tag
           round
@@ -302,7 +315,7 @@ function typeTag(t: string): string {
           class="chip"
           @click="filterType = 'income'"
         >
-          收入
+          {{ t('app.ledger.typeIncome') }}
         </van-tag>
         <van-tag
           round
@@ -312,7 +325,7 @@ function typeTag(t: string): string {
           class="chip"
           @click="filterType = 'expense'"
         >
-          支出
+          {{ t('app.ledger.typeExpense') }}
         </van-tag>
       </div>
     </div>
@@ -320,7 +333,7 @@ function typeTag(t: string): string {
     <div class="list">
       <van-empty
         v-if="!store.loading && !filteredItems.length"
-        description="暂无账单记录"
+        :description="t('app.ledger.noEntries')"
       />
       <div v-else class="ledger-cards">
         <van-swipe-cell
@@ -329,7 +342,7 @@ function typeTag(t: string): string {
           class="card-swipe"
         >
           <van-cell
-            :title="item.description || item.platform || '未命名'"
+            :title="item.description || item.platform || t('app.ledger.unnamed')"
             :label="`${shortDate(item.date)} · ${item.platform || '-'} · ${item.person || '-'}`"
             clickable
             @click="handleEdit(item)"
@@ -355,7 +368,7 @@ function typeTag(t: string): string {
             <van-button
               square
               type="danger"
-              text="删除"
+              :text="t('app.common.remove')"
               class="del-btn"
               @click="askDelete(item)"
             />
