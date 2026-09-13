@@ -245,3 +245,62 @@ categories 8 / sub_categories 6 / specific_items 2 / settings 1 行，无丢失�
 （vite 回落端口 ⇒ 应用失去全部 API 访问），留待后续环处理。
 
 **真实数据库本次未被触碰**：全程用临时库，`catwarehouse.db` 的 mtime 仍是 P2a 的 `01:23`。
+
+### `75c3ac5` — P2c-1 国际化 B-3：库存区业务文案迁移
+
+**只动库存区组件**，其余区域仍是硬编码中文（后续批次）。
+
+**先建公共词汇表再逐文件替换**：全站反复出现的名词/按钮/提示
+（名称 / 描述 / 价格 / 库存 / 编辑 / 删除 / 保存 / 取消 / 暂无数据 / 请输入…）
+统一进 `app.common`。不这么做的话，同一个「保存」会在 10 个文件里各写一份，
+**改一处漏九处**。
+
+**迁移的 7 个组件**
+| 文件 | 迁移内容 |
+| --- | --- |
+| `ViewToggle.vue` | 表格 / 卡片（`options` 由 `const` 改 `computed`） |
+| `ItemTable.vue` | 8 个列标题 + 编辑/删除（`columns` 由 `const` 改 `computed`） |
+| `ItemCard.vue` | 卡片字段标签 + 编辑/删除 + 空态 |
+| `FloatingButton.vue` | 下拉三项 + 导出成功/失败提示 |
+| `CategoryTree.vue` | 侧栏标题、暂无描述、暂无数据、增改标题、两个删除确认框 |
+| `CategoryForm.vue` | 表单标签/占位符/按钮 + **48 个图标 tooltip** |
+| `ItemForm.vue` | 表单标签/占位符/按钮 |
+
+**两个值得说的做法**
+1. **`CategoryForm` 的 48 个图标 `label` 字段直接删掉**，模板改用
+   `t('app.icons.' + icon.name)`。把 48 条中文留在组件里，等于语言包之外又存一份，
+   翻译时必漏；键取组件名也不会出现对不上的风险。
+2. **删除确认框的插值走 vue-i18n 具名插值**（`{name}`），不再用模板字符串拼接 ——
+   拼接会把语序**锁死在中文**，英文语序不同就得改代码。
+
+**刻意未迁移（并记录理由，不是漏掉）**
+- `FloatingButton` 的两条 `console.log`/`console.error`：**开发者可见，非用户界面文案**
+- `ItemForm` / `CategoryForm` 的 `unit: '个'`：这是**表单默认值**，会随提交写进数据库，
+  属于**数据**而非界面文案。跟着界面语言变会让「同一张表里单位中英混杂」；
+  要改应另开一项「单位字典」的需求，**不在本 Phase 夹带**
+
+**闸门（全绿）**
+| 闸门 | 结果 |
+| --- | --- |
+| `vue-tsc` | 18 → 18，9 个文件的错误计数**逐个不变** |
+| 前端行为探针 | **PROBE IDENTICAL**（未碰 stores/services，204 条文案照旧） |
+| `vite build` | 退出码 0 |
+| `spec_check.py` | 0 违规 |
+
+> 行号说明：`ItemCard` 50→52、`ViewToggle` 25→29，均为新增 import 导致的**平移**，
+> 不是新增错误，已逐条核对。
+
+**真实浏览器端到端**（`vite dev` + 真实后端 + chrome-devtools，
+后端指向**真实库的副本**）
+| 检查 | 结果 |
+| --- | --- |
+| `zh-CN` | 与改动前**逐项一致**（分类 / 库存列表 / 8 个列头 / 表格·卡片 / 无数据） |
+| `en-US` 列表 | Inventory / Category / Name·Price·Stock·Updated·Expires·Description·Recorded by·Actions / Table·Card / No Data |
+| `en-US` 下拉 | Upload receipt / Export / Import |
+| `en-US` 表单 | New category / Name / Description / Icon / Icon color / Cancel / Save |
+| 48 个图标 tooltip | **全部译出**（Folder…Ribbon），实测 DOM `title` 属性计数 = **48** |
+| **缺失键扫描** | 全 DOM 无 `app.*`/`common.*`/`inventory.*` 形式的原始键残留 |
+| **控制台** | **零 warn / 零 error**（vue-i18n 缺键会打警告 —— 这是最灵敏的一条） |
+| 布局 | 与改动前一致，无元素重叠 |
+
+**真实数据库未被触碰**：全程用真实库的**副本**，`catwarehouse.db` mtime 仍是 `01:23`。
