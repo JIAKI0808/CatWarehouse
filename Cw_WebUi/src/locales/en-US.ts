@@ -117,6 +117,41 @@ const enUS: MessageSchema = {
       inputPerson: 'Who recorded it',
     },
 
+    analytics: {
+      title: 'Analytics',
+      totalItems: 'Total items',
+      totalValue: 'Total stock value',
+      totalIncome: 'Total income',
+      totalExpense: 'Total expense',
+      selectCategory: 'Select a category',
+      selectSubCategory: 'Select a sub-category',
+      emptyTrend: 'Pick a category and sub-category to see trends',
+      metric: {
+        quantity: 'Quantity',
+        price: 'Price',
+        totalPrice: 'Total price',
+        unitPrice: 'Unit price',
+        stock: 'Stock',
+      },
+      axis: {
+        quantity: 'Quantity ({unit})',
+        price: 'Price (¥)',
+        totalPrice: 'Total price (¥)',
+        unitPrice: 'Unit price (¥)',
+        amount: 'Amount (¥)',
+      },
+      chart: {
+        quantityTrend: 'Quantity trend',
+        priceTrend: 'Price trend',
+        totalPriceTrend: 'Total price trend',
+        unitPriceTrend: 'Unit price trend',
+        quantityDistribution: 'Quantity distribution',
+        priceComparison: 'Price comparison',
+        categoryStockShare: 'Stock share by category',
+        monthlyCompare: 'Monthly income vs. expense',
+      },
+    },
+
     icons: {
       FolderOutline: 'Folder',
       CartOutline: 'Cart',

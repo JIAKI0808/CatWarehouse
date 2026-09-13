@@ -127,6 +127,43 @@ const zhCN = {
       inputPerson: '谁记的',
     },
 
+    analytics: {
+      title: '数据分析',
+      totalItems: '总库存数',
+      totalValue: '总库存价值',
+      totalIncome: '总收入',
+      totalExpense: '总支出',
+      selectCategory: '选择大类',
+      selectSubCategory: '选择子类',
+      emptyTrend: '请选择大类和子类查看趋势',
+      // 图表的「指标名」与「坐标轴名」分开：坐标轴带单位，指标名不带。
+      // 混成一个 key 会让饼图的扇区名叫成「数量 (斤)」，很怪。
+      metric: {
+        quantity: '数量',
+        price: '价格',
+        totalPrice: '总价',
+        unitPrice: '单价',
+        stock: '库存',
+      },
+      axis: {
+        quantity: '数量 ({unit})',
+        price: '价格 (¥)',
+        totalPrice: '总价 (¥)',
+        unitPrice: '单价 (¥)',
+        amount: '金额 (¥)',
+      },
+      chart: {
+        quantityTrend: '数量趋势',
+        priceTrend: '价格趋势',
+        totalPriceTrend: '总价趋势',
+        unitPriceTrend: '单价趋势',
+        quantityDistribution: '数量分布',
+        priceComparison: '价格对比',
+        categoryStockShare: '分类库存占比',
+        monthlyCompare: '月度收支对比',
+      },
+    },
+
     // 图标选择器的 48 个 tooltip。键就是 @vicons/ionicons5 的组件名 ——
     // 换图标库时键跟着变，比「按序号 icon1..icon48」可维护得多。
     icons: {
