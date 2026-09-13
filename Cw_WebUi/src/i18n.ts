@@ -32,8 +32,35 @@ const STORAGE_KEY = 'locale'
 /** 语言包里的 `backend` 分区：后端的 `detail` 原文 → 本地化文本。 */
 type BackendTable = { backend?: Record<string, string> }
 
+/**
+ * 语言在**它自己那门语言里**的名字（endonym）。
+ *
+ * 刻意写「简体中文 / English」而不是「Chinese / 英语」：语言选择器是给
+ * **看不懂当前界面语言**的人用的，用界面语言去写选项名，恰恰帮不到他。
+ * 所以这张表**不参与翻译** —— 两种语言下都显示同一份。
+ */
+export const LOCALE_LABELS: Record<AppLocale, string> = {
+  'zh-CN': '简体中文',
+  'en-US': 'English',
+}
+
 export function isSupportedLocale(value: unknown): value is AppLocale {
   return typeof value === 'string' && (SUPPORTED_LOCALES as readonly string[]).includes(value)
+}
+
+/**
+ * 用户**是否显式选过**语言（localStorage 里有有效值）。
+ *
+ * 与 `readStoredLocale()` 的区别：后者在没选过时会回默认值，看不出「没选过」。
+ * 设置页要靠这个区分来决断「要不要采纳后端存的偏好」——
+ * 用户在本机显式选过的，不该被别的设备的选择覆盖。
+ */
+export function hasStoredLocale(): boolean {
+  try {
+    return isSupportedLocale(localStorage.getItem(STORAGE_KEY))
+  } catch {
+    return false
+  }
 }
 
 /** 读 localStorage 里的偏好；读不到 / 不认识 / 被禁用，一律回默认语言。 */

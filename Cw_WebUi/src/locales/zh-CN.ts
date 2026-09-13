@@ -25,6 +25,11 @@ const zhCN = {
       pricing: '售价管理',
       settings: '设置',
     },
+    settingsPage: {
+      language: '语言',
+      languageNote: '切换后立即生效；服务器不可达时只保存在本机',
+      languageSyncFailed: '已在本机切换，但未能同步到服务器',
+    },
   },
   backend: {
     'Category not found': '分类不存在',

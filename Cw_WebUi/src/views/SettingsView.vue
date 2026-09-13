@@ -7,20 +7,73 @@ import {
   NButton,
   NSpin,
   NCard,
+  NCollapse,
+  NCollapseItem,
+  NSelect,
   useMessage,
 } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '@/stores/settings'
 import { useServerConfigStore } from '@/stores/serverConfig'
-import { connectionApi } from '@/services/api'
+import { connectionApi, i18nApi } from '@/services/api'
+import {
+  LOCALE_LABELS,
+  SUPPORTED_LOCALES,
+  currentLocale,
+  hasStoredLocale,
+  isSupportedLocale,
+  setLocale,
+} from '@/i18n'
 
 const store = useSettingsStore()
 const serverConfigStore = useServerConfigStore()
 const message = useMessage()
+const { t } = useI18n()
 const testing = ref(false)
+
+// 选择器绑的是独立 ref，不是 i18n 的 locale：切换必须走 handleLocaleChange 才能同步后端。
+const localeValue = ref<string>(currentLocale())
+// 选项来自**前端**的语言清单，不是后端的 /api/i18n/locales ——
+// 前端只能渲染自己打包了语言包的语言，后端可能支持更多。
+const localeOptions = SUPPORTED_LOCALES.map((value) => ({
+  label: LOCALE_LABELS[value],
+  value,
+}))
 
 onMounted(async () => {
   await Promise.all([store.fetchSettings(), store.fetchVersion()])
+  await syncLocaleFromServer()
 })
+
+/**
+ * 从后端拉语言偏好。
+ *
+ * 采纳规则只有一条，免得「谁覆盖谁」说不清：**本机没显式选过时才采纳后端值**。
+ * 用户在本机选过的，不该被别的设备的选择覆盖。
+ * 服务器不可达是正常状态 —— 静默跳过，localStorage 始终是唯一真相。
+ */
+async function syncLocaleFromServer() {
+  try {
+    const pref = await i18nApi.getPreference()
+    if (!hasStoredLocale() && isSupportedLocale(pref.locale)) {
+      setLocale(pref.locale)
+    }
+    localeValue.value = currentLocale()
+  } catch {
+    // 离线 / 连不上：保持本机设置，且**不提示** —— 这不是错误
+  }
+}
+
+/** 切语言：本机立即生效（不等待网络），再尽力同步给后端。 */
+async function handleLocaleChange(next: string) {
+  localeValue.value = next
+  const applied = setLocale(next)
+  try {
+    await i18nApi.updatePreference(applied)
+  } catch {
+    message.warning(t('app.settingsPage.languageSyncFailed'))
+  }
+}
 
 async function handleSave() {
   try {
@@ -176,6 +229,25 @@ async function handleTestConnection() {
             </div>
           </template>
         </NCard>
+
+        <div class="border-t border-gray-200" />
+
+        <!-- 语言（收纳型控件：默认折叠，不占版面，也不改动既有区块布局） -->
+        <NCollapse>
+          <NCollapseItem :title="t('app.settingsPage.language')" name="locale">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <NSelect
+                :value="localeValue"
+                :options="localeOptions"
+                class="w-40"
+                @update:value="handleLocaleChange"
+              />
+              <span class="text-xs text-gray-500">
+                {{ t('app.settingsPage.languageNote') }}
+              </span>
+            </div>
+          </NCollapseItem>
+        </NCollapse>
 
         <div class="border-t border-gray-200" />
 

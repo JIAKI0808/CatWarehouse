@@ -20,6 +20,11 @@ const enUS: MessageSchema = {
       pricing: 'Pricing',
       settings: 'Settings',
     },
+    settingsPage: {
+      language: 'Language',
+      languageNote: 'Applies immediately; kept on this device when the server is unreachable',
+      languageSyncFailed: 'Switched on this device, but could not sync to the server',
+    },
   },
   backend: {
     'Category not found': 'Category not found',
