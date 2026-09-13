@@ -1,0 +1,30 @@
+# 打包配置（用户本轮选定：配置就绪，实际打包留作单独一步执行 `npm run pack:win`）。
+#
+# 只打包运行期真正需要的东西：渲染层产物 dist/ + Electron 主进程 electron/ + package.json。
+# src/、scripts/、mirror.manifest.json 都是构建期资产，不进安装包。
+appId: com.catwarehouse.client
+productName: CatWareHouse
+copyright: CatWareHouse
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**
+  - electron/**
+  - package.json
+
+asar: true
+
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: CatWareHouse
