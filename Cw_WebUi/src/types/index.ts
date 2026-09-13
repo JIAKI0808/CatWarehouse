@@ -369,6 +369,72 @@ export interface CurrencyInfo {
   symbol: string
 }
 
+// ---------------------------------------------------------------------------
+// OCR 票据识别（`api/intake/ocr_router.py`）
+// ---------------------------------------------------------------------------
+
+export interface ReceiptItem {
+  name: string
+  quantity: number | null
+  unit_price: number | null
+  amount: number | null
+}
+
+/** 置信度低于阈值的识别行。**只上报，不影响解析结果**（见后端 `ocr/types.py`）。 */
+export interface LowConfidenceLine {
+  text: string
+  confidence: number
+}
+
+export interface Receipt {
+  doc_type: string
+  merchant: string | null
+  date: string | null
+  order_no: string | null
+  items: ReceiptItem[]
+  total: number | null
+  raw_text: string
+  extra: Record<string, unknown>
+  low_confidence: LowConfidenceLine[]
+}
+
+/** 落库草稿的一条明细，字段全部可改后再提交。 */
+export interface ReceiptItemDraft {
+  name: string
+  quantity?: number | null
+  unit_price?: number | null
+  amount?: number | null
+  selected: boolean
+  sub_category_id?: number | null
+}
+
+/** 落库草稿 —— 识别结果与数据库之间唯一的中间契约。 */
+export interface ReceiptDraft {
+  sub_category_id: number | null
+  recorder: string
+  image_path: string | null
+  items: ReceiptItemDraft[]
+  direction: string
+  update_stock: boolean
+  create_ledger: boolean
+  ledger: Record<string, unknown>
+  meta: Record<string, unknown>
+}
+
+/** 落库结果，逐项如实汇报（含被跳过与被归零的原因）。 */
+export interface ApplyResult {
+  created_items: number[]
+  updated_sub_categories: number[]
+  created_ledger_id: number | null
+  skipped: string[]
+  clamped: string[]
+}
+
+export interface ReceiptRecognizeResponse {
+  receipt: Receipt
+  draft: ReceiptDraft
+}
+
 /**
  * `GET /api/i18n/messages/{locale}` —— 后端文案包。
  * `backend_messages` 的键是后端 `detail` 的**原文**，值是本地化文本。
