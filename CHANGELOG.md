@@ -1411,3 +1411,21 @@ build 0；spec_check 6 文件 0 违规。
 **诚实说明**：桩 OCR 是替身，验证的是「整条 OCR 链路在移动端界面上可用」。
 
 **未做的事**：语音端 UI 接线（P13+）；客户端（CwClient）镜像同步（P11 改动尚未同步）。
+
+### `c0d12af` — P13 OCR优化-4：CwClient 镜像同步（P11/P12 的网页端 OCR 改动）
+
+把 P11（网页端 OCR）的改动同步到桌面客户端。
+
+**镜像工具又一次主动报出问题**：`--check` 报 `EXTRA_SOURCE (1):
+src/components/OcrReceiptModal.vue` —— 新组件源端有、清单未收录。
+没有这个检查，它会一直不在客户端里而 `--check` 仍显示通过。已补进清单并 apply。
+
+**结果**：`--apply` 55 entries（ADDED 1, UPDATED 6, UNCHANGED 48）；
+`--check` **55 SAME, 0 drifted**；源端 `git status --short Cw_WebUi` 无输出；
+客户端 vue-tsc **17 error / 9 文件**（与网页端 P11 后一致，UploadModal 2→1）；
+vite build 退出码 0。
+
+**OCR 链路四端打通**：后端（P10 置信度 + 识别端点）→ 网页端（P11）→ 移动端（P12）→
+桌面客户端（P13 镜像）。
+
+**未做的事**：语音端 `/api/voice/*` UI 接线（独立链路，留后续环）。
