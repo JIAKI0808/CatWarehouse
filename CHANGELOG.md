@@ -1350,3 +1350,38 @@ P7 Mobile 货币适配 + 镜像 → P8 两端货币切换 UI → P9 单位字典
 
 **未做的事**：未删既有的死配置 `OcrConfig.confidence_threshold`（Karpathy 准则 3）；
 未改前端（前端目前完全不调用 `/api/ocr/*`）。
+
+### `4de74de` — P11 OCR优化-2：WebUi 接入 OCR（上传单据 → 识别 → 核对 → 入库）
+
+把「造好了却没人用」的 `/api/ocr/*` 端点接到网页端，并把「上传单据」这个
+**原本是死代码**的入口变成真正可用的功能。
+
+**动手前核对到的现状**：后端 `/api/ocr/receipt` + `/api/ocr/receipt/apply` 已实现，
+但**没有任何前端调用**；前端唯一 OCR 痕迹是 `FloatingButton.handleUpload` 里的
+`fetch('/api/image-analysis')` —— **该路径不存在**，结果只 console.log。
+
+**新增**：`OcrReceiptModal.vue`（核对+入库弹层，两态）；`types/index.ts` 8 个类型；
+`services/api.ts` 的 `ocrApi` + 共享 `postForm`。
+
+**修改**：`FloatingButton.vue`（死 fetch → 识别 → 打开核对弹层）；
+`UploadModal.vue`（修掉一个阻塞本功能的既有 bug）。
+
+**核对弹层（界面谨慎、收纳型）**：复用既有 UploadModal 作选择器（未改其 UI）；
+核对视图（商户/日期/总额 + 低置信度警告 + 分类下拉 + 明细勾选）→ 结果视图
+（新增物品/更新子分类/账本/跳过/归零）；分类下拉来自后端；低置信度行如实显示。
+
+**🐞 修掉一个阻塞本功能的既有 bug**（18 个基线错误之一）：`handleUploadChange({ fileList })`
+把 naive-ui emit 的**数组**解构成 undefined、覆盖 v-model 的正确值，「上传」按钮永远不可用。
+改成正确签名后恢复可用。
+
+**闸门（全绿）**：vue-tsc **18 → 17**（修掉那 1 个签名错误）；探针 PROBE IDENTICAL；
+build 0；spec_check 6 文件 0 违规。
+
+**真实浏览器端到端**（真实后端 + 真实 HttpOcrEngine + PaddleX 契约桩 OCR）：
+上传 → 识别弹层（商户/日期/总额 ¥33.00/两条明细）→ 低置信度警告（花椒 45%、合计 30%）
+→ 分类下拉选「调料/香料」→ 入库 → 结果（新增 2、更新子分类 1、账本 -）。
+**数据库实测**：香料子分类 0→3、两条明细写入、description 带摘要、ledger 仍为 0。
+
+**诚实说明**：桩 OCR 是替身，验证的是「整条 OCR 链路在界面上可用」，不是识别准确率。
+
+**未做的事**：Mobile OCR 适配（P12）、语音端 UI 接线（独立链路，不混本 Phase）。
