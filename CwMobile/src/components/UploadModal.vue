@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { showToast, showSuccessToast, type UploaderFileListItem } from 'vant'
+import { showToast, type UploaderFileListItem } from 'vant'
 import { useI18n } from 'vue-i18n'
-import { uploadApi } from '@/services/api'
+import { ocrApi } from '@/services/api'
+import type { ReceiptRecognizeResponse } from '@/types'
 
 const { t } = useI18n()
 
 const props = defineProps<{ visible: boolean }>()
-const emit = defineEmits<{ (e: 'update:visible', value: boolean): void }>()
+const emit = defineEmits<{
+  (e: 'update:visible', value: boolean): void
+  (e: 'recognized', response: ReceiptRecognizeResponse): void
+}>()
 
 const fileList = ref<UploaderFileListItem[]>([])
 const uploading = ref(false)
 
+/**
+ * 选中图片 → 调真实 OCR 接口识别 → 把结果交给上层打开「核对 + 入库」弹层。
+ * 原先这里只是 `uploadApi.upload`（存盘，不识别），改成识别后，
+ * 识别结果经 `recognized` 事件上抛，由 `DataActionsSheet` 打开 `OcrReceiptSheet`。
+ */
 async function handleRead(
   files: UploaderFileListItem | UploaderFileListItem[]
 ) {
@@ -20,12 +29,12 @@ async function handleRead(
   if (!file) return
   uploading.value = true
   try {
-    await uploadApi.upload(file)
-    showSuccessToast(t('app.intake.uploadSuccess'))
+    const response = await ocrApi.recognize(file)
+    emit('recognized', response)
     emit('update:visible', false)
     fileList.value = []
   } catch (e: any) {
-    showToast(e.message || t('app.intake.uploadFailed'))
+    showToast(e.message || t('app.ocr.recognizeFailed'))
   } finally {
     uploading.value = false
   }

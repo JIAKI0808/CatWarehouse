@@ -273,6 +273,33 @@ const enUS: MessageSchema = {
       empty: 'No notifications',
     },
 
+    // OCR receipt recognition. The currency symbol comes from `useCurrencyStore`.
+    ocr: {
+      reviewTitle: 'Review recognized receipt',
+      recognizeFailed: 'Recognition failed, please try again',
+      merchant: 'Merchant',
+      date: 'Date',
+      orderNo: 'Order no.',
+      docType: 'Type',
+      total: 'Total',
+      categoryPlaceholder: 'Pick a sub-category to store into (optional)',
+      lowConfidence: 'These lines were recognized with low confidence — please verify',
+      noItems: 'No line items were recognized',
+      itemName: 'Item',
+      itemQuantity: 'Qty',
+      itemUnitPrice: 'Unit price',
+      itemAmount: 'Amount',
+      apply: 'Store',
+      applying: 'Storing…',
+      applySuccess: 'Stored',
+      applyFailed: 'Failed to store, please try again',
+      createdItems: 'Items created',
+      updatedSubCategories: 'Sub-categories updated',
+      createdLedger: 'Ledger entry',
+      skipped: 'Skipped',
+      clamped: 'Clamped to zero',
+    },
+
     categoryManager: {
       title: 'Categories',
       addCategory: 'New category',
