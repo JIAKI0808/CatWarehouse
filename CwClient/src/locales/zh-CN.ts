@@ -245,6 +245,34 @@ const zhCN = {
       empty: '暂无通知',
     },
 
+    // OCR 票据识别。默认 CNY ⇒ 符号由 `useCurrencyStore` 提供，不在文案里写死。
+    ocr: {
+      reviewTitle: '核对识别结果',
+      recognizeFailed: '识别失败，请重试',
+      merchant: '商户',
+      date: '日期',
+      orderNo: '单号',
+      docType: '类型',
+      total: '总额',
+      categoryPlaceholder: '选择入库子分类（可选）',
+      lowConfidence: '以下行识别置信度较低，请核对',
+      noItems: '未识别出明细行',
+      itemName: '品名',
+      itemQuantity: '数量',
+      itemUnitPrice: '单价',
+      itemAmount: '金额',
+      apply: '入库',
+      applying: '入库中…',
+      applySuccess: '入库完成',
+      applyFailed: '入库失败，请重试',
+      createdItems: '新增物品',
+      updatedSubCategories: '更新子分类',
+      createdLedger: '账本',
+      skipped: '跳过',
+      clamped: '归零',
+      retry: '重新上传',
+    },
+
     // store / api 层的兜底错误文案。
     // 这些不是界面里写死的词条，而是 `e.message` 为空时**兜底**的那一句，
     // 按 store 分组命名（`fetch*Failed` / `create*Failed` / …），便于对照排查。

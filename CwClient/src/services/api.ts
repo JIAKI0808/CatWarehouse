@@ -44,6 +44,9 @@ import type {
   MessagePackResponse,
   CurrencyPreference,
   CurrencyInfo,
+  ApplyResult,
+  ReceiptDraft,
+  ReceiptRecognizeResponse,
 } from '@/types'
 import { useServerConfigStore } from '@/stores/serverConfig'
 import { translate } from '@/i18n'
@@ -298,6 +301,40 @@ export const backupApi = {
  *
  * 写 `updatePreference` 只传 `code` —— 符号由服务端查表，客户端自报会被忽略。
  */
+/**
+ * OCR 票据识别（`api/intake/ocr_router.py`）。
+ *
+ * `recognize` 与 `uploadApi.upload` 一样**绕过 `request()`**：后者总是设
+ * `Content-Type: application/json`，而 multipart 的 boundary 必须由浏览器自己定，
+ * 手设反而会破坏请求。所以这里走裸 `fetch` + `FormData`，并且**不设** `Content-Type`。
+ *
+ * 失败时**解析后端的 `detail`** 再抛 —— 后端把「图片坏了」和「引擎没起来」分成
+ * 400 / 503，丢掉 detail 会让这两种情况在界面上长得一模一样。
+ */
+async function postForm<T>(url: string, file: File): Promise<T> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await fetch(`${getBaseUrl()}${url}`, { method: 'POST', body: formData })
+  if (!response.ok) {
+    let detail = translate('app.api.requestFailed', { status: response.status })
+    try {
+      const body = await response.json()
+      if (body.detail) detail = body.detail
+    } catch {}
+    throw new Error(detail)
+  }
+  return response.json()
+}
+
+export const ocrApi = {
+  recognize: (file: File) => postForm<ReceiptRecognizeResponse>('/api/ocr/receipt', file),
+  apply: (draft: ReceiptDraft) =>
+    request<ApplyResult>('/api/ocr/receipt/apply', {
+      method: 'POST',
+      body: JSON.stringify(draft),
+    }),
+}
+
 /**
  * 计量单位字典（`/api/units`，「通用化」环新增）。
  * 返回**字符串数组**（`["个","包",...]`）—— 单位是要写进数据库的**数据**，

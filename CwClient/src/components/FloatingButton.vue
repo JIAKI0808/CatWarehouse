@@ -3,16 +3,20 @@ import { ref, computed } from 'vue'
 import { NButton, NDropdown, NIcon, useMessage } from 'naive-ui'
 import { ArrowUpOutline } from '@vicons/ionicons5'
 import { useI18n } from 'vue-i18n'
-import { exportApi } from '@/services/api'
+import { exportApi, ocrApi } from '@/services/api'
 import { useCategoryStore } from '@/stores/category'
 import UploadModal from './UploadModal.vue'
 import ImportModal from './ImportModal.vue'
+import OcrReceiptModal from './OcrReceiptModal.vue'
+import type { ReceiptRecognizeResponse } from '@/types'
 
 const message = useMessage()
 const categoryStore = useCategoryStore()
 const { t } = useI18n()
 const showUploadModal = ref(false)
 const showImportModal = ref(false)
+const showOcrModal = ref(false)
+const ocrResponse = ref<ReceiptRecognizeResponse | null>(null)
 
 // computed：菜单项文案要随语言切换重算（模板里 :options 会自动解包）。
 const addOptions = computed(() => [
@@ -52,21 +56,25 @@ function handleImported() {
   categoryStore.fetchAll()
 }
 
+/**
+ * 选中图片 → 调真实 OCR 接口识别 → 打开「核对 + 入库」弹层。
+ *
+ * 原先这里是 `fetch('/api/image-analysis')` —— **该路径不存在**，且结果只 console.log，
+ * 用户什么都看不到。现在接上真实的 `/api/ocr/receipt`，识别结果交给
+ * `OcrReceiptModal` 核对后再经 `/api/ocr/receipt/apply` 落库。
+ */
 async function handleUpload(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
   try {
-    const response = await fetch('/api/image-analysis', {
-      method: 'POST',
-      body: formData,
-    })
-    if (response.ok) {
-      const result = await response.json()
-      console.log('上传成功:', result)
-    }
-  } catch (error) {
-    console.error('上传失败:', error)
+    ocrResponse.value = await ocrApi.recognize(file)
+    showOcrModal.value = true
+  } catch (e: any) {
+    message.error(e.message || t('app.ocr.recognizeFailed'))
   }
+}
+
+function handleOcrApplied() {
+  // 入库后刷新分类（数量变了），保持界面与库一致
+  categoryStore.fetchAll()
 }
 </script>
 
@@ -80,9 +88,12 @@ async function handleUpload(file: File) {
       </NButton>
     </NDropdown>
 
-    <UploadModal
-      v-model:visible="showUploadModal"
-      @upload="handleUpload"
+    <UploadModal v-model:visible="showUploadModal" @upload="handleUpload" />
+
+    <OcrReceiptModal
+      v-model:visible="showOcrModal"
+      :response="ocrResponse"
+      @applied="handleOcrApplied"
     />
 
     <ImportModal v-model:visible="showImportModal" @imported="handleImported" />

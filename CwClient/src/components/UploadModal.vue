@@ -23,7 +23,10 @@ function handleClose() {
   fileList.value = []
 }
 
-function handleUploadChange({ fileList: newFileList }: { fileList: UploadFileInfo[] }) {
+// naive-ui 的 `update:file-list` 直接 emit **数组**，不是 `{ fileList }` 包装对象。
+// 原写法 `({ fileList })` 会把数组解构成 undefined，导致 `fileList` 被覆盖成 undefined、
+// 「上传」按钮永远不可用 —— 这是既有的一个 bug（也是 vue-tsc 的 18 个基线错误之一）。
+function handleUploadChange(newFileList: UploadFileInfo[]) {
   fileList.value = newFileList
 }
 

@@ -22,6 +22,7 @@
     "src/components/ItemTable.vue",
     "src/components/LedgerForm.vue",
     "src/components/MenuBar.vue",
+    "src/components/OcrReceiptModal.vue",
     "src/components/PricingCategoryTree.vue",
     "src/components/PricingForm.vue",
     "src/components/PricingTable.vue",
