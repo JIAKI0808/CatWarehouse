@@ -1385,3 +1385,29 @@ build 0；spec_check 6 文件 0 违规。
 **诚实说明**：桩 OCR 是替身，验证的是「整条 OCR 链路在界面上可用」，不是识别准确率。
 
 **未做的事**：Mobile OCR 适配（P12）、语音端 UI 接线（独立链路，不混本 Phase）。
+
+### `804b2d6` — P12 OCR优化-3：Mobile 接入 OCR（上传单据 → 识别 → 核对 → 入库）
+
+与 P11 完全同构，只把 UI 换成 Vant。移动端「上传单据」原本只是 `uploadApi.upload`
+（**存盘，不识别**），本 Phase 把 `UploadModal.handleRead` 改成 `ocrApi.recognize`，
+经新 `recognized` 事件上抛，`DataActionsSheet` 打开 `OcrReceiptSheet` 核对后落库。
+
+**新增**：`OcrReceiptSheet.vue`（Vant 底部 popup，两态）；`types/index.ts` 8 个类型；
+`services/api.ts` 的 `ocrApi`。
+
+**修改**：`UploadModal.vue`（识别 + `recognized` 事件）；`DataActionsSheet.vue`（接事件 + 开弹层）。
+
+**界面做法（收纳型，复用既有交互）**：复用既有 UploadModal（未改 UI）；
+核对视图 → 结果视图；分类选择复用 `van-action-sheet`（与语言/货币切换同构）；
+低置信度行如实显示。
+
+**闸门（全绿）**：移动端 vue-tsc 0 error；build 0；spec_check 7 文件 0 违规。
+
+**真实浏览器端到端**（390 移动视口 + 真实后端 + 真实 HttpOcrEngine + PaddleX 契约桩 OCR）：
+上传 → 识别弹层（商户/日期/总额 ¥33.00/两条明细）→ 低置信度警告（花椒 45%、合计 30%）
+→ 分类选「调料/香料」→ 入库 → 结果（新增 2、更新子分类 1）。
+**数据库实测**：香料 0→3、两条明细写入、ledger 仍为 0。
+
+**诚实说明**：桩 OCR 是替身，验证的是「整条 OCR 链路在移动端界面上可用」。
+
+**未做的事**：语音端 UI 接线（P13+）；客户端（CwClient）镜像同步（P11 改动尚未同步）。
