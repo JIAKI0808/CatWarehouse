@@ -29,7 +29,9 @@ function createWindow(url) {
     minHeight: 640,
     title: 'CatWareHouse',
     show: false,
-    backgroundColor: '#1a1a1a',
+    // 亮色模式下页面自身不画背景（镜像的 main.css 只在 `.dark` 下写背景），由这层窗口底色兜底；
+    // 暗色模式 body/#app 自带不透明的 #1a1a1a，会完全盖住本值，故这里取亮色画布的白色。
+    backgroundColor: '#ffffff',
     webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
   win.once('ready-to-show', () => win.show())
