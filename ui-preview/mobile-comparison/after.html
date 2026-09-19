@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=375, initial-scale=1.0" />
+    <title>优化后 · CatWareHouse</title>
+    <link rel="stylesheet" href="shared.css" />
+  </head>
+  <body>
+    <div class="app after" data-version="after">
+      <header class="after-header">
+        <button class="after-title" type="button" data-dialog="category">食品杂货 <img src="../assets/icon-arrow-down-2.svg" alt="" /></button>
+        <div class="after-actions"><button class="badge" type="button" data-toast="当前有 3 条库存与系统提醒" aria-label="通知"><img src="../assets/icon-comment-dots.svg" alt="" /></button><button type="button" data-dialog="more" aria-label="更多操作"><img src="../assets/icon-menu-kebab-vertical-circle.svg" alt="" /></button></div>
+      </header>
+      <section class="page active" data-page="inventory">
+        <label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="搜索库存物品" data-search autocomplete="off" /></label>
+        <main class="after-body">
+          <section class="profile"><div class="profile-main"><div class="avatar">🐾</div><div><h2>Hi SAIKO</h2><p>欢迎来到 CatWareHouse</p></div></div><span class="date">09/12</span></section>
+          <section class="task-card">
+            <div class="task-intro"><h2>今天想整理什么？</h2><div class="robot" aria-hidden="true"></div></div>
+            <div class="task-actions"><button type="button" data-dialog="add"><b>快速入库</b><span>新增物品与数量</span></button><button type="button" data-toast="上传单据：演示操作已触发"><b>上传单据</b><span>模拟识别购物票据</span></button></div>
+          </section>
+          <section class="overview collapsed" data-overview>
+            <div class="overview-head" data-overview-toggle><h2>库存概况</h2><button type="button" aria-label="展开库存概况" aria-expanded="false"><img src="../assets/icon-arrow-right-2.svg" alt="" /></button></div>
+            <div class="overview-content">
+              <div class="value-tile"><small>库存总值</small><strong>¥4,860</strong><svg viewBox="0 0 160 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 30 C18 18 30 34 45 21 S72 17 88 26 112 35 126 18 145 10 160 22" fill="none" stroke="#19c4d4" stroke-width="3" stroke-linecap="round" /></svg></div>
+              <div class="overview-notes"><div><span>低库存</span><b>2 项</b></div><div><span>临期提醒</span><b>1 项</b></div><div><span>食品杂货</span><b>6 袋</b></div></div>
+            </div>
+          </section>
+          <div class="recent-title"><h2>最近物品</h2><span>食品杂货</span></div>
+          <div data-inventory-list>
+            <article class="after-item" data-filter="四川红花椒 厨房 调味料"><h3>四川红花椒</h3><p>价格 ¥18.00 · 库存 2 袋</p><p>厨房常用调味料 · SAIKO</p></article>
+            <article class="after-item" data-filter="酱油 生抽 低库存"><h3>酱油</h3><p>价格 ¥12.50 · 库存 1 瓶</p><p>生抽 · SAIKO</p></article>
+            <article class="after-item" data-filter="橄榄油 烹饪"><h3>橄榄油</h3><p>价格 ¥56.00 · 库存 3 瓶</p><p>过期 2027/06/20 · SAIKO</p></article>
+          </div>
+        </main>
+      </section>
+
+      <section class="page subpage" data-page="analytics"><h1>数据分析</h1><p>最近 30 天 · 2026/09/11</p><div class="metric-grid"><div class="metric"><small>总库存数</small><strong>128</strong></div><div class="metric"><small>库存总值</small><strong>¥4,860</strong></div><div class="metric"><small>本月收入</small><strong>¥12,840</strong></div><div class="metric"><small>本月支出</small><strong>¥5,320</strong></div></div><div class="list-card"><h2>库存分类占比</h2><div class="list-row"><span>食品杂货</span><b>42%</b></div><div class="list-row"><span>清洁用品</span><b>26%</b></div><div class="list-row"><span>电子产品</span><b>18%</b></div><div class="list-row"><span>宠物用品</span><b>14%</b></div></div></section>
+      <section class="page subpage" data-page="ledger"><h1>账本</h1><p>9 月收支概览</p><div class="metric-grid"><div class="metric"><small>收入</small><strong class="amount-in">¥12,840</strong></div><div class="metric"><small>支出</small><strong class="amount-out">¥5,320</strong></div></div><div class="list-card"><h2>最近账单</h2><div class="list-row"><div>家庭日用品补货<small>淘宝 · 09/10</small></div><b class="amount-out">-¥286</b></div><div class="list-row"><div>二手设备出售<small>闲鱼 · 09/08</small></div><b class="amount-in">+¥680</b></div><div class="list-row"><div>宠物食品<small>京东 · 09/06</small></div><b class="amount-out">-¥198</b></div></div></section>
+      <section class="page subpage" data-page="pricing"><h1>售价管理</h1><p>3 个商品正在维护</p><div class="list-card"><div class="list-row"><div>四川红花椒<small>成本 ¥12 · 建议 ¥18</small></div><b>1.50</b></div><div class="list-row"><div>橄榄油<small>成本 ¥42 · 建议 ¥56</small></div><b>1.33</b></div><div class="list-row"><div>猫砂 10L<small>成本 ¥58 · 建议 ¥79</small></div><b>1.36</b></div></div></section>
+      <section class="page subpage" data-page="settings"><h1>设置</h1><p>v0.1.4 · 127.0.0.1:11222</p><div class="list-card"><div class="list-row"><span>深色模式</span><button class="toggle" type="button" data-theme aria-label="深色模式" aria-pressed="false"></button></div><div class="list-row"><span>智能识别单据</span><button class="toggle on" type="button" aria-label="智能识别单据" aria-pressed="true"></button></div><div class="list-row"><span>库存预警</span><button class="toggle on" type="button" aria-label="库存预警" aria-pressed="true"></button></div><div class="list-row"><span>连接状态</span><b class="amount-in">正常</b></div></div></section>
+
+      <nav class="tabbar" aria-label="优化后底部导航">
+        <button class="tab active" type="button" data-tab="inventory"><img class="tab-icon" src="../assets/tab-storage.png" alt="" /><span>库存</span></button>
+        <button class="tab" type="button" data-tab="analytics"><img class="tab-icon" src="../assets/tab-analytics.png" alt="" /><span>数据</span></button>
+        <button class="tab" type="button" data-tab="ledger"><img class="tab-icon" src="../assets/tab-ledger.png" alt="" /><span>账本</span></button>
+        <button class="tab" type="button" data-tab="pricing"><img class="tab-icon" src="../assets/tab-pricing.png" alt="" /><span>售价</span></button>
+        <button class="tab" type="button" data-tab="settings"><img class="tab-icon" src="../assets/tab-settings.png" alt="" /><span>设置</span></button>
+      </nav>
+
+      <div class="overlay" data-overlay>
+        <div class="dialog" role="dialog" aria-modal="true">
+          <div data-dialog-content></div>
+          <div class="dialog-actions"><button type="button" data-close>取消</button><button class="primary" type="button" data-confirm>确认</button></div>
+        </div>
+      </div>
+      <div class="toast" role="status" data-toast-box></div>
+    </div>
+    <script src="demo.js"></script>
+  </body>
+</html>

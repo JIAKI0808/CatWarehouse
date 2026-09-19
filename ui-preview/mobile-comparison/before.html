@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=375, initial-scale=1.0" />
+    <title>优化前 · CatWareHouse</title>
+    <link rel="stylesheet" href="shared.css" />
+  </head>
+  <body>
+    <div class="app before" data-version="before">
+      <header class="vant-nav">
+        <div class="nav-left"><button class="icon-button" type="button" data-dialog="category" aria-label="管理分类">▦</button></div>
+        <button class="nav-title" type="button" data-dialog="category">食品杂货 <span>⌄</span></button>
+        <div class="nav-right"><button class="icon-button" type="button" data-toast="当前有 3 条库存提醒" aria-label="通知">♧<sup>3</sup></button><button class="icon-button" type="button" data-dialog="more" aria-label="更多操作">⋯</button></div>
+      </header>
+      <section class="page active" data-page="inventory">
+        <div class="before-info"><b>食品杂货</b><span class="muted">库存 6 袋</span></div>
+        <main class="before-body">
+          <section class="old-summary" aria-label="库存摘要">
+            <div><small>物品总数</small><b>128</b></div><div><small>低库存</small><b>2 项</b></div><div><small>临期</small><b>1 项</b></div>
+          </section>
+          <div class="old-section-title"><h2>食品杂货</h2><span>共 3 件物品</span></div>
+          <article class="old-item" data-edit="四川红花椒"><h3>四川红花椒</h3><p>价格 ¥18.00 · 库存 2 袋</p><p>厨房常用调味料</p><p>SAIKO</p></article>
+          <article class="old-item" data-edit="酱油"><h3>酱油 <span class="tag">低库存</span></h3><p>价格 ¥12.50 · 库存 1 瓶</p><p>生抽</p><p>SAIKO</p></article>
+          <article class="old-item" data-edit="橄榄油"><h3>橄榄油</h3><p>价格 ¥56.00 · 库存 3 瓶</p><p>过期 2027/06/20</p><p>SAIKO</p></article>
+        </main>
+        <button class="old-fab" type="button" data-dialog="add">＋ 新增物品</button>
+      </section>
+
+      <section class="page subpage" data-page="analytics"><h1>数据分析</h1><p>最近 30 天</p><div class="metric-grid"><div class="metric"><small>总库存数</small><strong>128</strong></div><div class="metric"><small>库存总值</small><strong>¥4,860</strong></div><div class="metric"><small>本月收入</small><strong>¥12,840</strong></div><div class="metric"><small>本月支出</small><strong>¥5,320</strong></div></div><div class="list-card"><h2>库存分类占比</h2><div class="list-row"><span>食品杂货</span><b>42%</b></div><div class="list-row"><span>清洁用品</span><b>26%</b></div><div class="list-row"><span>电子产品</span><b>18%</b></div><div class="list-row"><span>宠物用品</span><b>14%</b></div></div></section>
+      <section class="page subpage" data-page="ledger"><h1>账本</h1><p>9 月收支概览</p><div class="metric-grid"><div class="metric"><small>收入</small><strong class="amount-in">¥12,840</strong></div><div class="metric"><small>支出</small><strong class="amount-out">¥5,320</strong></div></div><div class="list-card"><h2>最近账单</h2><div class="list-row"><div>家庭日用品补货<small>淘宝 · 09/10</small></div><b class="amount-out">-¥286</b></div><div class="list-row"><div>二手设备出售<small>闲鱼 · 09/08</small></div><b class="amount-in">+¥680</b></div><div class="list-row"><div>宠物食品<small>京东 · 09/06</small></div><b class="amount-out">-¥198</b></div></div></section>
+      <section class="page subpage" data-page="pricing"><h1>售价管理</h1><p>3 个商品正在维护</p><div class="list-card"><div class="list-row"><div>四川红花椒<small>成本 ¥12 · 建议 ¥18</small></div><b>1.50</b></div><div class="list-row"><div>橄榄油<small>成本 ¥42 · 建议 ¥56</small></div><b>1.33</b></div><div class="list-row"><div>猫砂 10L<small>成本 ¥58 · 建议 ¥79</small></div><b>1.36</b></div></div></section>
+      <section class="page subpage" data-page="settings"><h1>设置</h1><p>v0.1.4</p><div class="list-card"><h2>外观</h2><div class="list-row"><span>深色模式</span><button class="toggle" type="button" data-theme aria-label="深色模式" aria-pressed="false"></button></div></div><div class="list-card"><h2>服务器配置</h2><div class="list-row"><div>服务器地址<small>127.0.0.1</small></div><span>›</span></div><div class="list-row"><div>端口<small>11222</small></div><span>›</span></div><div class="list-row"><span>连接状态</span><b class="amount-in">正常</b></div></div><div class="list-card"><h2>插件功能</h2><div class="list-row"><span>AI 分类建议</span><button class="toggle on" type="button" aria-label="AI 分类建议" aria-pressed="true"></button></div><div class="list-row"><span>智能补全</span><button class="toggle on" type="button" aria-label="智能补全" aria-pressed="true"></button></div><div class="list-row"><span>语音输入</span><button class="toggle" type="button" aria-label="语音输入" aria-pressed="false"></button></div></div></section>
+
+      <nav class="tabbar" aria-label="优化前底部导航">
+        <button class="tab active" type="button" data-tab="inventory"><span class="tab-symbol">▢</span><span>库存</span></button>
+        <button class="tab" type="button" data-tab="analytics"><span class="tab-symbol">⌁</span><span>数据</span></button>
+        <button class="tab" type="button" data-tab="ledger"><span class="tab-symbol">≡</span><span>账本</span></button>
+        <button class="tab" type="button" data-tab="pricing"><span class="tab-symbol">◇</span><span>售价</span></button>
+        <button class="tab" type="button" data-tab="settings"><span class="tab-symbol">⚙</span><span>设置</span></button>
+      </nav>
+
+      <div class="overlay" data-overlay>
+        <div class="dialog" role="dialog" aria-modal="true">
+          <div data-dialog-content></div>
+          <div class="dialog-actions"><button type="button" data-close>取消</button><button class="primary" type="button" data-confirm>确认</button></div>
+        </div>
+      </div>
+      <div class="toast" role="status" data-toast-box></div>
+    </div>
+    <script src="demo.js"></script>
+  </body>
+</html>
